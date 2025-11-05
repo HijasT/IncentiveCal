@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Incentive Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: #00796B;
+      margin-top: 30px;
+      font-size: 28px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+      width: 90%;
+      max-width: 650px;
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #00BFA6;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #009E8C;
+    }
+    .results {
+      margin-top: 25px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      line-height: 1.8;
+    }
+    .results span {
+      font-weight: bold;
+      color: #333;
+    }
+    .brown {
+      color: #8B4513;
+      font-style: italic;
+      font-weight: bold;
+    }
+    .blue {
+      color: #0047AB;
+      font-style: italic;
+      font-weight: bold;
+    }
+    .green {
+      color: #00796B;
+      font-weight: bold;
+    }
+    #chartContainer {
+      width: 100%;
+      height: 350px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Incentive Calculator</h1>
+  <div class="container">
+    <label for="salesTarget">Sales Target (AED):</label>
+    <input type="number" id="salesTarget" placeholder="Enter sales target" />
+
+    <label for="totalSales">Total Sales (AED):</label>
+    <input type="number" id="totalSales" placeholder="Enter total sales made" />
+
+    <label for="personalSales">Personal Sales (AED):</label>
+    <input type="number" id="personalSales" placeholder="Enter your personal sales" />
+
+    <label for="salesPersons">Number of Salespersons:</label>
+    <input type="number" id="salesPersons" value="25" />
+
+    <button onclick="calculateIncentive()">Calculate</button>
+
+    <div class="results" id="results"></div>
+    <div id="chartContainer">
+      <canvas id="incentiveChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+  const ctx = document.getElementById('incentiveChart');
+
+  function calculateIncentive() {
+    const salesTarget = parseFloat(document.getElementById('salesTarget').value);
+    const totalSales = parseFloat(document.getElementById('totalSales').value);
+    const personalSales = parseFloat(document.getElementById('personalSales').value);
+    const salesPersons = parseFloat(document.getElementById('salesPersons').value);
+
+    if (!salesTarget || !totalSales || !personalSales || !salesPersons) {
+      document.getElementById('results').innerHTML = "<span style='color:red;'>Please fill all fields</span>";
+      return;
+    }
+
+    let tier = "";
+    let tierPercent = 0;
+    const totalPercent = (totalSales / salesTarget) * 100;
+
+    if (totalPercent >= 85 && totalPercent <= 100) { tier = "Tier 1 (2.5%)"; tierPercent = 0.025; }
+    else if (totalPercent >= 101 && totalPercent <= 110) { tier = "Tier 2 (3%)"; tierPercent = 0.03; }
+    else if (totalPercent >= 111) { tier = "Tier 3 (3.5%)"; tierPercent = 0.035; }
+    else { tier = "Below Target (No Incentive)"; tierPercent = 0; }
+
+    const totalIncentivePool = totalSales * tierPercent;
+    const equalSplit = (totalIncentivePool * 0.7) / salesPersons;
+    const personal30 = (personalSales / totalSales) * (totalIncentivePool * 0.3);
+    const totalIncentive = equalSplit + personal30;
+
+    const personalPercent = ((personalSales / totalSales) * 100).toFixed(2);
+
+    document.getElementById('results').innerHTML = `
+      <div><span>Incentive Tier:</span> ${tier}</div>
+      <div><span>Equal Split (70%):</span> <span class="brown">AED ${equalSplit.toFixed(2)}</span></div>
+      <div><span>Personal Sales %:</span> ${personalPercent}%</div>
+      <div><span>Personal 30%:</span> <span class="blue">AED ${personal30.toFixed(2)}</span></div>
+      <div><span>Total Sales Incentive:</span> <span class="green">AED ${totalIncentive.toFixed(2)}</span></div>
+    `;
+
+    updateChart(equalSplit, totalIncentive, personalSales, totalSales, tierPercent, salesPersons);
+  }
+
+  function updateChart(equalSplit, totalIncentive, personalSales, totalSales, tierPercent, salesPersons) {
+    const maxX = personalSales * 1.5; // X-axis ends at 1.5x personal sales
+    const step = personalSales / 25; // smooth curve resolution
+
+    const xValues = [];
+    const yValues = [];
+
+    for (let i = 0; i <= maxX; i += step) {
+      const personal30 = (i / totalSales) * (totalSales * tierPercent) * 0.3;
+      const totalPossibleIncentive = ((totalSales * tierPercent) * 0.7 / salesPersons) + personal30;
+      xValues.push(i);
+      yValues.push(totalPossibleIncentive);
+    }
+
+    if (window.incentiveChartInstance) window.incentiveChartInstance.destroy();
+
+    window.incentiveChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: xValues,
+        datasets: [{
+          label: 'Projected Incentive Curve',
+          data: yValues,
+          borderColor: '#00BFA6',
+          borderWidth: 3,
+          fill: false,
+          tension: 0.4,
+          pointRadius: 0,
+        }, {
+          label: 'Your Current Incentive',
+          data: [{ x: personalSales, y: totalIncentive }],
+          pointBackgroundColor: '#FF6B00',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 3,
+          pointRadius: 7,
+          type: 'scatter',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: 'Personal Sales Made (AED)', color: '#333', font: { size: 14, weight: 'bold' } },
+            min: 0,
+            max: maxX,
+            grid: { color: '#eee' }
+          },
+          y: {
+            title: { display: true, text: 'Incentive You Could Have Made (AED)', color: '#333', font: { size: 14, weight: 'bold' } },
+            min: equalSplit,
+            grid: { color: '#eee' }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: '#444', font: { size: 13 } } },
+          tooltip: {
+            mode: 'nearest',
+            intersect: false,
+            backgroundColor: '#333',
+            titleFont: { size: 13, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 10,
+            cornerRadius: 8
+          }
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
