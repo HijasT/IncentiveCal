@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incentive Calculator</title>
+<style>
+  body { font-family: Arial; background:#f9f9f9; padding:40px; color:#333; }
+  h1 { text-align:center; }
+  .calc-box { background:white; padding:20px; border-radius:10px; max-width:400px; margin:auto; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+  input { width:100%; padding:8px; margin:6px 0; }
+  button { width:100%; padding:10px; background:#0078d7; color:white; border:none; border-radius:6px; cursor:pointer; }
+  button:hover { background:#005fa3; }
+  .result { margin-top:15px; background:#eef; padding:10px; border-radius:8px; }
+</style>
+</head>
+<body>
+<h1>Incentive Calculator</h1>
+<div class="calc-box">
+  <label>Total Sales (AED):</label><input id="totalSales" type="number">
+  <label>Personal Sales (AED):</label><input id="personalSales" type="number">
+  <label>Sales Target (AED):</label><input id="target" type="number">
+  <label>Number of Salespeople:</label><input id="numPeople" type="number" value="25">
+  <button onclick="calculate()">Calculate</button>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+function calculate() {
+  const S = parseFloat(document.getElementById("totalSales").value);
+  const Y = parseFloat(document.getElementById("personalSales").value);
+  const Target = parseFloat(document.getElementById("target").value);
+  const N = parseFloat(document.getElementById("numPeople").value);
+  
+  if (!S || !Y || !Target || !N) return alert("Enter all fields");
+  
+  const perf = S / Target;
+  let r = 0;
+  if (perf >= 1.11) r = 0.035;
+  else if (perf >= 1.01) r = 0.03;
+  else if (perf >= 0.85) r = 0.025;
+
+  const totalPool = S * r;
+  const equalPool = totalPool * 0.7;
+  const perfPool = totalPool * 0.3;
+  const equalSplit = equalPool / N;
+  const personalShare = Y / S;
+  const personal30 = perfPool * personalShare;
+  const totalIncentive = equalSplit + personal30;
+
+  document.getElementById("result").innerHTML = `
+    <b>Incentive Rate:</b> ${(r*100).toFixed(2)}%<br>
+    <b>Equal Split (70%):</b> AED ${equalSplit.toFixed(2)}<br>
+    <b>Personal Sales %:</b> ${(personalShare*100).toFixed(2)}%<br>
+    <b>Personal 30%:</b> AED ${personal30.toFixed(2)}<br>
+    <b>Total Incentive:</b> <span style="font-size:18px;font-weight:bold;">AED ${totalIncentive.toFixed(2)}</span>
+  `;
+}
+</script>
+</body>
+</html>
