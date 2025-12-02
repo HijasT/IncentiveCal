@@ -1,223 +1,479 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Incentive Calculator</title>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f8f9fa;
-      color: #333;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      transition: background 0.5s, color 0.5s;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Incentive Calculator v2.1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --accent: #0A7E8C;
+    --muted: #666;
+    --darkblue: #0047AB;
+    --darkbrown: #5C4033;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background:var(--bg);
+    color:#222;
+    transition: background .3s, color .3s;
+    display:flex;
+    justify-content:center;
+    padding:28px 16px;
+  }
 
-    /* Header */
-    .header {
-      width: 90%;
-      max-width: 650px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      margin-top: 30px;
-      margin-bottom: 10px;
-    }
-    h1 {
-      font-size: 28px;
-      color: #00796B;
-      margin: 0;
-      transition: color 0.5s;
-    }
-    .header-bottom {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      margin-top: 5px;
-      align-items: center;
-    }
-    .version {
-      font-size: 14px;
-      font-weight: normal;
-      color: #555;
-      transition: color 0.5s;
-    }
-    .dark-mode-btn {
-      cursor: pointer;
-      font-size: 22px;
-      color: #00796B;
-      transition: color 0.5s;
-      user-select: none;
-    }
+  .app {
+    width:100%;
+    max-width:980px;
+  }
 
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      padding: 30px;
-      width: 90%;
-      max-width: 650px;
-      margin-bottom: 30px;
-      transition: background 0.5s, color 0.5s, box-shadow 0.5s;
-    }
-    label { display: block; margin-top: 15px; font-weight: 600; }
-    input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; transition: background 0.5s, color 0.5s, border 0.5s; }
-    button { margin-top: 20px; background-color: #00BFA6; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; transition: background 0.3s; }
-    button:hover { background-color: #009E8C; }
-    .results { margin-top: 25px; padding-top: 10px; border-top: 1px solid #ddd; line-height: 1.8; }
-    .dark-blue { color: #0047AB; font-weight: bold; font-style: italic; transition: color 0.5s; }
-    .dark-brown { color: #5C4033; font-weight: bold; font-style: italic; transition: color 0.5s; }
-    .dark-salem { color: #00796B; font-weight: bold; transition: color 0.5s; }
-    .projected { font-size: 0.9em; color: #666; font-style: italic; margin-top: 10px; line-height: 1.5; transition: color 0.5s; }
-    .quote { margin-top: 20px; padding: 12px; background-color: #f0f4f4; border-left: 5px solid #00796B; font-style: italic; color: #444; border-radius: 8px; font-size: 14px; transition: background 0.5s, color 0.5s, border-left-color 0.5s; }
+  header.app-header{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .title-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  h1{ margin:0; font-size:28px; color:var(--accent); }
+  .sub-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+  }
+  .version{ color:var(--muted); font-size:13px; }
+  .dark-toggle{
+    cursor:pointer;
+    font-size:20px;
+    color:var(--accent);
+    user-select:none;
+  }
 
-    /* Dark Mode */
-    body.dark {
-      background: #121212;
-      color: #e0e0e0;
-    }
-    body.dark .version { color: #ccc; }
-    body.dark .dark-mode-btn { color: #00bfa6; }
-    body.dark .container { background: #1e1e1e; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-    body.dark input, body.dark button { background: #2c2c2c; color: #fff; border: 1px solid #555; }
-    body.dark .dark-blue { color: #3399ff; }
-    body.dark .dark-brown { color: #b36b00; }
-    body.dark .dark-salem { color: #00bfa6; }
-    body.dark .quote { background-color: #2c2c2c; color: #ccc; border-left-color: #00bfa6; }
-  </style>
+  /* pill tabs */
+  .tabs{
+    display:flex;
+    gap:8px;
+    margin: 12px 0;
+  }
+  .pill{
+    padding:8px 14px;
+    border-radius:999px;
+    background:#e9f6f6;
+    color:#08373a;
+    cursor:pointer;
+    font-weight:600;
+    border:1px solid rgba(10,126,140,0.06);
+    transition:transform .12s, background .12s;
+  }
+  .pill:hover{ transform:translateY(-2px); }
+  .pill.active{
+    background:var(--accent);
+    color:#fff;
+    box-shadow: 0 6px 18px rgba(10,126,140,0.12);
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    box-shadow:0 8px 30px rgba(16,24,40,0.06);
+    padding:22px;
+  }
+
+  /* input area grid */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap:12px;
+  }
+  label{display:block; font-weight:600; margin-bottom:6px; color:#333;}
+  input[type="number"], input[type="file"]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid #d3d6d8;
+    font-size:15px;
+  }
+  input[type="file"]{ padding:8px; }
+
+  .btn{
+    display:inline-block;
+    padding:12px 16px;
+    border-radius:10px;
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    border:none;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn.secondary{
+    background:#fff;
+    color:var(--accent);
+    border:1px solid rgba(10,126,140,0.15);
+    box-shadow:none;
+  }
+
+  .results { margin-top:18px; line-height:1.6; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+
+  .value{
+    font-weight:700;
+  }
+
+  .darkBlue{ color:var(--darkblue); font-style:italic; font-weight:700; }
+  .darkBrown{ color:var(--darkbrown); font-style:italic; font-weight:700; }
+  .salem{ color:var(--accent); font-weight:800; }
+
+  .highlight-total{
+    margin-top:12px;
+    background: #e8fffb;
+    border-left:6px solid var(--accent);
+    padding:12px;
+    border-radius:8px;
+    font-size:18px;
+    font-weight:800;
+  }
+
+  .note{ color:var(--muted); font-size:13px; margin-bottom:8px; }
+
+  /* table */
+  .table-wrap{ margin-top:14px; overflow:auto; border-radius:8px; border:1px solid #e6eef0; }
+  table{ width:100%; border-collapse:collapse; min-width:700px; }
+  th, td{ padding:10px 12px; border-bottom:1px solid #eef3f4; text-align:left; }
+  th{ background:var(--accent); color:#fff; font-weight:700; position:sticky; top:0; }
+  tr:nth-child(even){ background:#fbfdfd; }
+  tr:hover{ background:#f0fbfb; }
+
+  .small{ font-size:13px; color:var(--muted); }
+
+  /* dark mode overrides */
+  body.dark{
+    background:#0b0f11;
+    color:#dbe6e6;
+  }
+  body.dark .card{ background:#0f1415; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+  body.dark .pill{ background:rgba(255,255,255,0.03); color:#cfeeea; border-color:rgba(255,255,255,0.03);}
+  body.dark .pill.active{ background:var(--accent); color:#001; }
+  body.dark input[type="number"], body.dark input[type="file"]{ background:#1c2223; border-color:#2a3637; color:#dfefef; }
+  body.dark th{ background: #063a3c; color:#fff; }
+  body.dark tr:nth-child(even){ background:#0f1616; }
+  body.dark tr:hover{ background:#082425; }
+  body.dark .highlight-total{ background:#003733; color:#dff7f2; border-left-color: #00bfa6; }
+  body.dark .darkBlue{ color:#66b3ff; }
+  body.dark .darkBrown{ color:#e6b76b; }
+  body.dark .salem{ color:#00bfa6; }
+</style>
 </head>
 <body>
-  <div class="header">
-    <h1>Smart Incentive Calculator</h1>
-    <div class="header-bottom">
-      <span class="version">v1.5</span>
-      <div class="dark-mode-btn" id="darkModeBtn" onclick="toggleDarkMode()">☀️</div>
+  <div class="app">
+    <header class="app-header">
+      <div class="title-row">
+        <h1>Smart Incentive Calculator</h1>
+        <div class="dark-toggle" id="darkToggle" title="Toggle dark mode">☀️</div>
+      </div>
+      <div class="sub-row">
+        <div class="version">v2.2</div>
+        <div class="note small">This tool runs entirely in your browser — no upload stored anywhere.</div>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Calculator tabs">
+      <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
+      <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
     </div>
+
+    <!-- INDIVIDUAL CARD -->
+    <section id="individual" class="card" aria-labelledby="tab-ind" style="display:block;">
+      <div class="note">Enter numbers and press Calculate. Projected incentive assumes an extra package of AED 1695.</div>
+
+      <div class="grid">
+        <div>
+          <label for="ind-target">Sales Target (AED)</label>
+          <input id="ind-target" type="number" placeholder="700000" />
+        </div>
+
+        <div>
+          <label for="ind-total">Total Sales (AED)</label>
+          <input id="ind-total" type="number" placeholder="735000" />
+        </div>
+
+        <div>
+          <label for="ind-personal">Personal Sales (AED)</label>
+          <input id="ind-personal" type="number" placeholder="30450" />
+        </div>
+
+        <div>
+          <label for="ind-count">Number of Salespersons</label>
+          <input id="ind-count" type="number" value="25" />
+        </div>
+      </div>
+
+      <button class="btn" onclick="calculateIndividual()">Calculate</button>
+
+      <div id="ind-results" class="results"></div>
+      <div id="ind-quote" class="small" style="margin-top:8px;color:var(--muted)"></div>
+    </section>
+
+    <!-- BULK CARD -->
+    <section id="bulk" class="card" aria-labelledby="tab-bulk" style="display:none; margin-top:16px;">
+      <div class="note">Upload Excel where layout is: A1/B1 = headers; then A2 = staff name, B3 = staff total; A4 = next name, B5 next total; etc.
+      Extra columns are ignored. File must be .xlsx or .xls.</div>
+
+      <div class="grid">
+        <div>
+          <label for="bulk-target">Sales Target (AED)</label>
+          <input id="bulk-target" type="number" placeholder="700000" />
+        </div>
+
+        <div>
+          <label for="bulk-file">Excel File (.xlsx, .xls)</label>
+          <input id="bulk-file" type="file" accept=".xlsx,.xls" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button class="btn" onclick="calculateBulk()">Process Upload</button>
+        <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px;">Download Results</button>
+      </div>
+
+      <div id="bulk-results" style="margin-top:14px;"></div>
+    </section>
   </div>
 
-  <div class="container">
-    <label for="salesTarget">Sales Target (AED):</label>
-    <input type="number" id="salesTarget" placeholder="Enter sales target" />
+<script>
+/* UI helpers */
+function activateTab(name){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.card').forEach(c=>c.style.display='none');
+  if(name==='individual'){
+    document.getElementById('tab-ind').classList.add('active');
+    document.getElementById('individual').style.display='block';
+  } else {
+    document.getElementById('tab-bulk').classList.add('active');
+    document.getElementById('bulk').style.display='block';
+  }
+}
 
-    <label for="totalSales">Total Sales (AED):</label>
-    <input type="number" id="totalSales" placeholder="Enter total sales made" />
+/* Dark mode toggle */
+const darkToggle = document.getElementById('darkToggle');
+darkToggle.addEventListener('click', ()=>{
+  document.body.classList.toggle('dark');
+  darkToggle.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️';
+});
 
-    <label for="personalSales">Personal Sales (AED):</label>
-    <input type="number" id="personalSales" placeholder="Enter your personal sales" />
+/* Motivational quotes only for individual tab */
+const quotes = [
+  "Every sale brings you closer to success.",
+  "Push a little harder — your future self will thank you.",
+  "Small wins compound into big results.",
+  "Be the reason someone earns a compliment today."
+];
 
-    <label for="salesPersons">Number of Salespersons:</label>
-    <input type="number" id="salesPersons" value="25" />
+/* ---------- INDIVIDUAL CALC ---------- */
+function calculateIndividual(){
+  const target = parseFloat(document.getElementById('ind-target').value);
+  const total = parseFloat(document.getElementById('ind-total').value);
+  const personal = parseFloat(document.getElementById('ind-personal').value);
+  const count = parseInt(document.getElementById('ind-count').value,10);
+  const out = document.getElementById('ind-results');
+  const quoteEl = document.getElementById('ind-quote');
+  out.innerHTML=''; quoteEl.textContent='';
 
-    <button onclick="calculateIncentive()">Calculate</button>
+  if(!target || !total || !personal || !count){ out.innerHTML = "<div style='color:#d9534f'>Please fill all fields</div>"; return; }
 
-    <div class="results" id="results"></div>
-  </div>
+  const pct = (total / target) * 100;
+  let tierText='Below Target (No Incentive)';
+  let tierPct = 0;
+  if(pct >=85 && pct <=100){ tierText = 'Tier 1 (2.5%)'; tierPct = 0.025; }
+  else if(pct >=101 && pct <=110){ tierText = 'Tier 2 (3%)'; tierPct = 0.03; }
+  else if(pct >=111){ tierText = 'Tier 3 (3.5%)'; tierPct = 0.035; }
 
-  <script>
-    const darkModeBtn = document.getElementById('darkModeBtn');
+  const pool = total * tierPct;
+  const equalSplit = (pool * 0.7) / count;
+  const personal30 = (personal / total) * (pool * 0.3);
+  const totalIncentive = equalSplit + personal30;
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-      darkModeBtn.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️';
-    }
+  // Projection if user sold AED 1695 (same tierPct logic based on new totals)
+  const extra = 1695;
+  const newTotal = total + extra;
+  const newPersonal = personal + extra;
+  const newPct = (newTotal / target) * 100;
+  let newTierPct = 0;
+  if(newPct >=85 && newPct <=100) newTierPct = 0.025;
+  else if(newPct >=101 && newPct <=110) newTierPct = 0.03;
+  else if(newPct >=111) newTierPct = 0.035;
+  const newPool = newTotal * newTierPct;
+  const newEqualSplit = (newPool * 0.7) / count;
+  const newPersonal30 = (newPersonal / newTotal) * (newPool * 0.3);
+  const newTotalIncentive = newEqualSplit + newPersonal30;
+  const diff = newTotalIncentive - totalIncentive;
 
-    async function getRandomQuoteOnline() {
-      try {
-        const res = await fetch("https://zenquotes.io/api/random");
-        const data = await res.json();
-        return `${data[0].q} — ${data[0].a}`;
-      } catch (err) {
-        const fallback = [
-          "Every sale brings you closer to your next success.",
-          "Push a little harder—your future self will thank you.",
-          "The harder you work, the luckier you get.",
-          "Sell smart, not hard. The incentive will follow."
-        ];
-        return fallback[Math.floor(Math.random() * fallback.length)];
+  out.innerHTML = `
+    <div><strong>Incentive Tier:</strong> ${tierText}</div>
+    <div><strong>Equal Split (70%):</strong> <span class="darkBlue">AED ${equalSplit.toFixed(3)}</span></div>
+    <div><strong>Personal Sales %:</strong> ${((personal/total)*100).toFixed(3)}%</div>
+    <div><strong>Personal 30%:</strong> <span class="darkBrown">AED ${personal30.toFixed(3)}</span></div>
+    <div class="highlight-total">Total Incentive: <span class="salem">AED ${totalIncentive.toFixed(2)}</span></div>
+    <div style="margin-top:10px" class="small">If you sell an extra package of AED ${extra}: projected incentive AED ${newTotalIncentive.toFixed(2)} (difference ${diff>=0?'+':''}${diff.toFixed(2)} AED)</div>
+  `;
+
+  // random quote
+  const q = quotes[Math.floor(Math.random()*quotes.length)];
+  quoteEl.textContent = q;
+}
+
+/* ---------- BULK CALC (merged-row pattern) ----------
+
+ Pattern assumed:
+ Row 1: headers (A1 / B1)
+ Row 2: staff name (A2)
+ Row 3: staff total (B3)
+ Row 4: staff name (A4)
+ Row 5: staff total (B5)
+ ...
+ We will read starting from row index 2 (1-based), step by 2: nameRow = r, totalRow = r+1
+ Column indices: A => 0, B => 1
+ Extra columns ignored.
+ ---------- */
+
+function calculateBulk(){
+  const target = parseFloat(document.getElementById('bulk-target').value);
+  const fileInput = document.getElementById('bulk-file');
+  const file = fileInput.files && fileInput.files[0];
+  const out = document.getElementById('bulk-results');
+  const dwn = document.getElementById('downloadBtn');
+  out.innerHTML=''; dwn.style.display='none'; window._bulkExportData = null;
+
+  if(!target || !file){ out.innerHTML = "<div style='color:#d9534f'>Please provide sales target and select an Excel file.</div>"; return; }
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const array = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(array, {type:'array'});
+      const first = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[first];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+
+      if(rows.length < 3){ out.innerHTML = "<div style='color:#d9534f'>Excel looks too short — need at least header + one staff block.</div>"; return; }
+
+      const staffList = [];
+      // start from row index 1 (0-based => row 2 in Excel)
+      for(let r = 1; r < rows.length; r += 2){
+        const nameRow = rows[r];       // expected to contain staff name at col 0
+        const totalRow = rows[r+1];    // expected to contain total at col 1
+        if(!nameRow) continue;
+        const staffName = nameRow[0];
+        if(!staffName) continue;
+        const totalVal = totalRow && totalRow[1];
+        const totalNum = totalVal === undefined || totalVal === null ? NaN : Number(totalVal);
+        if(isNaN(totalNum)) continue;
+        staffList.push({ Staff: String(staffName).trim(), Total: Number(totalNum) });
       }
-    }
 
-    async function calculateIncentive() {
-      const salesTarget = parseFloat(document.getElementById('salesTarget').value);
-      const totalSales = parseFloat(document.getElementById('totalSales').value);
-      const personalSales = parseFloat(document.getElementById('personalSales').value);
-      const salesPersons = parseFloat(document.getElementById('salesPersons').value);
-
-      if (!salesTarget || !totalSales || !personalSales || !salesPersons) {
-        document.getElementById('results').innerHTML = "<span style='color:red;'>Please fill all fields</span>";
+      if(staffList.length === 0){
+        out.innerHTML = "<div style='color:#d9534f'>No valid staff/name & total pairs found using the merged-row pattern.</div>";
         return;
       }
 
-      const totalPercent = (totalSales / salesTarget) * 100;
-      let tier = "";
-      let tierPercent = 0;
-      if (totalPercent >= 85 && totalPercent <= 100) { tier = "Tier 1 (2.5%)"; tierPercent = 0.025; }
-      else if (totalPercent >= 101 && totalPercent <= 110) { tier = "Tier 2 (3%)"; tierPercent = 0.03; }
-      else if (totalPercent >= 111) { tier = "Tier 3 (3.5%)"; tierPercent = 0.035; }
-      else { tier = "Below Target (No Incentive)"; tierPercent = 0; }
+      // compute totals
+      const teamTotal = staffList.reduce((s,c)=>s + c.Total, 0);
+      const pct = (teamTotal / target) * 100;
+      let tierText='Below Target (No Incentive)', tierPct=0;
+      if(pct >=85 && pct <=100){ tierText = 'Tier 1 (2.5%)'; tierPct = 0.025; }
+      else if(pct >=101 && pct <=110){ tierText = 'Tier 2 (3%)'; tierPct = 0.03; }
+      else if(pct >=111){ tierText = 'Tier 3 (3.5%)'; tierPct = 0.035; }
 
-      const totalIncentivePool = totalSales * tierPercent;
-      const equalSplit = (totalIncentivePool * 0.7) / salesPersons;
-      const personal30 = (personalSales / totalSales) * (totalIncentivePool * 0.3);
-      const currentIncentive = equalSplit + personal30;
-      const personalPercent = ((personalSales / totalSales) * 100).toFixed(3);
+      const pool = teamTotal * tierPct;
+      const equalSplit = (pool * 0.7) / staffList.length;
+      // fill per-staff values
+      staffList.forEach(s=>{
+        s.PersonalPercent = ((s.Total / teamTotal) * 100).toFixed(3);
+        s.Personal30 = ((s.Total / teamTotal) * (pool * 0.3));
+        s.Personal30_display = s.Personal30.toFixed(3);
+        s.EqualSplit = Number(equalSplit.toFixed(3));
+        s.TotalIncentive = Number((equalSplit + s.Personal30).toFixed(2));
+      });
 
-      const extraSale = 1695;
+      // sort by TotalIncentive desc
+      staffList.sort((a,b) => b.TotalIncentive - a.TotalIncentive);
 
-      // Projection calculations
-      const newTotalSalesYou = totalSales + extraSale;
-      const newPersonalSalesYou = personalSales + extraSale;
-      const newTotalPercentYou = (newTotalSalesYou / salesTarget) * 100;
-      let newTierPercentYou = 0;
-      if (newTotalPercentYou >= 85 && newTotalPercentYou <= 100) newTierPercentYou = 0.025;
-      else if (newTotalPercentYou >= 101 && newTotalPercentYou <= 110) newTierPercentYou = 0.03;
-      else if (newTotalPercentYou >= 111) newTierPercentYou = 0.035;
-      const newIncentivePoolYou = newTotalSalesYou * newTierPercentYou;
-      const newEqualSplitYou = (newIncentivePoolYou * 0.7) / salesPersons;
-      const newPersonal30You = (newPersonalSalesYou / newTotalSalesYou) * (newIncentivePoolYou * 0.3);
-      const projectedIncentiveYou = newEqualSplitYou + newPersonal30You;
-      const differenceYou = projectedIncentiveYou - currentIncentive;
+      // render results table and meta
+      let html = `<div><strong>Tier:</strong> ${tierText} &nbsp; <span class="small">(${pct.toFixed(2)}% of target)</span></div>`;
+      html += `<div style="margin-top:6px"><strong>Total Sales:</strong> AED ${teamTotal.toFixed(2)}</div>`;
+      html += `<div style="margin-top:6px"><strong>Equal Split (per staff):</strong> <span class="darkBlue">AED ${equalSplit.toFixed(3)}</span></div>`;
 
-      const newTotalSalesOther = totalSales + extraSale;
-      const newPersonalSalesOther = personalSales;
-      const newTotalPercentOther = (newTotalSalesOther / salesTarget) * 100;
-      let newTierPercentOther = 0;
-      if (newTotalPercentOther >= 85 && newTotalPercentOther <= 100) newTierPercentOther = 0.025;
-      else if (newTotalPercentOther >= 101 && newTotalPercentOther <= 110) newTierPercentOther = 0.03;
-      else if (newTotalPercentOther >= 111) newTierPercentOther = 0.035;
-      const newIncentivePoolOther = newTotalSalesOther * newTierPercentOther;
-      const newEqualSplitOther = (newIncentivePoolOther * 0.7) / salesPersons;
-      const newPersonal30Other = (newPersonalSalesOther / newTotalSalesOther) * (newIncentivePoolOther * 0.3);
-      const projectedIncentiveOther = newEqualSplitOther + newPersonal30Other;
-      const differenceOther = projectedIncentiveOther - currentIncentive;
+      html += `<div class="table-wrap"><table><thead><tr>
+        <th>Staff</th><th>Total (AED)</th><th>Personal %</th><th>Personal 30% (AED)</th><th>Equal Split (AED)</th><th>Total Incentive (AED)</th>
+      </tr></thead><tbody>`;
 
-      const quote = await getRandomQuoteOnline();
+      staffList.forEach(s=>{
+        html += `<tr>
+          <td>${escapeHtml(s.Staff)}</td>
+          <td>${s.Total.toFixed(2)}</td>
+          <td>${s.PersonalPercent}%</td>
+          <td>${s.Personal30_display}</td>
+          <td>${s.EqualSplit.toFixed(3)}</td>
+          <td>${s.TotalIncentive.toFixed(2)}</td>
+        </tr>`;
+      });
 
-      document.getElementById('results').innerHTML = `
-        <div><span>Incentive Tier:</span> ${tier}</div>
-        <div><span>Equal Split (70%):</span> <span class="dark-blue">AED ${equalSplit.toFixed(3)}</span></div>
-        <div><span>Personal Sales %:</span> ${personalPercent}%</div>
-        <div><span>Personal 30%:</span> <span class="dark-brown">AED ${personal30.toFixed(3)}</span></div>
-        <div><span>Total Sales Incentive:</span> <span class="dark-salem">AED ${currentIncentive.toFixed(2)}</span></div>
+      html += `</tbody></table></div>`;
+      out.innerHTML = html;
 
-        <div class="projected">
-          <div>If <strong>you</strong> sold an extra package of AED ${extraSale}:</div>
-          <div>Projected Incentive: AED ${projectedIncentiveYou.toFixed(2)}</div>
-          <div>Difference: ${differenceYou >=0 ? '+' : ''}${differenceYou.toFixed(2)} AED</div>
+      // prepare data for download (export full columns incl EqualSplit)
+      // produce clean objects with proper column names
+      const exportData = staffList.map(s => ({
+        Staff: s.Staff,
+        Total: Number(s.Total.toFixed(2)),
+        PersonalPercent: Number(s.PersonalPercent),
+        Personal30: Number(s.Personal30.toFixed(3)),
+        EqualSplit: Number(s.EqualSplit.toFixed(3)),
+        TotalIncentive: Number(s.TotalIncentive.toFixed(2))
+      }));
 
-          <div style="margin-top:8px;">If <strong>someone else</strong> sold an extra package of AED ${extraSale}:</div>
-          <div>Projected Incentive: AED ${projectedIncentiveOther.toFixed(2)}</div>
-          <div>Difference: ${differenceOther >=0 ? '+' : ''}${differenceOther.toFixed(2)} AED</div>
-        </div>
-
-        <div class="quote">${quote}</div>
-      `;
+      window._bulkExportData = exportData;
+      document.getElementById('downloadBtn').style.display = 'inline-block';
+    } catch(err){
+      console.error(err);
+      out.innerHTML = "<div style='color:#d9534f'>Failed to parse the file. Make sure it's a valid .xlsx/.xls workbook.</div>";
     }
-  </script>
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* download prepared export */
+function downloadBulk(){
+  if(!window._bulkExportData || !window._bulkExportData.length) return;
+  const ws = XLSX.utils.json_to_sheet(window._bulkExportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
+  XLSX.writeFile(wb, 'Bulk_Incentives_v2.1.xlsx');
+}
+
+/* small helper */
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+/* allow Enter key to trigger calculate on individual inputs */
+['ind-target','ind-total','ind-personal','ind-count'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calculateIndividual(); });
+});
+</script>
 </body>
 </html>
