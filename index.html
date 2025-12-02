@@ -15,12 +15,14 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      transition: background 0.5s, color 0.5s;
     }
     h1 {
       text-align: center;
       color: #00796B;
       margin-top: 30px;
       font-size: 28px;
+      transition: color 0.5s;
     }
     .container {
       background: white;
@@ -30,6 +32,7 @@
       width: 90%;
       max-width: 650px;
       margin-bottom: 30px;
+      transition: background 0.5s, color 0.5s, box-shadow 0.5s;
     }
     label {
       display: block;
@@ -43,6 +46,7 @@
       border: 1px solid #ccc;
       border-radius: 10px;
       font-size: 16px;
+      transition: background 0.5s, color 0.5s, border 0.5s;
     }
     button {
       margin-top: 20px;
@@ -54,6 +58,7 @@
       font-size: 16px;
       cursor: pointer;
       width: 100%;
+      transition: background 0.3s;
     }
     button:hover {
       background-color: #009E8C;
@@ -64,23 +69,22 @@
       border-top: 1px solid #ddd;
       line-height: 1.8;
     }
-    .results span {
-      font-weight: bold;
-      color: #333;
-    }
     .dark-blue {
       color: #0047AB;
       font-weight: bold;
       font-style: italic;
+      transition: color 0.5s;
     }
     .dark-brown {
       color: #5C4033;
       font-weight: bold;
       font-style: italic;
+      transition: color 0.5s;
     }
     .dark-salem {
       color: #00796B;
       font-weight: bold;
+      transition: color 0.5s;
     }
     .projected {
       font-size: 0.9em;
@@ -88,6 +92,7 @@
       font-style: italic;
       margin-top: 10px;
       line-height: 1.5;
+      transition: color 0.5s;
     }
     .quote {
       margin-top: 20px;
@@ -98,7 +103,29 @@
       color: #444;
       border-radius: 8px;
       font-size: 14px;
+      transition: background 0.5s, color 0.5s, border-left-color 0.5s;
     }
+
+    /* Dark Mode */
+    body.dark {
+      background: #121212;
+      color: #e0e0e0;
+    }
+    body.dark h1 { color: #00BFA6; }
+    body.dark .container { 
+      background: #1e1e1e;
+      color: #e0e0e0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    body.dark input, body.dark button {
+      background: #2c2c2c;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    body.dark .dark-blue { color: #3399ff; }
+    body.dark .dark-brown { color: #b36b00; }
+    body.dark .dark-salem { color: #00bfa6; }
+    body.dark .quote { background-color: #2c2c2c; color: #ccc; border-left-color: #00bfa6; }
   </style>
 </head>
 <body>
@@ -117,6 +144,7 @@
     <input type="number" id="salesPersons" value="25" />
 
     <button onclick="calculateIncentive()">Calculate</button>
+    <button onclick="toggleDarkMode()" style="margin-top:10px;">Toggle Dark Mode</button>
 
     <div class="results" id="results"></div>
   </div>
@@ -128,7 +156,6 @@
         const data = await res.json();
         return `${data[0].q} — ${data[0].a}`;
       } catch (err) {
-        console.warn("Could not fetch quote online, using fallback.");
         const fallback = [
           "Every sale brings you closer to your next success.",
           "Push a little harder—your future self will thank you.",
@@ -137,6 +164,10 @@
         ];
         return fallback[Math.floor(Math.random() * fallback.length)];
       }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
     }
 
     async function calculateIncentive() {
@@ -162,7 +193,7 @@
       const equalSplit = (totalIncentivePool * 0.7) / salesPersons;
       const personal30 = (personalSales / totalSales) * (totalIncentivePool * 0.3);
       const currentIncentive = equalSplit + personal30;
-      const personalPercent = ((personalSales / totalSales) * 100).toFixed(2);
+      const personalPercent = ((personalSales / totalSales) * 100).toFixed(3);
 
       const extraSale = 1695;
 
@@ -198,17 +229,17 @@
 
       document.getElementById('results').innerHTML = `
         <div><span>Incentive Tier:</span> ${tier}</div>
-        <div><span>Equal Split (70%):</span> <span class="dark-blue">AED ${equalSplit.toFixed(2)}</span></div>
+        <div><span>Equal Split (70%):</span> <span class="dark-blue">AED ${equalSplit.toFixed(3)}</span></div>
         <div><span>Personal Sales %:</span> ${personalPercent}%</div>
-        <div><span>Personal 30%:</span> <span class="dark-brown">AED ${personal30.toFixed(2)}</span></div>
+        <div><span>Personal 30%:</span> <span class="dark-brown">AED ${personal30.toFixed(3)}</span></div>
         <div><span>Total Sales Incentive:</span> <span class="dark-salem">AED ${currentIncentive.toFixed(2)}</span></div>
 
         <div class="projected">
-          <div>If <strong>you</strong> sold an extra package of AED ${extraSale}:</div>
+          <div>If <strong>you</strong> had sold an extra package of AED ${extraSale}:</div>
           <div>Projected Incentive: AED ${projectedIncentiveYou.toFixed(2)}</div>
           <div>Difference: ${differenceYou >=0 ? '+' : ''}${differenceYou.toFixed(2)} AED</div>
 
-          <div style="margin-top:8px;">If <strong>someone else</strong> sold an extra package of AED ${extraSale}:</div>
+          <div style="margin-top:8px;">If <strong>someone else</strong> had sold an extra package of AED ${extraSale}:</div>
           <div>Projected Incentive: AED ${projectedIncentiveOther.toFixed(2)}</div>
           <div>Difference: ${differenceOther >=0 ? '+' : ''}${differenceOther.toFixed(2)} AED</div>
         </div>
