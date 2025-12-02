@@ -17,12 +17,33 @@
       min-height: 100vh;
       transition: background 0.5s, color 0.5s;
     }
-    h1 {
-      text-align: center;
-      color: #00796B;
+    .header {
+      width: 90%;
+      max-width: 650px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-top: 30px;
+      margin-bottom: 10px;
+    }
+    h1 {
       font-size: 28px;
+      color: #00796B;
+      margin: 0;
       transition: color 0.5s;
+    }
+    h1 .version {
+      font-size: 14px;
+      font-weight: normal;
+      color: #555;
+      margin-left: 8px;
+    }
+    .dark-mode-btn {
+      cursor: pointer;
+      font-size: 22px;
+      color: #00796B;
+      transition: color 0.5s;
+      user-select: none;
     }
     .container {
       background: white;
@@ -112,6 +133,8 @@
       color: #e0e0e0;
     }
     body.dark h1 { color: #00BFA6; }
+    body.dark h1 .version { color: #ccc; }
+    body.dark .dark-mode-btn { color: #00bfa6; }
     body.dark .container { 
       background: #1e1e1e;
       color: #e0e0e0;
@@ -129,7 +152,11 @@
   </style>
 </head>
 <body>
-  <h1>Smart Incentive Calculator</h1>
+  <div class="header">
+    <h1>Smart Incentive Calculator <span class="version">v1.4</span></h1>
+    <div class="dark-mode-btn" onclick="toggleDarkMode()">🌙</div>
+  </div>
+
   <div class="container">
     <label for="salesTarget">Sales Target (AED):</label>
     <input type="number" id="salesTarget" placeholder="Enter sales target" />
@@ -144,7 +171,6 @@
     <input type="number" id="salesPersons" value="25" />
 
     <button onclick="calculateIncentive()">Calculate</button>
-    <button onclick="toggleDarkMode()" style="margin-top:10px;">Toggle Dark Mode</button>
 
     <div class="results" id="results"></div>
   </div>
@@ -197,7 +223,7 @@
 
       const extraSale = 1695;
 
-      // Projection 1: You sell the extra package
+      // Projection 1: You sell extra package
       const newTotalSalesYou = totalSales + extraSale;
       const newPersonalSalesYou = personalSales + extraSale;
       const newTotalPercentYou = (newTotalSalesYou / salesTarget) * 100;
@@ -211,7 +237,7 @@
       const projectedIncentiveYou = newEqualSplitYou + newPersonal30You;
       const differenceYou = projectedIncentiveYou - currentIncentive;
 
-      // Projection 2: Someone else sells the package
+      // Projection 2: Someone else sells extra package
       const newTotalSalesOther = totalSales + extraSale;
       const newPersonalSalesOther = personalSales;
       const newTotalPercentOther = (newTotalSalesOther / salesTarget) * 100;
@@ -235,11 +261,11 @@
         <div><span>Total Sales Incentive:</span> <span class="dark-salem">AED ${currentIncentive.toFixed(2)}</span></div>
 
         <div class="projected">
-          <div>If <strong>you</strong> had sold an extra package of AED ${extraSale}:</div>
+          <div>If <strong>you</strong> sold an extra package of AED ${extraSale}:</div>
           <div>Projected Incentive: AED ${projectedIncentiveYou.toFixed(2)}</div>
           <div>Difference: ${differenceYou >=0 ? '+' : ''}${differenceYou.toFixed(2)} AED</div>
 
-          <div style="margin-top:8px;">If <strong>someone else</strong> had sold an extra package of AED ${extraSale}:</div>
+          <div style="margin-top:8px;">If <strong>someone else</strong> sold an extra package of AED ${extraSale}:</div>
           <div>Projected Incentive: AED ${projectedIncentiveOther.toFixed(2)}</div>
           <div>Difference: ${differenceOther >=0 ? '+' : ''}${differenceOther.toFixed(2)} AED</div>
         </div>
