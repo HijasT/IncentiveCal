@@ -1,52 +1,99 @@
-# Smart Incentive Calculator
+# Smart Incentive Calculator  
+### Version 2.2
 
-**Version:** v1.5
-
-A web-based calculator to calculate sales incentives for your team.  
-It considers total sales, personal sales, sales target, and number of salespersons.  
-Includes:
-
-- Tier-based incentive calculation (Tier 1, Tier 2, Tier 3)
-- 70% equal split across team
-- 30% individual contribution based on sales
-- Projected incentives for additional packages sold by yourself or others
-- Motivational quotes fetched online
-- Dark/Light mode toggle
-- Three decimal precision for intermediate calculations
+A fast and clean incentive calculator with two modes:  
+**Individual Incentive Calculation** and **Bulk Excel-Based Incentive Calculation**.
 
 ---
 
-### **Usage**
+## Features
 
-You can use the calculator locally by opening `index.html` in a browser, or access it online at: [Smart Incentive Calculator](https://hijast.github.io/IncentiveCal/)
-
-1. Enter the following:
-   - Sales Target (AED)
-   - Total Sales (AED)
-   - Personal Sales (AED)
-   - Number of Salespersons (default 25)
-2. Click **Calculate**.
-3. View:
-   - Incentive Tier
-   - Equal Split (70%)
-   - Personal 30%
-   - Total Incentive
-   - Projected Incentives
-   - Motivational Quote
+• Tier-based incentive logic (2.5%, 3.0%, 3.5%)  
+• Automatic distribution: 70% Equal Split + 30% Personal Contribution  
+• Modern UI with horizontal pill tabs  
+• Bulk mode supports Smart-Salem-style Excel sheets:  
+  - Column A: Staff names (every second row)  
+  - Column B: Total sales (every second row, offset by one row)  
+  - All other columns ignored  
+• Ranked incentive output  
+• Download results as spreadsheet  
+• All processing is fully client-side (no data stored)
 
 ---
 
-### **Versioning**
+## Excel Upload Requirements
 
-- v1.0: Initial release  
-- v1.1 - v1.4: Feature updates  
-- **v1.5**: Dark mode toggle moved to top-right, version and toggle on second line, minor UI improvements  
+Your Excel sheet **must follow the SS format**:
+
+| Row | Column A (Staff) | Column B (Sales) |
+|-----|------------------|------------------|
+| 1  | Header           | Header           |
+| 2  | Staff Name       |                  |
+| 3  |                  | Total Sales      |
+| 4  | Staff Name       |                  |
+| 5  |                  | Total Sales      |
+| ... | Repeats in same pattern |
+
+**Notes:**  
+✓ Packages sold in the first cell are ignored  
+✓ Only the total sales (the *second* cell of each pair) are used  
+✓ Daily sales, averages, extra columns… all ignored  
+✓ Empty rows skipped automatically  
+✓ Up to 50 staff supported
 
 ---
 
-### **Notes**
+## Using the Calculator
 
-- 3-digit decimal precision used for Equal Split, Personal 30%, and Personal Sales %  
-- Total Incentive rounded to 2 decimals  
-- Dark/Light mode icon: ☀️ (light) / 🌙 (dark)  
-- Motivational quotes fetched from [ZenQuotes API](https://zenquotes.io)
+### Online Version  
+Use it instantly here:  
+**https://hijast.github.io/IncentiveCal/**
+
+### Local Version  
+1. Download the `index.html` file  
+2. Open it directly in any browser  
+3. No installation required
+
+---
+
+## Bulk Mode Instructions
+
+1. Click the **Bulk Calculator** tab  
+2. Upload your Excel sheet  
+3. Enter the monthly target  
+4. The tool will:  
+   - Detect all staff  
+   - Calculate total sales  
+   - Apply Tier logic automatically  
+   - Generate Equal Split and Personal 30%  
+   - Rank staff by total incentive  
+5. Download the generated output file
+
+---
+
+## Version History
+
+### **v2.2**  
+• Corrected alternating-row staff & total sales detection  
+• Polished UI tabs to pill-style navigation  
+• Improved input validation in bulk mode  
+• Cleaned internal code structure
+
+### **v2.1**  
+• Added Bulk Incentive Calculator  
+• Added Excel parsing + ranking  
+• Added download feature
+
+### **v1.x**  
+• Base Individual Incentive Calculator  
+• Added projections  
+• Added formatting improvements
+
+---
+
+## License  
+MIT License. Free for personal and workplace use.
+
+---
+
+If you want badges, screenshots, or a version changelog table, tell me.
