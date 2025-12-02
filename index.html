@@ -17,6 +17,8 @@
       min-height: 100vh;
       transition: background 0.5s, color 0.5s;
     }
+
+    /* Header */
     .header {
       width: 90%;
       max-width: 650px;
@@ -26,17 +28,18 @@
       margin-top: 30px;
       margin-bottom: 10px;
     }
-    h1 {
-      font-size: 28px;
-      color: #00796B;
-      margin: 0;
-      transition: color 0.5s;
+    .header-left {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
     }
-    h1 .version {
+    .header-left span.version {
       font-size: 14px;
       font-weight: normal;
       color: #555;
       margin-left: 8px;
+      transition: color 0.5s;
     }
     .dark-mode-btn {
       cursor: pointer;
@@ -44,6 +47,14 @@
       color: #00796B;
       transition: color 0.5s;
       user-select: none;
+    }
+
+    /* Rest same as before */
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #00796B;
+      transition: color 0.5s;
     }
     .container {
       background: white;
@@ -55,106 +66,37 @@
       margin-bottom: 30px;
       transition: background 0.5s, color 0.5s, box-shadow 0.5s;
     }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: 600;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: background 0.5s, color 0.5s, border 0.5s;
-    }
-    button {
-      margin-top: 20px;
-      background-color: #00BFA6;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 16px;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background-color: #009E8C;
-    }
-    .results {
-      margin-top: 25px;
-      padding-top: 10px;
-      border-top: 1px solid #ddd;
-      line-height: 1.8;
-    }
-    .dark-blue {
-      color: #0047AB;
-      font-weight: bold;
-      font-style: italic;
-      transition: color 0.5s;
-    }
-    .dark-brown {
-      color: #5C4033;
-      font-weight: bold;
-      font-style: italic;
-      transition: color 0.5s;
-    }
-    .dark-salem {
-      color: #00796B;
-      font-weight: bold;
-      transition: color 0.5s;
-    }
-    .projected {
-      font-size: 0.9em;
-      color: #666;
-      font-style: italic;
-      margin-top: 10px;
-      line-height: 1.5;
-      transition: color 0.5s;
-    }
-    .quote {
-      margin-top: 20px;
-      padding: 12px;
-      background-color: #f0f4f4;
-      border-left: 5px solid #00796B;
-      font-style: italic;
-      color: #444;
-      border-radius: 8px;
-      font-size: 14px;
-      transition: background 0.5s, color 0.5s, border-left-color 0.5s;
-    }
+    label { display: block; margin-top: 15px; font-weight: 600; }
+    input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; transition: background 0.5s, color 0.5s, border 0.5s; }
+    button { margin-top: 20px; background-color: #00BFA6; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; transition: background 0.3s; }
+    button:hover { background-color: #009E8C; }
+    .results { margin-top: 25px; padding-top: 10px; border-top: 1px solid #ddd; line-height: 1.8; }
+    .dark-blue { color: #0047AB; font-weight: bold; font-style: italic; transition: color 0.5s; }
+    .dark-brown { color: #5C4033; font-weight: bold; font-style: italic; transition: color 0.5s; }
+    .dark-salem { color: #00796B; font-weight: bold; transition: color 0.5s; }
+    .projected { font-size: 0.9em; color: #666; font-style: italic; margin-top: 10px; line-height: 1.5; transition: color 0.5s; }
+    .quote { margin-top: 20px; padding: 12px; background-color: #f0f4f4; border-left: 5px solid #00796B; font-style: italic; color: #444; border-radius: 8px; font-size: 14px; transition: background 0.5s, color 0.5s, border-left-color 0.5s; }
 
     /* Dark Mode */
     body.dark {
       background: #121212;
       color: #e0e0e0;
     }
-    body.dark h1 { color: #00BFA6; }
-    body.dark h1 .version { color: #ccc; }
+    body.dark .header-left span.version { color: #ccc; }
     body.dark .dark-mode-btn { color: #00bfa6; }
-    body.dark .container { 
-      background: #1e1e1e;
-      color: #e0e0e0;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-    body.dark input, body.dark button {
-      background: #2c2c2c;
-      color: #fff;
-      border: 1px solid #555;
-    }
+    body.dark .container { background: #1e1e1e; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    body.dark input, body.dark button { background: #2c2c2c; color: #fff; border: 1px solid #555; }
     body.dark .dark-blue { color: #3399ff; }
     body.dark .dark-brown { color: #b36b00; }
     body.dark .dark-salem { color: #00bfa6; }
     body.dark .quote { background-color: #2c2c2c; color: #ccc; border-left-color: #00bfa6; }
+
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Smart Incentive Calculator <span class="version">v1.4</span></h1>
-    <div class="dark-mode-btn" onclick="toggleDarkMode()">🌙</div>
+    <div class="header-left">Smart Incentive Calculator <span class="version">v1.4</span></div>
+    <div class="dark-mode-btn" id="darkModeBtn" onclick="toggleDarkMode()">☀️</div>
   </div>
 
   <div class="container">
@@ -176,6 +118,13 @@
   </div>
 
   <script>
+    const darkModeBtn = document.getElementById('darkModeBtn');
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      darkModeBtn.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️';
+    }
+
     async function getRandomQuoteOnline() {
       try {
         const res = await fetch("https://zenquotes.io/api/random");
@@ -190,10 +139,6 @@
         ];
         return fallback[Math.floor(Math.random() * fallback.length)];
       }
-    }
-
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
     }
 
     async function calculateIncentive() {
@@ -223,7 +168,7 @@
 
       const extraSale = 1695;
 
-      // Projection 1: You sell extra package
+      // Projection calculations (same as before)
       const newTotalSalesYou = totalSales + extraSale;
       const newPersonalSalesYou = personalSales + extraSale;
       const newTotalPercentYou = (newTotalSalesYou / salesTarget) * 100;
@@ -237,7 +182,6 @@
       const projectedIncentiveYou = newEqualSplitYou + newPersonal30You;
       const differenceYou = projectedIncentiveYou - currentIncentive;
 
-      // Projection 2: Someone else sells extra package
       const newTotalSalesOther = totalSales + extraSale;
       const newPersonalSalesOther = personalSales;
       const newTotalPercentOther = (newTotalSalesOther / salesTarget) * 100;
