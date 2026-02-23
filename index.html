@@ -1,177 +1,315 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smart Incentive Calculator v2.2</title>
+<title>Smart Incentive Calculator v2.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root{
-    --bg: #f8f9fa;
-    --card: #ffffff;
-    --accent: #0A7E8C;
-    --muted: #666;
-    --darkblue: #0047AB;
-    --darkbrown: #5C4033;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    min-height:100vh;
-    font-family:Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background:var(--bg);
-    color:#222;
-    transition: background .3s, color .3s;
-    display:flex;
-    justify-content:center;
-    padding:28px 16px;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-  .app {
-    width:100%;
-    max-width:980px;
-  }
+:root{
+–bg: #f0f4f8;
+–card: #ffffff;
+–accent: #0A7E8C;
+–accent-light: #e8f7f8;
+–muted: #6b7a8a;
+–darkblue: #0047AB;
+–darkbrown: #5C4033;
+–border: #e1e8ed;
+–text: #1a2332;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+min-height:100vh;
+font-family:‘DM Sans’, ‘Segoe UI’, sans-serif;
+background:var(–bg);
+color:var(–text);
+transition: background .3s, color .3s;
+display:flex;
+justify-content:center;
+padding:32px 16px;
+}
 
-  header.app-header{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin-bottom:18px;
-  }
-  .title-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-  }
-  h1{ margin:0; font-size:28px; color:var(--accent); }
-  .sub-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:8px;
-  }
-  .version{ color:var(--muted); font-size:13px; }
-  .dark-toggle{
-    cursor:pointer;
-    font-size:20px;
-    color:var(--accent);
-    user-select:none;
-  }
+.app {
+width:100%;
+max-width:1000px;
+}
 
-  /* pill tabs */
-  .tabs{
-    display:flex;
-    gap:8px;
-    margin: 12px 0;
-  }
-  .pill{
-    padding:8px 14px;
-    border-radius:999px;
-    background:#e9f6f6;
-    color:#08373a;
-    cursor:pointer;
-    font-weight:600;
-    border:1px solid rgba(10,126,140,0.06);
-    transition:transform .12s, background .12s;
-  }
-  .pill:hover{ transform:translateY(-2px); }
-  .pill.active{
-    background:var(--accent);
-    color:#fff;
-    box-shadow: 0 6px 18px rgba(10,126,140,0.12);
-  }
+header.app-header{
+display:flex;
+flex-direction:column;
+gap:6px;
+margin-bottom:22px;
+}
+.title-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+h1{ font-size:26px; color:var(–accent); letter-spacing:-0.5px; }
+.sub-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:8px;
+}
+.version{ color:var(–muted); font-size:12px; font-family:‘DM Mono’, monospace; }
+.dark-toggle{
+cursor:pointer;
+font-size:20px;
+color:var(–accent);
+user-select:none;
+transition: transform .2s;
+}
+.dark-toggle:hover{ transform: rotate(20deg); }
 
-  .card{
-    background:var(--card);
-    border-radius:14px;
-    box-shadow:0 8px 30px rgba(16,24,40,0.06);
-    padding:22px;
-  }
+.tabs{
+display:flex;
+gap:8px;
+margin: 14px 0;
+}
+.pill{
+padding:9px 18px;
+border-radius:999px;
+background:var(–card);
+color:var(–muted);
+cursor:pointer;
+font-weight:600;
+font-size:14px;
+border:1px solid var(–border);
+transition:all .15s;
+}
+.pill:hover{ color:var(–accent); border-color:var(–accent); }
+.pill.active{
+background:var(–accent);
+color:#fff;
+border-color:var(–accent);
+box-shadow: 0 4px 14px rgba(10,126,140,0.25);
+}
 
-  /* input area grid */
-  .grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-    gap:12px;
-  }
-  label{display:block; font-weight:600; margin-bottom:6px; color:#333;}
-  input[type="number"], input[type="file"]{
-    width:100%;
-    padding:10px 12px;
-    border-radius:10px;
-    border:1px solid #d3d6d8;
-    font-size:15px;
-  }
-  input[type="file"]{ padding:8px; }
+.card{
+background:var(–card);
+border-radius:16px;
+box-shadow:0 2px 16px rgba(16,24,40,0.06), 0 0 0 1px var(–border);
+padding:24px;
+}
 
-  .btn{
-    display:inline-block;
-    padding:12px 16px;
-    border-radius:10px;
-    background:var(--accent);
-    color:#fff;
-    font-weight:700;
-    border:none;
-    cursor:pointer;
-    margin-top:12px;
-  }
-  .btn.secondary{
-    background:#fff;
-    color:var(--accent);
-    border:1px solid rgba(10,126,140,0.15);
-    box-shadow:none;
-  }
+.grid{
+display:grid;
+grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+gap:14px;
+}
+label{display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:var(–muted); text-transform:uppercase; letter-spacing:.4px;}
+input[type=“number”], input[type=“file”]{
+width:100%;
+padding:11px 13px;
+border-radius:10px;
+border:1.5px solid var(–border);
+font-size:15px;
+font-family:inherit;
+background:var(–bg);
+color:var(–text);
+transition: border-color .15s, box-shadow .15s;
+outline: none;
+}
+input[type=“number”]:focus, input[type=“file”]:focus{
+border-color:var(–accent);
+box-shadow: 0 0 0 3px rgba(10,126,140,0.12);
+}
+input[type=“file”]{ padding:9px; cursor:pointer; }
 
-  .results { margin-top:18px; line-height:1.6; }
-  .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+/* Split Slider */
+.split-section{
+margin-top:18px;
+background: var(–accent-light);
+border-radius:12px;
+padding:16px 18px;
+border: 1px solid rgba(10,126,140,0.15);
+}
+.split-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:12px;
+}
+.split-label{
+font-weight:700;
+font-size:14px;
+color:var(–accent);
+}
+.split-badges{
+display:flex;
+gap:8px;
+align-items:center;
+}
+.badge{
+padding:4px 10px;
+border-radius:999px;
+font-size:13px;
+font-weight:700;
+font-family:‘DM Mono’, monospace;
+}
+.badge-equal{ background:rgba(0,71,171,0.1); color:var(–darkblue); }
+.badge-personal{ background:rgba(92,64,51,0.12); color:var(–darkbrown); }
+.badge-sep{ color:var(–muted); font-weight:400; font-size:13px; }
 
-  .value{
-    font-weight:700;
-  }
+.slider-wrap{ position:relative; }
+input[type=“range”]{
+-webkit-appearance:none;
+width:100%;
+height:6px;
+border-radius:4px;
+background: linear-gradient(to right, var(–darkblue) var(–fill, 70%), rgba(92,64,51,0.35) var(–fill, 70%));
+outline:none;
+cursor:pointer;
+border: none;
+}
+input[type=“range”]::-webkit-slider-thumb{
+-webkit-appearance:none;
+width:20px;
+height:20px;
+border-radius:50%;
+background:var(–card);
+border:3px solid var(–accent);
+box-shadow:0 2px 8px rgba(10,126,140,0.3);
+cursor:grab;
+transition: transform .1s;
+}
+input[type=“range”]::-webkit-slider-thumb:active{ cursor:grabbing; transform:scale(1.15); }
+input[type=“range”]::-moz-range-thumb{
+width:20px; height:20px;
+border-radius:50%;
+background:var(–card);
+border:3px solid var(–accent);
+box-shadow:0 2px 8px rgba(10,126,140,0.3);
+cursor:grab;
+}
+.slider-ticks{
+display:flex;
+justify-content:space-between;
+margin-top:6px;
+font-size:11px;
+color:var(–muted);
+font-family:‘DM Mono’, monospace;
+}
 
-  .darkBlue{ color:var(--darkblue); font-style:italic; font-weight:700; }
-  .darkBrown{ color:var(--darkbrown); font-style:italic; font-weight:700; }
-  .salem{ color:var(--accent); font-weight:800; }
+.btn{
+display:inline-flex;
+align-items:center;
+gap:6px;
+padding:11px 20px;
+border-radius:10px;
+background:var(–accent);
+color:#fff;
+font-weight:700;
+font-size:14px;
+font-family:inherit;
+border:none;
+cursor:pointer;
+margin-top:14px;
+transition: transform .12s, box-shadow .12s;
+box-shadow: 0 4px 14px rgba(10,126,140,0.2);
+}
+.btn:hover{ transform:translateY(-1px); box-shadow: 0 6px 18px rgba(10,126,140,0.3); }
+.btn:active{ transform:translateY(0); }
+.btn.secondary{
+background:var(–card);
+color:var(–accent);
+border:1.5px solid var(–border);
+box-shadow:none;
+}
+.btn.secondary:hover{ border-color:var(–accent); box-shadow: 0 4px 14px rgba(10,126,140,0.1); }
 
-  .highlight-total{
-    margin-top:12px;
-    background: #e8fffb;
-    border-left:6px solid var(--accent);
-    padding:12px;
-    border-radius:8px;
-    font-size:18px;
-    font-weight:800;
-  }
+.results { margin-top:20px; line-height:1.7; }
 
-  .note{ color:var(--muted); font-size:13px; margin-bottom:8px; }
+.result-grid{
+display:grid;
+grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+gap:10px;
+margin:12px 0;
+}
+.result-box{
+background:var(–bg);
+border-radius:10px;
+padding:12px 14px;
+border:1px solid var(–border);
+}
+.result-box .rb-label{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(–muted); margin-bottom:4px; }
+.result-box .rb-val{ font-size:17px; font-weight:700; font-family:‘DM Mono’, monospace; }
 
-  /* table */
-  .table-wrap{ margin-top:14px; overflow:auto; border-radius:8px; border:1px solid #e6eef0; }
-  table{ width:100%; border-collapse:collapse; min-width:700px; }
-  th, td{ padding:10px 12px; border-bottom:1px solid #eef3f4; text-align:left; }
-  th{ background:var(--accent); color:#fff; font-weight:700; position:sticky; top:0; }
-  tr:nth-child(even){ background:#fbfdfd; }
-  tr:hover{ background:#f0fbfb; }
+.highlight-total{
+margin-top:12px;
+background: linear-gradient(135deg, #e8f9f7, #d0f4ef);
+border-left:5px solid var(–accent);
+padding:14px 16px;
+border-radius:10px;
+font-size:19px;
+font-weight:800;
+color:#035059;
+}
 
-  .small{ font-size:13px; color:var(--muted); }
+.projection-box{
+margin-top:10px;
+padding:12px 14px;
+border-radius:10px;
+background:#fffbeb;
+border:1px solid #fde68a;
+font-size:13px;
+color:#78350f;
+}
 
-  /* dark mode overrides */
-  body.dark{
-    background:#0b0f11;
-    color:#dbe6e6;
-  }
-  body.dark .card{ background:#0f1415; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-  body.dark .pill{ background:rgba(255,255,255,0.03); color:#cfeeea; border-color:rgba(255,255,255,0.03);}
-  body.dark .pill.active{ background:var(--accent); color:#001; }
-  body.dark input[type="number"], body.dark input[type="file"]{ background:#1c2223; border-color:#2a3637; color:#dfefef; }
-  body.dark th{ background: #063a3c; color:#fff; }
-  body.dark tr:nth-child(even){ background:#0f1616; }
-  body.dark tr:hover{ background:#082425; }
-  body.dark .highlight-total{ background:#003733; color:#dff7f2; border-left-color: #00bfa6; }
-  body.dark .darkBlue{ color:#66b3ff; }
-  body.dark .darkBrown{ color:#e6b76b; }
-  body.dark .salem{ color:#00bfa6; }
+.note{ color:var(–muted); font-size:12px; margin-bottom:12px; padding:8px 12px; background:var(–bg); border-radius:8px; border:1px solid var(–border); }
+
+.table-wrap{ margin-top:14px; overflow:auto; border-radius:10px; border:1px solid var(–border); }
+table{ width:100%; border-collapse:collapse; min-width:700px; }
+th, td{ padding:10px 14px; border-bottom:1px solid var(–border); text-align:left; font-size:14px; }
+th{ background:var(–accent); color:#fff; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.5px; position:sticky; top:0; }
+tr:last-child td{ border-bottom:none; }
+tr:nth-child(even) td{ background:#f8fbfc; }
+tr:hover td{ background:#eef8f9; }
+
+.darkBlue{ color:var(–darkblue); font-weight:700; font-family:‘DM Mono’, monospace; }
+.darkBrown{ color:var(–darkbrown); font-weight:700; font-family:‘DM Mono’, monospace; }
+.salem{ color:var(–accent); }
+.quote{ font-style:italic; color:var(–muted); font-size:13px; margin-top:10px; padding-left:10px; border-left:3px solid var(–border); }
+.error{ color:#c0392b; background:#fdf2f0; padding:10px 14px; border-radius:8px; border:1px solid #f5c6c0; font-size:14px; }
+.tier-badge{
+display:inline-block;
+padding:4px 12px;
+border-radius:999px;
+font-size:13px;
+font-weight:700;
+background:rgba(10,126,140,0.1);
+color:var(–accent);
+margin-left:6px;
+}
+.tier-none{ background:rgba(192,57,43,0.1); color:#c0392b; }
+
+/* dark mode */
+body.dark{ –bg:#0d1117; –card:#161b22; –border:#2d3748; –text:#e2e8f0; –muted:#8899aa; –accent-light: rgba(10,126,140,0.12); }
+body.dark input[type=“number”], body.dark input[type=“file”]{ background:#0d1117; color:#e2e8f0; }
+body.dark .split-section{ background:rgba(10,126,140,0.08); }
+body.dark th{ background:#063a3c; }
+body.dark tr:nth-child(even) td{ background:#0f1820; }
+body.dark tr:hover td{ background:#0d2025; }
+body.dark .highlight-total{ background:#062a27; color:#7df3e1; border-left-color:#00bfa6; }
+body.dark .projection-box{ background:#1a1200; border-color:#92400e; color:#fbbf24; }
+body.dark .result-box{ background:#0d1117; }
+body.dark .darkBlue{ color:#60a5fa; }
+body.dark .darkBrown{ color:#f59e0b; }
+body.dark .salem{ color:#2dd4bf; }
+body.dark .tier-badge{ background:rgba(10,126,140,0.2); color:#2dd4bf; }
+body.dark .tier-none{ background:rgba(192,57,43,0.15); color:#f87171; }
+body.dark .btn.secondary{ background:#161b22; }
+
+@media(max-width:500px){
+h1{ font-size:20px; }
+.card{ padding:16px; }
+}
 </style>
+
 </head>
 <body>
   <div class="app">
@@ -181,77 +319,113 @@
         <div class="dark-toggle" id="darkToggle" title="Toggle dark mode">☀️</div>
       </div>
       <div class="sub-row">
-        <div class="version">v2.2</div>
+        <div class="version">v2.3</div>
       </div>
     </header>
 
-    <div class="tabs" role="tablist" aria-label="Calculator tabs">
-      <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
-      <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
+```
+<div class="tabs" role="tablist" aria-label="Calculator tabs">
+  <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
+  <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
+</div>
+
+<!-- INDIVIDUAL CARD -->
+<section id="individual" class="card" aria-labelledby="tab-ind">
+  <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
+  <div class="grid">
+    <div>
+      <label for="ind-target">Sales Target (AED)</label>
+      <input id="ind-target" type="number" placeholder="700000" />
     </div>
+    <div>
+      <label for="ind-total">Total Sales (AED)</label>
+      <input id="ind-total" type="number" placeholder="735000" />
+    </div>
+    <div>
+      <label for="ind-personal">Personal Sales (AED)</label>
+      <input id="ind-personal" type="number" placeholder="30450" />
+    </div>
+    <div>
+      <label for="ind-count">Number of Salespersons</label>
+      <input id="ind-count" type="number" value="28" />
+    </div>
+  </div>
 
-    <!-- INDIVIDUAL CARD -->
-    <section id="individual" class="card" aria-labelledby="tab-ind" style="display:block;">
-       <div class="note small">This tool runs entirely in your browser — no data stored anywhere.</div>
-      <div class="grid">
-        <div>
-          <label for="ind-target">Sales Target (AED)</label>
-          <input id="ind-target" type="number" placeholder="700000" />
-        </div>
-
-        <div>
-          <label for="ind-total">Total Sales (AED)</label>
-          <input id="ind-total" type="number" placeholder="735000" />
-        </div>
-
-        <div>
-          <label for="ind-personal">Personal Sales (AED)</label>
-          <input id="ind-personal" type="number" placeholder="30450" />
-        </div>
-
-        <div>
-          <label for="ind-count">Number of Salespersons</label>
-          <input id="ind-count" type="number" value="25" />
-        </div>
+  <!-- Split Slider -->
+  <div class="split-section">
+    <div class="split-header">
+      <span class="split-label">Incentive Pool Split</span>
+      <div class="split-badges">
+        <span class="badge badge-equal" id="ind-equal-badge">Equal 70%</span>
+        <span class="badge-sep">/</span>
+        <span class="badge badge-personal" id="ind-personal-badge">Personal 30%</span>
       </div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="ind-split" min="10" max="90" value="70" step="5"
+        oninput="updateSplitDisplay('ind')" />
+    </div>
+    <div class="slider-ticks">
+      <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
+    </div>
+  </div>
 
-      <button class="btn" onclick="calculateIndividual()">Calculate</button>
+  <button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
+  <div id="ind-results" class="results"></div>
+</section>
 
-      <div id="ind-results" class="results"></div>
-      <div id="ind-quote" class="small" style="margin-top:8px;color:var(--muted)"></div>
-    </section>
+<!-- BULK CARD -->
+<section id="bulk" class="card" aria-labelledby="tab-bulk" style="display:none; margin-top:16px;">
+  <div class="note">
+    Upload an Excel file. Expected format: alternating rows — odd rows contain the staff name (column A), even rows contain the staff's total sales (column B). Extra columns are ignored. Accepted: .xlsx, .xls
+  </div>
 
-    <!-- BULK CARD -->
-    <section id="bulk" class="card" aria-labelledby="tab-bulk" style="display:none; margin-top:16px;">
-      <div class="note">Upload Excel file with Staff and Total as header.
-      Extra columns are ignored. File must be .xlsx or .xls.</div>
+  <div class="grid">
+    <div>
+      <label for="bulk-target">Sales Target (AED)</label>
+      <input id="bulk-target" type="number" placeholder="700000" />
+    </div>
+    <div>
+      <label for="bulk-file">Excel File (.xlsx, .xls)</label>
+      <input id="bulk-file" type="file" accept=".xlsx,.xls" />
+    </div>
+  </div>
 
-      <div class="grid">
-        <div>
-          <label for="bulk-target">Sales Target (AED)</label>
-          <input id="bulk-target" type="number" placeholder="700000" />
-        </div>
-
-        <div>
-          <label for="bulk-file">Excel File (.xlsx, .xls)</label>
-          <input id="bulk-file" type="file" accept=".xlsx,.xls" />
-        </div>
+  <!-- Split Slider (bulk) -->
+  <div class="split-section">
+    <div class="split-header">
+      <span class="split-label">Incentive Pool Split</span>
+      <div class="split-badges">
+        <span class="badge badge-equal" id="bulk-equal-badge">Equal 70%</span>
+        <span class="badge-sep">/</span>
+        <span class="badge badge-personal" id="bulk-personal-badge">Personal 30%</span>
       </div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" id="bulk-split" min="10" max="90" value="70" step="5"
+        oninput="updateSplitDisplay('bulk')" />
+    </div>
+    <div class="slider-ticks">
+      <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
+    </div>
+  </div>
 
-      <div style="margin-top:12px;">
-        <button class="btn" onclick="calculateBulk()">Process Upload</button>
-        <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px;">Download Results</button>
-      </div>
+  <div style="margin-top:4px;">
+    <button class="btn" onclick="calculateBulk()">Process Upload</button>
+    <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px;">⬇ Download Results</button>
+  </div>
 
-      <div id="bulk-results" style="margin-top:14px;"></div>
-    </section>
+  <div id="bulk-results" style="margin-top:14px;"></div>
+</section>
+```
+
   </div>
 
 <script>
-/* UI helpers */
+/* ─── UI HELPERS ───────────────────────────────────────────── */
 function activateTab(name){
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.card').forEach(c=>c.style.display='none');
+  document.querySelectorAll('section.card').forEach(c=>c.style.display='none');
   if(name==='individual'){
     document.getElementById('tab-ind').classList.add('active');
     document.getElementById('individual').style.display='block';
@@ -261,14 +435,36 @@ function activateTab(name){
   }
 }
 
-/* Dark mode toggle */
+/* Dark mode */
 const darkToggle = document.getElementById('darkToggle');
 darkToggle.addEventListener('click', ()=>{
   document.body.classList.toggle('dark');
   darkToggle.textContent = document.body.classList.contains('dark') ? '🌙' : '☀️';
 });
 
-/* Motivational quotes only for individual tab */
+/* Split slider display update */
+function updateSplitDisplay(prefix){
+  const slider = document.getElementById(prefix + '-split');
+  const equalPct = parseInt(slider.value, 10);
+  const personalPct = 100 - equalPct;
+  document.getElementById(prefix + '-equal-badge').textContent = `Equal ${equalPct}%`;
+  document.getElementById(prefix + '-personal-badge').textContent = `Personal ${personalPct}%`;
+  // update slider fill via CSS variable
+  slider.style.setProperty('--fill', equalPct + '%');
+}
+// initialise both sliders on load
+updateSplitDisplay('ind');
+updateSplitDisplay('bulk');
+
+/* ─── TIER LOGIC (single source of truth) ─────────────────── */
+function getTier(pct){
+  if(pct >= 85 && pct <= 100)  return { text:'Tier 1 (2.5%)', rate:0.025 };
+  if(pct > 100 && pct <= 110)  return { text:'Tier 2 (3%)',   rate:0.03  };
+  if(pct > 110)                 return { text:'Tier 3 (3.5%)', rate:0.035 };
+  return { text:'Below Target', rate:0 };
+}
+
+/* ─── MOTIVATIONAL QUOTES ─────────────────────────────────── */
 const quotes = [
   "Every sale brings you closer to success.",
   "Push a little harder — your future self will thank you.",
@@ -276,82 +472,94 @@ const quotes = [
   "Be the reason someone earns a compliment today."
 ];
 
-/* ---------- INDIVIDUAL CALC ---------- */
+/* ─── INDIVIDUAL CALC ─────────────────────────────────────── */
 function calculateIndividual(){
-  const target = parseFloat(document.getElementById('ind-target').value);
-  const total = parseFloat(document.getElementById('ind-total').value);
+  const target   = parseFloat(document.getElementById('ind-target').value);
+  const total    = parseFloat(document.getElementById('ind-total').value);
   const personal = parseFloat(document.getElementById('ind-personal').value);
-  const count = parseInt(document.getElementById('ind-count').value,10);
+  const count    = parseInt(document.getElementById('ind-count').value, 10);
+  const equalPct = parseInt(document.getElementById('ind-split').value, 10) / 100;
   const out = document.getElementById('ind-results');
-  const quoteEl = document.getElementById('ind-quote');
-  out.innerHTML=''; quoteEl.textContent='';
+  out.innerHTML = '';
 
-  if(!target || !total || !personal || !count){ out.innerHTML = "<div style='color:#d9534f'>Please fill all fields</div>"; return; }
+  if(!target || !total || !personal || !count){
+    out.innerHTML = `<div class="error">Please fill in all fields before calculating.</div>`;
+    return;
+  }
 
-  const pct = (total / target) * 100;
-  let tierText='Below Target (No Incentive)';
-  let tierPct = 0;
-  if(pct >=85 && pct <=100){ tierText = 'Tier 1 (2.5%)'; tierPct = 0.025; }
-  else if(pct >=101 && pct <=110){ tierText = 'Tier 2 (3%)'; tierPct = 0.03; }
-  else if(pct >=111){ tierText = 'Tier 3 (3.5%)'; tierPct = 0.035; }
+  const pct   = (total / target) * 100;
+  const tier  = getTier(pct);
+  const personalPct = 1 - equalPct;
 
-  const pool = total * tierPct;
-  const equalSplit = (pool * 0.7) / count;
-  const personal30 = (personal / total) * (pool * 0.3);
-  const totalIncentive = equalSplit + personal30;
+  const pool        = total * tier.rate;
+  const equalSplit  = (pool * equalPct) / count;
+  const personal30  = (personal / total) * (pool * personalPct);
+  const totalInc    = equalSplit + personal30;
 
-  // Projection if user sold AED 1695 (same tierPct logic based on new totals)
-  const extra = 1695;
-  const newTotal = total + extra;
+  // Projection: extra AED 1695
+  const extra       = 1695;
+  const newTotal    = total + extra;
   const newPersonal = personal + extra;
-  const newPct = (newTotal / target) * 100;
-  let newTierPct = 0;
-  if(newPct >=85 && newPct <=100) newTierPct = 0.025;
-  else if(newPct >=101 && newPct <=110) newTierPct = 0.03;
-  else if(newPct >=111) newTierPct = 0.035;
-  const newPool = newTotal * newTierPct;
-  const newEqualSplit = (newPool * 0.7) / count;
-  const newPersonal30 = (newPersonal / newTotal) * (newPool * 0.3);
-  const newTotalIncentive = newEqualSplit + newPersonal30;
-  const diff = newTotalIncentive - totalIncentive;
+  const newPct      = (newTotal / target) * 100;
+  const newTier     = getTier(newPct);
+  const newPool     = newTotal * newTier.rate;
+  const newEqual    = (newPool * equalPct) / count;
+  const newPers30   = (newPersonal / newTotal) * (newPool * personalPct);
+  const newTotalInc = newEqual + newPers30;
+  const diff        = newTotalInc - totalInc;
+
+  const tierClass = tier.rate === 0 ? 'tier-none' : '';
 
   out.innerHTML = `
-    <div><strong>Incentive Tier:</strong> ${tierText}</div>
-    <div><strong>Equal Split (70%):</strong> <span class="darkBlue">AED ${equalSplit.toFixed(3)}</span></div>
-    <div><strong>Personal Sales %:</strong> ${((personal/total)*100).toFixed(3)}%</div>
-    <div><strong>Personal 30%:</strong> <span class="darkBrown">AED ${personal30.toFixed(3)}</span></div>
-    <div class="highlight-total">Total Incentive: <span class="salem">AED ${totalIncentive.toFixed(2)}</span></div>
-    <div style="margin-top:10px" class="small">If you sell an extra package of AED ${extra}: projected incentive AED ${newTotalIncentive.toFixed(2)} (difference ${diff>=0?'+':''}${diff.toFixed(2)} AED)</div>
+    <div class="result-grid">
+      <div class="result-box">
+        <div class="rb-label">Incentive Tier</div>
+        <div class="rb-val"><span class="tier-badge ${tierClass}">${tier.text}</span></div>
+      </div>
+      <div class="result-box">
+        <div class="rb-label">Achievement</div>
+        <div class="rb-val">${pct.toFixed(2)}%</div>
+      </div>
+      <div class="result-box">
+        <div class="rb-label">Incentive Pool</div>
+        <div class="rb-val">AED ${fmt(pool)}</div>
+      </div>
+      <div class="result-box">
+        <div class="rb-label">Equal Split (${Math.round(equalPct*100)}%)</div>
+        <div class="rb-val darkBlue">AED ${equalSplit.toFixed(3)}</div>
+      </div>
+      <div class="result-box">
+        <div class="rb-label">Personal Share (${((personal/total)*100).toFixed(2)}%)</div>
+        <div class="rb-val darkBrown">AED ${personal30.toFixed(3)}</div>
+      </div>
+    </div>
+    <div class="highlight-total">
+      Total Incentive: <span class="salem">AED ${totalInc.toFixed(2)}</span>
+    </div>
+    ${tier.rate > 0 ? `
+    <div class="projection-box">
+      💡 Sell an extra AED ${extra.toLocaleString()}: projected incentive <strong>AED ${newTotalInc.toFixed(2)}</strong>
+      &nbsp;(${diff >= 0 ? '+' : ''}${diff.toFixed(2)} AED${newTier.rate !== tier.rate ? ', tier upgrades to ' + newTier.text : ''})
+    </div>` : ''}
+    <div class="quote">${quotes[Math.floor(Math.random()*quotes.length)]}</div>
   `;
-
-  // random quote
-  const q = quotes[Math.floor(Math.random()*quotes.length)];
-  quoteEl.textContent = q;
 }
 
-/* ---------- BULK CALC (merged-row pattern) ----------
-
- Pattern assumed:
- Row 1: headers (A1 / B1)
- Row 2: staff name (A2)
- Row 3: staff total (B3)
- Row 4: staff name (A4)
- Row 5: staff total (B5)
- ...
- We will read starting from row index 2 (1-based), step by 2: nameRow = r, totalRow = r+1
- Column indices: A => 0, B => 1
- Extra columns ignored.
- ---------- */
-
+/* ─── BULK CALC ───────────────────────────────────────────── */
 function calculateBulk(){
-  const target = parseFloat(document.getElementById('bulk-target').value);
+  const target   = parseFloat(document.getElementById('bulk-target').value);
   const fileInput = document.getElementById('bulk-file');
-  const file = fileInput.files && fileInput.files[0];
-  const out = document.getElementById('bulk-results');
-  const dwn = document.getElementById('downloadBtn');
-  out.innerHTML=''; dwn.style.display='none'; window._bulkExportData = null;
+  const file     = fileInput.files && fileInput.files[0];
+  const equalPct = parseInt(document.getElementById('bulk-split').value, 10) / 100;
+  const out      = document.getElementById('bulk-results');
+  const dwn      = document.getElementById('downloadBtn');
+  out.innerHTML  = ''; dwn.style.display = 'none'; window._bulkExportData = null;
 
-  if(!target || !file){ out.innerHTML = "<div style='color:#d9534f'>Please provide sales target and select an Excel file.</div>"; return; }
+  if(!target || !file){
+    out.innerHTML = `<div class="error">Please provide a sales target and select an Excel file.</div>`;
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = function(evt){
     try{
@@ -359,119 +567,134 @@ function calculateBulk(){
       const workbook = XLSX.read(array, {type:'array'});
       const first = workbook.SheetNames[0];
       const sheet = workbook.Sheets[first];
-      const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+      const rows  = XLSX.utils.sheet_to_json(sheet, {header:1});
 
-      if(rows.length < 3){ out.innerHTML = "<div style='color:#d9534f'>Excel looks too short — need at least header + one staff block.</div>"; return; }
+      if(rows.length < 3){
+        out.innerHTML = `<div class="error">File is too short — need at least a header row plus one staff entry block.</div>`;
+        return;
+      }
 
       const staffList = [];
-      // start from row index 1 (0-based => row 2 in Excel)
+      // merged-row pattern: row 1=header, row N=name (col A), row N+1=total (col B), repeat
       for(let r = 1; r < rows.length; r += 2){
-        const nameRow = rows[r];       // expected to contain staff name at col 0
-        const totalRow = rows[r+1];    // expected to contain total at col 1
+        const nameRow  = rows[r];
+        const totalRow = rows[r + 1];
         if(!nameRow) continue;
         const staffName = nameRow[0];
-        if(!staffName) continue;
+        if(!staffName && staffName !== 0) continue;
         const totalVal = totalRow && totalRow[1];
-        const totalNum = totalVal === undefined || totalVal === null ? NaN : Number(totalVal);
+        const totalNum = (totalVal === undefined || totalVal === null) ? NaN : Number(totalVal);
         if(isNaN(totalNum)) continue;
         staffList.push({ Staff: String(staffName).trim(), Total: Number(totalNum) });
       }
 
       if(staffList.length === 0){
-        out.innerHTML = "<div style='color:#d9534f'>No valid staff/name & total pairs found using the merged-row pattern.</div>";
+        out.innerHTML = `<div class="error">No valid staff/total pairs found. Check that the file follows the alternating row format described above.</div>`;
         return;
       }
 
-      // compute totals
-      const teamTotal = staffList.reduce((s,c)=>s + c.Total, 0);
-      const pct = (teamTotal / target) * 100;
-      let tierText='Below Target (No Incentive)', tierPct=0;
-      if(pct >=85 && pct <=100){ tierText = 'Tier 1 (2.5%)'; tierPct = 0.025; }
-      else if(pct >=101 && pct <=110){ tierText = 'Tier 2 (3%)'; tierPct = 0.03; }
-      else if(pct >=111){ tierText = 'Tier 3 (3.5%)'; tierPct = 0.035; }
+      const personalPct = 1 - equalPct;
+      const teamTotal   = staffList.reduce((s, c) => s + c.Total, 0);
+      const pct         = (teamTotal / target) * 100;
+      const tier        = getTier(pct);
+      const pool        = teamTotal * tier.rate;
+      const equalSplit  = (pool * equalPct) / staffList.length;
 
-      const pool = teamTotal * tierPct;
-      const equalSplit = (pool * 0.7) / staffList.length;
-      // fill per-staff values
-      staffList.forEach(s=>{
-        s.PersonalPercent = ((s.Total / teamTotal) * 100).toFixed(3);
-        s.Personal30 = ((s.Total / teamTotal) * (pool * 0.3));
-        s.Personal30_display = s.Personal30.toFixed(3);
-        s.EqualSplit = Number(equalSplit.toFixed(3));
-        s.TotalIncentive = Number((equalSplit + s.Personal30).toFixed(2));
+      staffList.forEach(s => {
+        s.PersonalPercent        = ((s.Total / teamTotal) * 100).toFixed(3);
+        s.Personal30             = (s.Total / teamTotal) * (pool * personalPct);
+        s.Personal30_display     = s.Personal30.toFixed(3);
+        s.EqualSplit             = Number(equalSplit.toFixed(3));
+        s.TotalIncentive         = Number((equalSplit + s.Personal30).toFixed(2));
       });
 
-      // sort by TotalIncentive desc
-      staffList.sort((a,b) => b.TotalIncentive - a.TotalIncentive);
+      staffList.sort((a, b) => b.TotalIncentive - a.TotalIncentive);
 
-      // render results table and meta
-      let html = `<div><strong>Tier:</strong> ${tierText} &nbsp; <span class="small">(${pct.toFixed(2)}% of target)</span></div>`;
-      html += `<div style="margin-top:6px"><strong>Total Sales:</strong> AED ${teamTotal.toFixed(2)}</div>`;
-      html += `<div style="margin-top:6px"><strong>Equal Split (per staff):</strong> <span class="darkBlue">AED ${equalSplit.toFixed(3)}</span></div>`;
+      const tierClass = tier.rate === 0 ? 'tier-none' : '';
+      let html = `
+        <div class="result-grid" style="margin-bottom:8px">
+          <div class="result-box">
+            <div class="rb-label">Incentive Tier</div>
+            <div class="rb-val"><span class="tier-badge ${tierClass}">${tier.text}</span></div>
+          </div>
+          <div class="result-box">
+            <div class="rb-label">Achievement</div>
+            <div class="rb-val">${pct.toFixed(2)}%</div>
+          </div>
+          <div class="result-box">
+            <div class="rb-label">Team Total Sales</div>
+            <div class="rb-val">AED ${fmt(teamTotal)}</div>
+          </div>
+          <div class="result-box">
+            <div class="rb-label">Equal Split / Person</div>
+            <div class="rb-val darkBlue">AED ${equalSplit.toFixed(3)}</div>
+          </div>
+        </div>`;
 
       html += `<div class="table-wrap"><table><thead><tr>
-        <th>Staff</th><th>Total (AED)</th><th>Personal %</th><th>Personal 30% (AED)</th><th>Equal Split (AED)</th><th>Total Incentive (AED)</th>
+        <th>#</th><th>Staff</th><th>Total (AED)</th><th>Personal %</th>
+        <th>Personal ${Math.round(personalPct*100)}% (AED)</th>
+        <th>Equal ${Math.round(equalPct*100)}% (AED)</th>
+        <th>Total Incentive (AED)</th>
       </tr></thead><tbody>`;
 
-      staffList.forEach(s=>{
+      staffList.forEach((s, i) => {
         html += `<tr>
-          <td>${escapeHtml(s.Staff)}</td>
+          <td style="color:var(--muted);font-size:12px">${i+1}</td>
+          <td><strong>${escapeHtml(s.Staff)}</strong></td>
           <td>${s.Total.toFixed(2)}</td>
           <td>${s.PersonalPercent}%</td>
-          <td>${s.Personal30_display}</td>
-          <td>${s.EqualSplit.toFixed(3)}</td>
-          <td>${s.TotalIncentive.toFixed(2)}</td>
+          <td class="darkBrown">${s.Personal30_display}</td>
+          <td class="darkBlue">${s.EqualSplit.toFixed(3)}</td>
+          <td><strong>${s.TotalIncentive.toFixed(2)}</strong></td>
         </tr>`;
       });
 
       html += `</tbody></table></div>`;
       out.innerHTML = html;
 
-      // prepare data for download (export full columns incl EqualSplit)
-      // produce clean objects with proper column names
-      const exportData = staffList.map(s => ({
-        Staff: s.Staff,
-        Total: Number(s.Total.toFixed(2)),
-        PersonalPercent: Number(s.PersonalPercent),
-        Personal30: Number(s.Personal30.toFixed(3)),
-        EqualSplit: Number(s.EqualSplit.toFixed(3)),
-        TotalIncentive: Number(s.TotalIncentive.toFixed(2))
+      window._bulkExportData = staffList.map(s => ({
+        Staff:           s.Staff,
+        Total_AED:       Number(s.Total.toFixed(2)),
+        Personal_Pct:    Number(s.PersonalPercent),
+        Personal_Share:  Number(s.Personal30.toFixed(3)),
+        Equal_Split:     Number(s.EqualSplit.toFixed(3)),
+        Total_Incentive: Number(s.TotalIncentive.toFixed(2))
       }));
 
-      window._bulkExportData = exportData;
-      document.getElementById('downloadBtn').style.display = 'inline-block';
+      document.getElementById('downloadBtn').style.display = 'inline-flex';
     } catch(err){
       console.error(err);
-      out.innerHTML = "<div style='color:#d9534f'>Failed to parse the file. Make sure it's a valid .xlsx/.xls workbook.</div>";
+      out.innerHTML = `<div class="error">Failed to parse the file. Ensure it is a valid .xlsx or .xls workbook.</div>`;
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-/* download prepared export */
+/* Download */
 function downloadBulk(){
   if(!window._bulkExportData || !window._bulkExportData.length) return;
   const ws = XLSX.utils.json_to_sheet(window._bulkExportData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
-  XLSX.writeFile(wb, 'Bulk_Incentives_v2.1.xlsx');
+  XLSX.writeFile(wb, 'Bulk_Incentives_v2.3.xlsx');
 }
 
-/* small helper */
+/* Helpers */
+function fmt(n){ return Number(n).toLocaleString('en-AE', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
 function escapeHtml(str){
   return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* allow Enter key to trigger calculate on individual inputs */
+/* Enter key on individual inputs */
 ['ind-target','ind-total','ind-personal','ind-count'].forEach(id=>{
   const el = document.getElementById(id);
-  if(el) el.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calculateIndividual(); });
+  if(el) el.addEventListener('keydown', e=>{ if(e.key==='Enter') calculateIndividual(); });
 });
 </script>
+
 </body>
 </html>
