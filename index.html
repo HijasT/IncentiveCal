@@ -287,22 +287,44 @@ margin-left:6px;
 }
 .tier-none{ background:rgba(192,57,43,0.1); color:#c0392b; }
 
-/* dark mode */
-body.dark{ –bg:#0d1117; –card:#161b22; –border:#2d3748; –text:#e2e8f0; –muted:#8899aa; –accent-light: rgba(10,126,140,0.12); }
-body.dark input[type=“number”], body.dark input[type=“file”]{ background:#0d1117; color:#e2e8f0; }
-body.dark .split-section{ background:rgba(10,126,140,0.08); }
+/* dark mode — redefine CSS variables so all elements re-inherit automatically */
+body.dark{
+–bg: #0d1117;
+–card: #161b22;
+–border: #2d3748;
+–text: #e2e8f0;
+–muted: #8899aa;
+–accent-light: rgba(10,126,140,0.12);
+–darkblue: #60a5fa;
+–darkbrown: #f59e0b;
+background: var(–bg);
+color: var(–text);
+}
+
+/* elements that need explicit overrides beyond variable inheritance */
+body.dark .card{ background:var(–card); box-shadow:0 2px 16px rgba(0,0,0,0.4), 0 0 0 1px var(–border); }
+body.dark .note{ background:var(–bg); border-color:var(–border); color:var(–muted); }
+body.dark .result-box{ background:var(–bg); border-color:var(–border); }
+body.dark input[type=“number”], body.dark input[type=“file”]{ background:var(–bg); color:var(–text); border-color:var(–border); }
+body.dark .pill{ background:var(–card); border-color:var(–border); color:var(–muted); }
+body.dark .pill.active{ background:var(–accent); color:#fff; border-color:var(–accent); }
+body.dark .btn.secondary{ background:var(–card); }
 body.dark th{ background:#063a3c; }
 body.dark tr:nth-child(even) td{ background:#0f1820; }
 body.dark tr:hover td{ background:#0d2025; }
 body.dark .highlight-total{ background:#062a27; color:#7df3e1; border-left-color:#00bfa6; }
 body.dark .projection-box{ background:#1a1200; border-color:#92400e; color:#fbbf24; }
-body.dark .result-box{ background:#0d1117; }
-body.dark .darkBlue{ color:#60a5fa; }
-body.dark .darkBrown{ color:#f59e0b; }
 body.dark .salem{ color:#2dd4bf; }
 body.dark .tier-badge{ background:rgba(10,126,140,0.2); color:#2dd4bf; }
 body.dark .tier-none{ background:rgba(192,57,43,0.15); color:#f87171; }
-body.dark .btn.secondary{ background:#161b22; }
+body.dark .badge-equal{ background:rgba(96,165,250,0.15); color:#60a5fa; }
+body.dark .badge-personal{ background:rgba(245,158,11,0.15); color:#f59e0b; }
+body.dark .quote{ border-left-color:var(–border); }
+
+/* ensure smooth transitions on themed elements */
+.card, .note, .result-box, .pill, input[type=“number”], input[type=“file”], .btn{
+transition: background .3s, color .3s, border-color .3s;
+}
 
 @media(max-width:500px){
 h1{ font-size:20px; }
