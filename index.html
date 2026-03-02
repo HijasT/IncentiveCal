@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -7,337 +6,288 @@
 <title>Smart Incentive Calculator v2.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
 /* LIGHT MODE */
 :root {
-–bg:           #f0f4f8;
-–card:         #ffffff;
-–accent:       #0A7E8C;
-–accent-light: #e8f7f8;
-–muted:        #6b7a8a;
-–darkblue:     #0047AB;
-–darkbrown:    #5C4033;
-–border:       #e1e8ed;
-–text:         #1a2332;
-–row-even:     #f8fbfc;
-–row-hover:    #eef8f9;
-–hl-bg:        linear-gradient(135deg,#e8f9f7,#d0f4ef);
-–hl-color:     #035059;
-–hl-border:    #0A7E8C;
-–proj-bg:      #fffbeb;
-–proj-border:  #fde68a;
-–proj-color:   #78350f;
-–err-bg:       #fdf2f0;
-–err-border:   #f5c6c0;
-–err-color:    #c0392b;
+  --bg:#f0f4f8;
+  --card:#ffffff;
+  --accent:#0A7E8C;
+  --accent-light:#e8f7f8;
+  --muted:#6b7a8a;
+  --darkblue:#0047AB;
+  --darkbrown:#5C4033;
+  --border:#e1e8ed;
+  --text:#1a2332;
+  --row-even:#f8fbfc;
+  --row-hover:#eef8f9;
+  --hl-bg:#e0f7f4;
+  --hl-color:#035059;
+  --hl-border:#0A7E8C;
+  --proj-bg:#fffbeb;
+  --proj-border:#fde68a;
+  --proj-color:#78350f;
+  --err-bg:#fdf2f0;
+  --err-border:#f5c6c0;
+  --err-color:#c0392b;
+  --tier-bg:rgba(10,126,140,0.1);
+  --tier-color:#0A7E8C;
 }
 
-/* DARK MODE — on html element so it cascades to everything */
+/* DARK MODE — on html AND explicit body override for Safari */
 html.dark {
-–bg:           #0d1117;
-–card:         #161b22;
-–accent-light: rgba(10,126,140,0.12);
-–muted:        #8899aa;
-–darkblue:     #60a5fa;
-–darkbrown:    #f59e0b;
-–border:       #2d3748;
-–text:         #e2e8f0;
-–row-even:     #0f1820;
-–row-hover:    #0d2025;
-–hl-bg:        #062a27;
-–hl-color:     #7df3e1;
-–hl-border:    #00bfa6;
-–proj-bg:      #1a1200;
-–proj-border:  #92400e;
-–proj-color:   #fbbf24;
-–err-bg:       #1a0a0a;
-–err-border:   #6b2020;
-–err-color:    #f87171;
+  --bg:#0d1117;
+  --card:#161b22;
+  --accent-light:rgba(10,126,140,0.12);
+  --muted:#8899aa;
+  --darkblue:#60a5fa;
+  --darkbrown:#f59e0b;
+  --border:#2d3748;
+  --text:#e2e8f0;
+  --row-even:#0f1820;
+  --row-hover:#0d2025;
+  --hl-bg:#062a27;
+  --hl-color:#7df3e1;
+  --hl-border:#00bfa6;
+  --proj-bg:#1a1200;
+  --proj-border:#92400e;
+  --proj-color:#fbbf24;
+  --err-bg:#1a0a0a;
+  --err-border:#6b2020;
+  --err-color:#f87171;
+  --tier-bg:rgba(10,126,140,0.25);
+  --tier-color:#2dd4bf;
 }
 
-/* RESET */
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-
-html, body {
-min-height: 100%;
+/* Safari fix: explicitly re-set background and color on body */
+html.dark body {
+  background-color:#0d1117;
+  color:#e2e8f0;
 }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 body {
-font-family: ‘DM Sans’, ‘Segoe UI’, sans-serif;
-background: var(–bg);
-color: var(–text);
-display: flex;
-justify-content: center;
-padding: 32px 16px;
-transition: background 0.3s, color 0.3s;
+  font-family:'DM Sans','Segoe UI',sans-serif;
+  background-color:var(--bg);
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  padding:32px 16px;
+  min-height:100vh;
 }
 
-.app { width:100%; max-width:1000px; }
+.app{width:100%;max-width:1000px}
 
 /* HEADER */
-header.app-header { display:flex; flex-direction:column; gap:6px; margin-bottom:22px; }
-.title-row { display:flex; justify-content:space-between; align-items:center; }
-h1 { font-size:26px; color:var(–accent); letter-spacing:-0.5px; }
-.version { color:var(–muted); font-size:12px; font-family:‘DM Mono’,monospace; }
-.dark-toggle { cursor:pointer; font-size:22px; user-select:none; transition:transform 0.2s; line-height:1; }
-.dark-toggle:hover { transform:rotate(20deg); }
+.app-header{margin-bottom:22px}
+.title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+h1{font-size:26px;color:var(--accent);letter-spacing:-0.5px}
+.version{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.dark-toggle{cursor:pointer;font-size:22px;user-select:none;line-height:1}
 
 /* TABS */
-.tabs { display:flex; gap:8px; margin:14px 0; }
-.pill {
-padding:9px 18px; border-radius:999px;
-background:var(–card); color:var(–muted);
-cursor:pointer; font-weight:600; font-size:14px;
-border:1px solid var(–border); font-family:inherit;
-transition: background 0.3s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+.tabs{display:flex;gap:8px;margin:14px 0}
+.pill{
+  padding:9px 18px;border-radius:999px;
+  background-color:var(--card);color:var(--muted);
+  cursor:pointer;font-weight:600;font-size:14px;
+  border:1px solid var(--border);font-family:inherit;
 }
-.pill:hover { color:var(–accent); border-color:var(–accent); }
-.pill.active {
-background:var(–accent); color:#fff;
-border-color:var(–accent);
-box-shadow:0 4px 14px rgba(10,126,140,0.3);
+.pill.active{
+  background-color:var(--accent);color:#fff;
+  border-color:var(--accent);
+  box-shadow:0 4px 14px rgba(10,126,140,0.3);
 }
 
 /* CARD */
-.card {
-background: var(–card);
-border-radius:16px;
-box-shadow:0 2px 16px rgba(16,24,40,0.07), 0 0 0 1px var(–border);
-padding:24px;
-transition: background 0.3s, box-shadow 0.3s;
+.card{
+  background-color:var(--card);
+  border-radius:16px;
+  box-shadow:0 2px 16px rgba(16,24,40,0.07),0 0 0 1px var(--border);
+  padding:24px;
 }
 
 /* NOTE */
-.note {
-font-size:12px; margin-bottom:14px; padding:8px 12px;
-background:var(–bg); color:var(–muted);
-border-radius:8px; border:1px solid var(–border);
-transition: background 0.3s, color 0.3s, border-color 0.3s;
+.note{
+  font-size:12px;margin-bottom:14px;padding:8px 12px;
+  background-color:var(--bg);color:var(--muted);
+  border-radius:8px;border:1px solid var(--border);
 }
 
 /* GRID + INPUTS */
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 
-label {
-display:block; font-weight:600; font-size:13px; margin-bottom:6px;
-color:var(–muted); text-transform:uppercase; letter-spacing:0.4px;
-transition: color 0.3s;
+label{
+  display:block;font-weight:600;font-size:13px;margin-bottom:6px;
+  color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;
 }
 
-input[type=“number”],
-input[type=“file”] {
-width:100%; padding:11px 13px;
-border-radius:10px; border:1.5px solid var(–border);
-font-size:15px; font-family:inherit;
-background:var(–bg); color:var(–text);
-outline:none; -webkit-appearance:none; appearance:none;
-transition: background 0.3s, color 0.3s, border-color 0.2s, box-shadow 0.2s;
+input[type=number],input[type=file]{
+  width:100%;padding:11px 13px;
+  border-radius:10px;border:1.5px solid var(--border);
+  font-size:15px;font-family:inherit;
+  background-color:var(--bg);color:var(--text);
+  outline:none;-webkit-appearance:none;appearance:none;
 }
-input[type=“number”]:focus,
-input[type=“file”]:focus {
-border-color:var(–accent);
-box-shadow:0 0 0 3px rgba(10,126,140,0.12);
+input[type=number]:focus,input[type=file]:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(10,126,140,0.12);
 }
-input[type=“file”] { padding:9px; cursor:pointer; }
+input[type=file]{padding:9px;cursor:pointer}
 
-/* SPLIT SLIDER SECTION */
-.split-section {
-margin-top:18px; padding:16px 18px;
-background:var(–accent-light);
-border-radius:12px; border:1px solid rgba(10,126,140,0.15);
-transition: background 0.3s;
+/* SPLIT SLIDER */
+.split-section{
+  margin-top:18px;padding:16px 18px;
+  background-color:var(--accent-light);
+  border-radius:12px;border:1px solid rgba(10,126,140,0.15);
 }
-.split-header {
-display:flex; justify-content:space-between; align-items:center;
-flex-wrap:wrap; gap:8px; margin-bottom:12px;
+.split-header{
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;margin-bottom:12px;
 }
-.split-label { font-weight:700; font-size:14px; color:var(–accent); }
-.split-badges { display:flex; gap:8px; align-items:center; }
-.badge {
-padding:4px 10px; border-radius:999px;
-font-size:13px; font-weight:700; font-family:‘DM Mono’,monospace;
-transition: background 0.3s, color 0.3s;
+.split-label{font-weight:700;font-size:14px;color:var(--accent)}
+.split-badges{display:flex;gap:8px;align-items:center}
+.badge{
+  padding:4px 10px;border-radius:999px;
+  font-size:13px;font-weight:700;font-family:'DM Mono',monospace;
 }
-.badge-equal   { background:rgba(0,71,171,0.1);   color:var(–darkblue); }
-.badge-personal{ background:rgba(92,64,51,0.12);  color:var(–darkbrown); }
-.badge-sep     { color:var(–muted); font-size:13px; }
+.badge-equal{background-color:rgba(0,71,171,0.1);color:var(--darkblue)}
+.badge-personal{background-color:rgba(92,64,51,0.12);color:var(--darkbrown)}
+html.dark .badge-equal{background-color:rgba(96,165,250,0.15)}
+html.dark .badge-personal{background-color:rgba(245,158,11,0.15)}
+.badge-sep{color:var(--muted);font-size:13px}
 
-/* RANGE SLIDER — mobile Safari fix */
-.slider-wrap { display:block; width:100%; }
-input[type=“range”] {
--webkit-appearance:none; appearance:none;
-display:block; width:100%; min-width:0;
-height:6px; border-radius:4px;
-border:none; outline:none; padding:0; margin:0;
-cursor:pointer;
-/* background set inline by JS for Safari compatibility */
-background: linear-gradient(to right, var(–darkblue) 70%, rgba(150,150,150,0.3) 70%);
+.slider-wrap{display:block;width:100%}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  display:block;width:100%;min-width:0;
+  height:6px;border-radius:4px;
+  border:none;outline:none;padding:0;margin:0;cursor:pointer;
+  background:linear-gradient(to right,var(--darkblue) 70%,rgba(150,150,150,0.3) 70%);
 }
-input[type=“range”]::-webkit-slider-runnable-track {
-height:6px; border-radius:4px;
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:4px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:22px;height:22px;border-radius:50%;
+  background-color:var(--card);
+  border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(10,126,140,0.35);
+  cursor:grab;margin-top:-8px;
 }
-input[type=“range”]::-webkit-slider-thumb {
--webkit-appearance:none; appearance:none;
-width:22px; height:22px; border-radius:50%;
-background:var(–card);
-border:3px solid var(–accent);
-box-shadow:0 2px 8px rgba(10,126,140,0.35);
-cursor:grab; margin-top:-8px;
-transition: background 0.3s, transform 0.1s;
+input[type=range]::-webkit-slider-thumb:active{cursor:grabbing}
+input[type=range]::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;
+  background-color:var(--card);border:3px solid var(--accent);
+  cursor:grab;
 }
-input[type=“range”]::-webkit-slider-thumb:active { cursor:grabbing; transform:scale(1.15); }
-input[type=“range”]::-moz-range-track {
-height:6px; border-radius:4px;
-background: linear-gradient(to right, var(–darkblue) 70%, rgba(150,150,150,0.3) 70%);
-}
-input[type=“range”]::-moz-range-thumb {
-width:22px; height:22px; border-radius:50%;
-background:var(–card); border:3px solid var(–accent);
-box-shadow:0 2px 8px rgba(10,126,140,0.35); cursor:grab;
-}
-.slider-ticks {
-display:flex; justify-content:space-between;
-margin-top:6px; font-size:11px;
-color:var(–muted); font-family:‘DM Mono’,monospace;
+.slider-ticks{
+  display:flex;justify-content:space-between;
+  margin-top:6px;font-size:11px;
+  color:var(--muted);font-family:'DM Mono',monospace;
 }
 
 /* BUTTONS */
-.btn {
-display:inline-flex; align-items:center; gap:6px;
-padding:11px 20px; border-radius:10px;
-background:var(–accent); color:#fff;
-font-weight:700; font-size:14px; font-family:inherit;
-border:none; cursor:pointer; margin-top:14px;
-box-shadow:0 4px 14px rgba(10,126,140,0.2);
--webkit-appearance:none; appearance:none;
-transition: transform 0.12s, box-shadow 0.12s;
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:11px 20px;border-radius:10px;
+  background-color:var(--accent);color:#fff;
+  font-weight:700;font-size:14px;font-family:inherit;
+  border:none;cursor:pointer;margin-top:14px;
+  box-shadow:0 4px 14px rgba(10,126,140,0.2);
+  -webkit-appearance:none;appearance:none;
 }
-.btn:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(10,126,140,0.3); }
-.btn:active { transform:translateY(0); }
-.btn.secondary {
-background:var(–card); color:var(–accent);
-border:1.5px solid var(–border); box-shadow:none;
-transition: background 0.3s, color 0.3s, border-color 0.2s;
+.btn.secondary{
+  background-color:var(--card);color:var(--accent);
+  border:1.5px solid var(--border);box-shadow:none;
 }
-.btn.secondary:hover { border-color:var(–accent); }
 
 /* RESULTS */
-.results { margin-top:20px; line-height:1.7; }
-
-.result-grid {
-display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-gap:10px; margin:12px 0;
+.results{margin-top:20px;line-height:1.7}
+.result-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:10px;margin:12px 0;
 }
-.result-box {
-background:var(–bg); border-radius:10px;
-padding:12px 14px; border:1px solid var(–border);
-transition: background 0.3s, border-color 0.3s;
+.result-box{
+  background-color:var(--bg);border-radius:10px;
+  padding:12px 14px;border:1px solid var(--border);
 }
-.result-box .rb-label {
-font-size:11px; font-weight:600; text-transform:uppercase;
-letter-spacing:0.5px; color:var(–muted); margin-bottom:4px;
+.result-box .rb-label{
+  font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;
 }
-.result-box .rb-val {
-font-size:17px; font-weight:700; font-family:‘DM Mono’,monospace;
-color:var(–text);
+.result-box .rb-val{
+  font-size:17px;font-weight:700;
+  font-family:'DM Mono',monospace;color:var(--text);
 }
-
-.highlight-total {
-margin-top:12px; padding:14px 16px; border-radius:10px;
-background:var(–hl-bg); border-left:5px solid var(–hl-border);
-font-size:19px; font-weight:800; color:var(–hl-color);
-transition: background 0.3s, color 0.3s, border-color 0.3s;
+.highlight-total{
+  margin-top:12px;padding:14px 16px;border-radius:10px;
+  background-color:var(--hl-bg);
+  border-left:5px solid var(--hl-border);
+  font-size:19px;font-weight:800;color:var(--hl-color);
 }
-.projection-box {
-margin-top:10px; padding:12px 14px; border-radius:10px;
-background:var(–proj-bg); border:1px solid var(–proj-border);
-font-size:13px; color:var(–proj-color);
-transition: background 0.3s, color 0.3s, border-color 0.3s;
+.projection-box{
+  margin-top:10px;padding:12px 14px;border-radius:10px;
+  background-color:var(--proj-bg);
+  border:1px solid var(--proj-border);
+  font-size:13px;color:var(--proj-color);
 }
-.error {
-color:var(–err-color); background:var(–err-bg);
-padding:10px 14px; border-radius:8px;
-border:1px solid var(–err-border); font-size:14px;
-transition: background 0.3s, color 0.3s, border-color 0.3s;
+.error{
+  margin-top:10px;padding:10px 14px;border-radius:8px;
+  background-color:var(--err-bg);
+  border:1px solid var(--err-border);
+  color:var(--err-color);font-size:14px;
 }
 
 /* TABLE */
-.table-wrap {
-margin-top:14px; overflow:auto; border-radius:10px;
-border:1px solid var(–border);
-transition: border-color 0.3s;
+.table-wrap{margin-top:14px;overflow:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
+th{
+  background-color:var(--accent);color:#fff;
+  font-weight:700;font-size:12px;
+  text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;
 }
-table { width:100%; border-collapse:collapse; min-width:700px; }
-th, td {
-padding:10px 14px; border-bottom:1px solid var(–border);
-text-align:left; font-size:14px;
-transition: background 0.3s, color 0.3s;
-}
-th {
-background:var(–accent); color:#fff;
-font-weight:700; font-size:12px;
-text-transform:uppercase; letter-spacing:0.5px;
-position:sticky; top:0;
-}
-tr:last-child td { border-bottom:none; }
-tr:nth-child(even) td { background:var(–row-even); }
-tr:hover td { background:var(–row-hover); }
+html.dark th{background-color:#063a3c}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background-color:var(--row-even)}
+tr:hover td{background-color:var(--row-hover)}
 
 /* COLOUR HELPERS */
-.darkBlue  { color:var(–darkblue);  font-weight:700; font-family:‘DM Mono’,monospace; }
-.darkBrown { color:var(–darkbrown); font-weight:700; font-family:‘DM Mono’,monospace; }
-.salem     { color:var(–accent); }
-.quote {
-font-style:italic; color:var(–muted); font-size:13px;
-margin-top:10px; padding-left:10px;
-border-left:3px solid var(–border);
-transition: color 0.3s, border-color 0.3s;
+.darkBlue{color:var(--darkblue);font-weight:700;font-family:'DM Mono',monospace}
+.darkBrown{color:var(--darkbrown);font-weight:700;font-family:'DM Mono',monospace}
+.salem{color:var(--accent)}
+html.dark .salem{color:#2dd4bf}
+.quote{
+  font-style:italic;color:var(--muted);font-size:13px;
+  margin-top:10px;padding-left:10px;border-left:3px solid var(--border);
 }
-
-.tier-badge {
-display:inline-block; padding:4px 12px; border-radius:999px;
-font-size:13px; font-weight:700;
-background:rgba(10,126,140,0.1); color:var(–accent); margin-left:6px;
+.tier-badge{
+  display:inline-block;padding:4px 12px;border-radius:999px;
+  font-size:13px;font-weight:700;margin-left:6px;
+  background-color:var(--tier-bg);color:var(--tier-color);
 }
-.tier-none { background:rgba(192,57,43,0.1); color:var(–err-color); }
+.tier-none{--tier-bg:rgba(192,57,43,0.1);--tier-color:var(--err-color)}
 
-/* DARK MODE — badge tweaks that need explicit color (not variable-driven) */
-html.dark .badge-equal    { background:rgba(96,165,250,0.15); }
-html.dark .badge-personal { background:rgba(245,158,11,0.15); }
-html.dark .tier-badge     { background:rgba(10,126,140,0.25); color:#2dd4bf; }
-html.dark .tier-none      { background:rgba(192,57,43,0.2); }
-html.dark input[type=“range”]::-webkit-slider-thumb { background:var(–card); }
-html.dark input[type=“range”]::-moz-range-thumb     { background:var(–card); }
-
-/* RESPONSIVE */
-@media(max-width:500px) {
-h1 { font-size:20px; }
-.card { padding:16px; }
-.split-header { flex-direction:column; align-items:flex-start; }
+@media(max-width:500px){
+  h1{font-size:20px}
+  .card{padding:16px}
+  .split-header{flex-direction:column;align-items:flex-start}
 }
 </style>
-
 </head>
 <body>
 <div class="app">
-  <header class="app-header">
+
+  <div class="app-header">
     <div class="title-row">
       <h1>Smart Incentive Calculator</h1>
-      <div class="dark-toggle" id="darkToggle" title="Toggle dark mode">☀️</div>
+      <div class="dark-toggle" id="darkToggle">☀️</div>
     </div>
-    <div class="sub-row">
-      <div class="version">v2.3</div>
-    </div>
-  </header>
-
-  <div class="tabs" role="tablist">
-    <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
-    <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
+    <div class="version">v2.3</div>
   </div>
 
   <!-- INDIVIDUAL -->
-
   <section id="individual" class="card">
     <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
     <div class="grid">
@@ -359,36 +309,32 @@ h1 { font-size:20px; }
       </div>
     </div>
 
-```
-<div class="split-section">
-  <div class="split-header">
-    <span class="split-label">Incentive Pool Split</span>
-    <div class="split-badges">
-      <span class="badge badge-equal" id="ind-equal-badge">Equal 70%</span>
-      <span class="badge-sep">/</span>
-      <span class="badge badge-personal" id="ind-personal-badge">Personal 30%</span>
+    <div class="split-section">
+      <div class="split-header">
+        <span class="split-label">Incentive Pool Split</span>
+        <div class="split-badges">
+          <span class="badge badge-equal" id="ind-equal-badge">Equal 70%</span>
+          <span class="badge-sep">/</span>
+          <span class="badge badge-personal" id="ind-personal-badge">Personal 30%</span>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="ind-split" min="10" max="90" value="70" step="5"
+          oninput="updateSlider('ind')" />
+      </div>
+      <div class="slider-ticks">
+        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
+      </div>
     </div>
-  </div>
-  <div class="slider-wrap">
-    <input type="range" id="ind-split" min="10" max="90" value="70" step="5"
-      oninput="updateSplitDisplay('ind')" />
-  </div>
-  <div class="slider-ticks">
-    <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-  </div>
-</div>
 
-<button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
-<div id="ind-results" class="results"></div>
-```
-
+    <button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
+    <div id="ind-results" class="results"></div>
   </section>
 
   <!-- BULK -->
-
-  <section id="bulk" class="card" style="display:none;margin-top:16px;">
+  <section id="bulk" class="card" style="display:none;margin-top:16px">
     <div class="note">
-      Upload an Excel file. Expected format: alternating rows — odd rows contain the staff name (column A), even rows contain total sales (column B). Extra columns are ignored. Accepted: .xlsx, .xls
+      Upload an Excel file. Alternating rows: odd rows = staff name (col A), even rows = total sales (col B). Extra columns ignored.
     </div>
     <div class="grid">
       <div>
@@ -401,40 +347,37 @@ h1 { font-size:20px; }
       </div>
     </div>
 
-```
-<div class="split-section">
-  <div class="split-header">
-    <span class="split-label">Incentive Pool Split</span>
-    <div class="split-badges">
-      <span class="badge badge-equal" id="bulk-equal-badge">Equal 70%</span>
-      <span class="badge-sep">/</span>
-      <span class="badge badge-personal" id="bulk-personal-badge">Personal 30%</span>
+    <div class="split-section">
+      <div class="split-header">
+        <span class="split-label">Incentive Pool Split</span>
+        <div class="split-badges">
+          <span class="badge badge-equal" id="bulk-equal-badge">Equal 70%</span>
+          <span class="badge-sep">/</span>
+          <span class="badge badge-personal" id="bulk-personal-badge">Personal 30%</span>
+        </div>
+      </div>
+      <div class="slider-wrap">
+        <input type="range" id="bulk-split" min="10" max="90" value="70" step="5"
+          oninput="updateSlider('bulk')" />
+      </div>
+      <div class="slider-ticks">
+        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
+      </div>
     </div>
-  </div>
-  <div class="slider-wrap">
-    <input type="range" id="bulk-split" min="10" max="90" value="70" step="5"
-      oninput="updateSplitDisplay('bulk')" />
-  </div>
-  <div class="slider-ticks">
-    <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-  </div>
-</div>
 
-<div>
-  <button class="btn" onclick="calculateBulk()">Process Upload</button>
-  <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px;">&#11015; Download Results</button>
-</div>
-<div id="bulk-results" style="margin-top:14px;"></div>
-```
-
+    <div>
+      <button class="btn" onclick="calculateBulk()">Process Upload</button>
+      <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px">&#11015; Download</button>
+    </div>
+    <div id="bulk-results" style="margin-top:14px"></div>
   </section>
-</div>
 
+</div>
 <script>
-/* ── TABS ── */
+/* TABS */
 function activateTab(name) {
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('section.card').forEach(c => c.style.display = 'none');
+  document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('section.card').forEach(function(c){ c.style.display='none'; });
   if (name === 'individual') {
     document.getElementById('tab-ind').classList.add('active');
     document.getElementById('individual').style.display = 'block';
@@ -444,50 +387,38 @@ function activateTab(name) {
   }
 }
 
-/* ── DARK MODE ──
-   Toggle .dark on <html>. Cleaner toggle as suggested — read state AFTER toggle. */
-const darkToggle = document.getElementById('darkToggle');
+/* DARK MODE */
+var darkToggle = document.getElementById('darkToggle');
 darkToggle.addEventListener('click', function() {
-  document.documentElement.classList.toggle('dark');
-  var isDark = document.documentElement.classList.contains('dark');
+  var isDark = document.documentElement.classList.toggle('dark');
   darkToggle.textContent = isDark ? '🌙' : '☀️';
-  // re-apply slider backgrounds so Safari picks up new --darkblue value
-  updateSplitDisplay('ind');
-  updateSplitDisplay('bulk');
+  updateSlider('ind');
+  updateSlider('bulk');
 });
 
-/* ── SPLIT SLIDER ──
-   We set backgroundImage directly in JS because Safari doesn't always
-   re-evaluate CSS custom properties inside range track backgrounds. */
-function sliderColor() {
-  // read computed --darkblue for current theme
-  return getComputedStyle(document.documentElement).getPropertyValue('--darkblue').trim() || '#0047AB';
-}
-
-function updateSplitDisplay(prefix) {
+/* SLIDER */
+function updateSlider(prefix) {
   var slider = document.getElementById(prefix + '-split');
   var eq = parseInt(slider.value, 10);
   var pr = 100 - eq;
   document.getElementById(prefix + '-equal-badge').textContent = 'Equal ' + eq + '%';
   document.getElementById(prefix + '-personal-badge').textContent = 'Personal ' + pr + '%';
-  var color = sliderColor();
-  slider.style.backgroundImage =
-    'linear-gradient(to right, ' + color + ' ' + eq + '%, rgba(150,150,150,0.3) ' + eq + '%)';
+  /* Set background directly — Safari does not re-evaluate CSS vars inside range track */
+  var isDark = document.documentElement.classList.contains('dark');
+  var fillColor = isDark ? '#60a5fa' : '#0047AB';
+  slider.style.background = 'linear-gradient(to right,' + fillColor + ' ' + eq + '%,rgba(150,150,150,0.3) ' + eq + '%)';
 }
+updateSlider('ind');
+updateSlider('bulk');
 
-// Initialise on load
-updateSplitDisplay('ind');
-updateSplitDisplay('bulk');
-
-/* ── TIER LOGIC (single source of truth) ── */
+/* TIER */
 function getTier(pct) {
-  if (pct >= 85 && pct <= 100) return { text: 'Tier 1 (2.5%)', rate: 0.025 };
-  if (pct > 100 && pct <= 110) return { text: 'Tier 2 (3%)',   rate: 0.03  };
-  if (pct > 110)               return { text: 'Tier 3 (3.5%)', rate: 0.035 };
-  return { text: 'Below Target', rate: 0 };
+  if (pct >= 85 && pct <= 100) return { text:'Tier 1 (2.5%)', rate:0.025 };
+  if (pct > 100 && pct <= 110) return { text:'Tier 2 (3%)',   rate:0.03  };
+  if (pct > 110)               return { text:'Tier 3 (3.5%)', rate:0.035 };
+  return { text:'Below Target', rate:0 };
 }
 
-/* ── QUOTES ── */
 var quotes = [
   'Every sale brings you closer to success.',
   'Push a little harder — your future self will thank you.',
@@ -495,211 +426,174 @@ var quotes = [
   'Be the reason someone earns a compliment today.'
 ];
 
-/* ── INDIVIDUAL CALC ── */
+/* INDIVIDUAL */
 function calculateIndividual() {
   var target   = parseFloat(document.getElementById('ind-target').value);
   var total    = parseFloat(document.getElementById('ind-total').value);
   var personal = parseFloat(document.getElementById('ind-personal').value);
   var count    = parseInt(document.getElementById('ind-count').value, 10);
-  var equalPct = parseInt(document.getElementById('ind-split').value, 10) / 100;
+  var eq       = parseInt(document.getElementById('ind-split').value, 10) / 100;
   var out = document.getElementById('ind-results');
-  out.innerHTML = '';
 
   if (!target || !total || !personal || !count) {
     out.innerHTML = '<div class="error">Please fill in all fields before calculating.</div>';
     return;
   }
 
-  var pct        = (total / target) * 100;
-  var tier       = getTier(pct);
-  var persoPct   = 1 - equalPct;
-  var pool       = total * tier.rate;
-  var equalSplit = (pool * equalPct) / count;
-  var pers30     = (personal / total) * (pool * persoPct);
-  var totalInc   = equalSplit + pers30;
+  var pct  = (total / target) * 100;
+  var tier = getTier(pct);
+  var pr   = 1 - eq;
+  var pool = total * tier.rate;
+  var eqSplit = (pool * eq) / count;
+  var p30     = (personal / total) * (pool * pr);
+  var totalInc = eqSplit + p30;
 
-  var extra       = 1695;
-  var newTotal    = total + extra;
-  var newPersonal = personal + extra;
-  var newPct      = (newTotal / target) * 100;
-  var newTier     = getTier(newPct);
-  var newPool     = newTotal * newTier.rate;
-  var newEqual    = (newPool * equalPct) / count;
-  var newPers30   = (newPersonal / newTotal) * (newPool * persoPct);
-  var newTotalInc = newEqual + newPers30;
-  var diff        = newTotalInc - totalInc;
+  var extra = 1695;
+  var nt = total + extra, np = personal + extra;
+  var newTier = getTier((nt / target) * 100);
+  var newPool = nt * newTier.rate;
+  var newInc  = ((newPool * eq) / count) + (np / nt) * (newPool * pr);
+  var diff    = newInc - totalInc;
 
-  var tierClass = tier.rate === 0 ? 'tier-none' : '';
+  var tClass = tier.rate === 0 ? 'tier-none' : '';
 
   var projHtml = '';
   if (tier.rate > 0) {
-    projHtml = '<div class="projection-box">' +
-      '&#128161; Sell an extra AED ' + extra.toLocaleString() +
-      ': projected incentive <strong>AED ' + newTotalInc.toFixed(2) + '</strong>' +
-      '&nbsp;(' + (diff >= 0 ? '+' : '') + diff.toFixed(2) + ' AED' +
-      (newTier.rate !== tier.rate ? ', tier upgrades to ' + newTier.text : '') + ')' +
-      '</div>';
+    projHtml = '<div class="projection-box">&#128161; Sell extra AED ' + extra.toLocaleString() +
+      ': projected AED ' + newInc.toFixed(2) +
+      ' (' + (diff >= 0 ? '+' : '') + diff.toFixed(2) +
+      (newTier.rate !== tier.rate ? ', upgrades to ' + newTier.text : '') + ')</div>';
   }
 
   out.innerHTML =
     '<div class="result-grid">' +
-      '<div class="result-box"><div class="rb-label">Incentive Tier</div>' +
-        '<div class="rb-val"><span class="tier-badge ' + tierClass + '">' + tier.text + '</span></div></div>' +
-      '<div class="result-box"><div class="rb-label">Achievement</div>' +
-        '<div class="rb-val">' + pct.toFixed(2) + '%</div></div>' +
-      '<div class="result-box"><div class="rb-label">Incentive Pool</div>' +
-        '<div class="rb-val">AED ' + fmt(pool) + '</div></div>' +
-      '<div class="result-box"><div class="rb-label">Equal Split (' + Math.round(equalPct*100) + '%)</div>' +
-        '<div class="rb-val darkBlue">AED ' + equalSplit.toFixed(3) + '</div></div>' +
-      '<div class="result-box"><div class="rb-label">Personal Share (' + ((personal/total)*100).toFixed(2) + '%)</div>' +
-        '<div class="rb-val darkBrown">AED ' + pers30.toFixed(3) + '</div></div>' +
+      box('Tier', '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
+      box('Achievement', pct.toFixed(2) + '%') +
+      box('Pool', 'AED ' + fmt(pool)) +
+      box('Equal (' + Math.round(eq*100) + '%)', '<span class="darkBlue">AED ' + eqSplit.toFixed(3) + '</span>') +
+      box('Personal (' + ((personal/total)*100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
     '</div>' +
     '<div class="highlight-total">Total Incentive: <span class="salem">AED ' + totalInc.toFixed(2) + '</span></div>' +
     projHtml +
     '<div class="quote">' + quotes[Math.floor(Math.random() * quotes.length)] + '</div>';
 }
 
-/* ── BULK CALC ── */
+function box(label, val) {
+  return '<div class="result-box"><div class="rb-label">' + label +
+    '</div><div class="rb-val">' + val + '</div></div>';
+}
+
+/* BULK */
 function calculateBulk() {
   var target   = parseFloat(document.getElementById('bulk-target').value);
   var fileInput = document.getElementById('bulk-file');
   var file     = fileInput.files && fileInput.files[0];
-  var equalPct = parseInt(document.getElementById('bulk-split').value, 10) / 100;
+  var eq       = parseInt(document.getElementById('bulk-split').value, 10) / 100;
   var out = document.getElementById('bulk-results');
   var dwn = document.getElementById('downloadBtn');
-  out.innerHTML = ''; dwn.style.display = 'none'; window._bulkExportData = null;
+  out.innerHTML = ''; dwn.style.display = 'none'; window._bulkData = null;
 
   if (!target || !file) {
-    out.innerHTML = '<div class="error">Please provide a sales target and select an Excel file.</div>';
+    out.innerHTML = '<div class="error">Please provide a target and select a file.</div>';
     return;
   }
 
   var reader = new FileReader();
-  reader.onload = function(evt) {
+  reader.onload = function(e) {
     try {
-      var wb    = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+      var wb    = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
       var sheet = wb.Sheets[wb.SheetNames[0]];
-      var rows  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      var rows  = XLSX.utils.sheet_to_json(sheet, { header:1 });
+      if (rows.length < 3) { out.innerHTML = '<div class="error">File too short.</div>'; return; }
 
-      if (rows.length < 3) {
-        out.innerHTML = '<div class="error">File too short — need at least a header row plus one staff entry.</div>';
-        return;
-      }
-
-      var staffList = [];
+      var staff = [];
       for (var r = 1; r < rows.length; r += 2) {
-        var nameRow  = rows[r];
-        var totalRow = rows[r + 1];
-        if (!nameRow) continue;
-        var name = nameRow[0];
-        if (!name && name !== 0) continue;
-        var tv = totalRow && totalRow[1];
-        var tn = (tv === undefined || tv === null) ? NaN : Number(tv);
-        if (isNaN(tn)) continue;
-        staffList.push({ Staff: String(name).trim(), Total: Number(tn) });
+        var name = rows[r] && rows[r][0];
+        var tv   = rows[r+1] && rows[r+1][1];
+        var tn   = (tv === undefined || tv === null) ? NaN : Number(tv);
+        if (name && !isNaN(tn)) staff.push({ Staff:String(name).trim(), Total:tn });
       }
+      if (!staff.length) { out.innerHTML = '<div class="error">No valid staff rows found.</div>'; return; }
 
-      if (!staffList.length) {
-        out.innerHTML = '<div class="error">No valid staff/total pairs found. Check the alternating-row format.</div>';
-        return;
-      }
+      var pr        = 1 - eq;
+      var teamTotal = staff.reduce(function(s,c){ return s + c.Total; }, 0);
+      var pct       = (teamTotal / target) * 100;
+      var tier      = getTier(pct);
+      var pool      = teamTotal * tier.rate;
+      var eqSplit   = (pool * eq) / staff.length;
 
-      var persoPct   = 1 - equalPct;
-      var teamTotal  = staffList.reduce(function(s,c){ return s + c.Total; }, 0);
-      var pct        = (teamTotal / target) * 100;
-      var tier       = getTier(pct);
-      var pool       = teamTotal * tier.rate;
-      var equalSplit = (pool * equalPct) / staffList.length;
-
-      staffList.forEach(function(s) {
-        s.PersonalPercent    = ((s.Total / teamTotal) * 100).toFixed(3);
-        s.Personal30         = (s.Total / teamTotal) * (pool * persoPct);
-        s.Personal30_display = s.Personal30.toFixed(3);
-        s.EqualSplit         = Number(equalSplit.toFixed(3));
-        s.TotalIncentive     = Number((equalSplit + s.Personal30).toFixed(2));
+      staff.forEach(function(s) {
+        s.PersonalPct = ((s.Total / teamTotal) * 100).toFixed(3);
+        s.P30         = (s.Total / teamTotal) * (pool * pr);
+        s.EqSplit     = Number(eqSplit.toFixed(3));
+        s.TotalInc    = Number((eqSplit + s.P30).toFixed(2));
       });
-      staffList.sort(function(a,b){ return b.TotalIncentive - a.TotalIncentive; });
+      staff.sort(function(a,b){ return b.TotalInc - a.TotalInc; });
 
-      var tierClass = tier.rate === 0 ? 'tier-none' : '';
+      var tClass = tier.rate === 0 ? 'tier-none' : '';
       var html =
         '<div class="result-grid" style="margin-bottom:8px">' +
-          '<div class="result-box"><div class="rb-label">Incentive Tier</div>' +
-            '<div class="rb-val"><span class="tier-badge ' + tierClass + '">' + tier.text + '</span></div></div>' +
-          '<div class="result-box"><div class="rb-label">Achievement</div>' +
-            '<div class="rb-val">' + pct.toFixed(2) + '%</div></div>' +
-          '<div class="result-box"><div class="rb-label">Team Total Sales</div>' +
-            '<div class="rb-val">AED ' + fmt(teamTotal) + '</div></div>' +
-          '<div class="result-box"><div class="rb-label">Equal Split / Person</div>' +
-            '<div class="rb-val darkBlue">AED ' + equalSplit.toFixed(3) + '</div></div>' +
+          box('Tier', '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
+          box('Achievement', pct.toFixed(2) + '%') +
+          box('Team Total', 'AED ' + fmt(teamTotal)) +
+          box('Equal / Person', '<span class="darkBlue">AED ' + eqSplit.toFixed(3) + '</span>') +
         '</div>' +
         '<div class="table-wrap"><table><thead><tr>' +
           '<th>#</th><th>Staff</th><th>Total (AED)</th><th>Personal %</th>' +
-          '<th>Personal ' + Math.round(persoPct*100) + '% (AED)</th>' +
-          '<th>Equal ' + Math.round(equalPct*100) + '% (AED)</th>' +
+          '<th>Personal ' + Math.round(pr*100) + '% (AED)</th>' +
+          '<th>Equal ' + Math.round(eq*100) + '% (AED)</th>' +
           '<th>Total Incentive (AED)</th>' +
         '</tr></thead><tbody>';
 
-      staffList.forEach(function(s, i) {
-        html +=
-          '<tr>' +
-            '<td style="color:var(--muted);font-size:12px">' + (i+1) + '</td>' +
-            '<td><strong>' + escapeHtml(s.Staff) + '</strong></td>' +
-            '<td>' + s.Total.toFixed(2) + '</td>' +
-            '<td>' + s.PersonalPercent + '%</td>' +
-            '<td class="darkBrown">' + s.Personal30_display + '</td>' +
-            '<td class="darkBlue">' + s.EqualSplit.toFixed(3) + '</td>' +
-            '<td><strong>' + s.TotalIncentive.toFixed(2) + '</strong></td>' +
-          '</tr>';
+      staff.forEach(function(s, i) {
+        html += '<tr>' +
+          '<td style="color:var(--muted);font-size:12px">' + (i+1) + '</td>' +
+          '<td><strong>' + esc(s.Staff) + '</strong></td>' +
+          '<td>' + s.Total.toFixed(2) + '</td>' +
+          '<td>' + s.PersonalPct + '%</td>' +
+          '<td class="darkBrown">' + s.P30.toFixed(3) + '</td>' +
+          '<td class="darkBlue">' + s.EqSplit.toFixed(3) + '</td>' +
+          '<td><strong>' + s.TotalInc.toFixed(2) + '</strong></td>' +
+        '</tr>';
       });
-
       html += '</tbody></table></div>';
       out.innerHTML = html;
 
-      window._bulkExportData = staffList.map(function(s) {
+      window._bulkData = staff.map(function(s) {
         return {
-          Staff:           s.Staff,
-          Total_AED:       Number(s.Total.toFixed(2)),
-          Personal_Pct:    Number(s.PersonalPercent),
-          Personal_Share:  Number(s.Personal30.toFixed(3)),
-          Equal_Split:     Number(s.EqualSplit.toFixed(3)),
-          Total_Incentive: Number(s.TotalIncentive.toFixed(2))
+          Staff:s.Staff, Total:Number(s.Total.toFixed(2)),
+          PersonalPct:Number(s.PersonalPct),
+          Personal30:Number(s.P30.toFixed(3)),
+          EqualSplit:Number(s.EqSplit.toFixed(3)),
+          TotalIncentive:Number(s.TotalInc.toFixed(2))
         };
       });
-      document.getElementById('downloadBtn').style.display = 'inline-flex';
-
+      dwn.style.display = 'inline-flex';
     } catch(err) {
-      console.error(err);
-      out.innerHTML = '<div class="error">Failed to parse the file. Ensure it is a valid .xlsx or .xls workbook.</div>';
+      out.innerHTML = '<div class="error">Failed to parse file. Check it is a valid .xlsx or .xls.</div>';
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
-/* ── DOWNLOAD ── */
 function downloadBulk() {
-  if (!window._bulkExportData || !window._bulkExportData.length) return;
-  var ws = XLSX.utils.json_to_sheet(window._bulkExportData);
+  if (!window._bulkData || !window._bulkData.length) return;
+  var ws = XLSX.utils.json_to_sheet(window._bulkData);
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
   XLSX.writeFile(wb, 'Bulk_Incentives_v2.3.xlsx');
 }
 
-/* ── HELPERS ── */
-function fmt(n) {
-  return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function fmt(n) { return Number(n).toLocaleString('en-AE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* ── ENTER KEY ── */
 ['ind-target','ind-total','ind-personal','ind-count'].forEach(function(id) {
   var el = document.getElementById(id);
-  if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') calculateIndividual(); });
+  if (el) el.addEventListener('keydown', function(e){ if(e.key==='Enter') calculateIndividual(); });
 });
 </script>
-
 </body>
 </html>
