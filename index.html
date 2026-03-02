@@ -3,38 +3,41 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smart Incentive Calculator v2.3</title>
+<title>Smart Incentive Calculator v2.4</title>
+<!-- SheetJS library for Excel parsing and export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+/* ── FONTS ─────────────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-/* LIGHT MODE */
+/* ── LIGHT MODE CSS VARIABLES ──────────────────────────────────────────────── */
 :root {
-  --bg:#f0f4f8;
-  --card:#ffffff;
-  --accent:#0A7E8C;
-  --accent-light:#e8f7f8;
-  --muted:#6b7a8a;
-  --darkblue:#0047AB;
-  --darkbrown:#5C4033;
-  --border:#e1e8ed;
-  --text:#1a2332;
-  --row-even:#f8fbfc;
-  --row-hover:#eef8f9;
-  --hl-bg:#e0f7f4;
-  --hl-color:#035059;
-  --hl-border:#0A7E8C;
-  --proj-bg:#fffbeb;
-  --proj-border:#fde68a;
-  --proj-color:#78350f;
-  --err-bg:#fdf2f0;
-  --err-border:#f5c6c0;
-  --err-color:#c0392b;
-  --tier-bg:rgba(10,126,140,0.1);
-  --tier-color:#0A7E8C;
+  --bg:#f0f4f8;               /* page background */
+  --card:#ffffff;             /* card surface */
+  --accent:#0A7E8C;           /* primary brand teal */
+  --accent-light:#e8f7f8;     /* teal tint for split section background */
+  --muted:#6b7a8a;            /* secondary text / labels */
+  --darkblue:#0047AB;         /* equal-split colour */
+  --darkbrown:#5C4033;        /* personal-split colour */
+  --border:#e1e8ed;           /* borders and dividers */
+  --text:#1a2332;             /* primary body text */
+  --row-even:#f8fbfc;         /* alternating table row */
+  --row-hover:#eef8f9;        /* table row hover */
+  --hl-bg:#e0f7f4;            /* total incentive highlight background */
+  --hl-color:#035059;         /* total incentive highlight text */
+  --hl-border:#0A7E8C;        /* total incentive highlight left border */
+  --proj-bg:#fffbeb;          /* projection box background */
+  --proj-border:#fde68a;      /* projection box border */
+  --proj-color:#78350f;       /* projection box text */
+  --err-bg:#fdf2f0;           /* error box background */
+  --err-border:#f5c6c0;       /* error box border */
+  --err-color:#c0392b;        /* error text */
+  --tier-bg:rgba(10,126,140,0.1);  /* tier badge background */
+  --tier-color:#0A7E8C;            /* tier badge text */
 }
 
-/* DARK MODE — on html AND explicit body override for Safari */
+/* ── DARK MODE CSS VARIABLES ───────────────────────────────────────────────── */
+/* Applied on <html> so variables cascade to ALL descendant elements */
 html.dark {
   --bg:#0d1117;
   --card:#161b22;
@@ -59,14 +62,19 @@ html.dark {
   --tier-color:#2dd4bf;
 }
 
-/* Safari fix: explicitly re-set background and color on body */
+/*
+  Safari iOS fix: CSS variables on <html> don't always re-cascade to <body>
+  background-color. Explicit hardcoded values bypass this WebKit quirk.
+*/
 html.dark body {
   background-color:#0d1117;
   color:#e2e8f0;
 }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── RESET ──────────────────────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 
+/* ── BODY LAYOUT ────────────────────────────────────────────────────────────── */
 body {
   font-family:'DM Sans','Segoe UI',sans-serif;
   background-color:var(--bg);
@@ -76,220 +84,324 @@ body {
   padding:32px 16px;
   min-height:100vh;
 }
+.app { width:100%; max-width:1000px; }
 
-.app{width:100%;max-width:1000px}
+/* ── HEADER ─────────────────────────────────────────────────────────────────── */
+.app-header { margin-bottom:22px; }
+.title-row  { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
+.version    { font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; }
+.dark-toggle{ cursor:pointer; font-size:22px; user-select:none; line-height:1; }
 
-/* HEADER */
-.app-header{margin-bottom:22px}
-.title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-h1{font-size:26px;color:var(--accent);letter-spacing:-0.5px}
-.version{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
-.dark-toggle{cursor:pointer;font-size:22px;user-select:none;line-height:1}
-
-/* TABS */
-.tabs{display:flex;gap:8px;margin:14px 0}
-.pill{
-  padding:9px 18px;border-radius:999px;
-  background-color:var(--card);color:var(--muted);
-  cursor:pointer;font-weight:600;font-size:14px;
-  border:1px solid var(--border);font-family:inherit;
+/* ── PILL TABS ──────────────────────────────────────────────────────────────── */
+.tabs { display:flex; gap:8px; margin:14px 0; }
+.pill {
+  padding:9px 18px; border-radius:999px;
+  background-color:var(--card); color:var(--muted);
+  cursor:pointer; font-weight:600; font-size:14px;
+  border:1px solid var(--border); font-family:inherit;
 }
-.pill.active{
-  background-color:var(--accent);color:#fff;
+.pill.active {
+  background-color:var(--accent); color:#fff;
   border-color:var(--accent);
   box-shadow:0 4px 14px rgba(10,126,140,0.3);
 }
 
-/* CARD */
-.card{
+/* ── CARD ───────────────────────────────────────────────────────────────────── */
+.card {
   background-color:var(--card);
   border-radius:16px;
-  box-shadow:0 2px 16px rgba(16,24,40,0.07),0 0 0 1px var(--border);
+  box-shadow:0 2px 16px rgba(16,24,40,0.07), 0 0 0 1px var(--border);
   padding:24px;
 }
 
-/* NOTE */
-.note{
-  font-size:12px;margin-bottom:14px;padding:8px 12px;
-  background-color:var(--bg);color:var(--muted);
-  border-radius:8px;border:1px solid var(--border);
+/* ── NOTE / INFO BOX ────────────────────────────────────────────────────────── */
+.note {
+  font-size:12px; margin-bottom:14px; padding:8px 12px;
+  background-color:var(--bg); color:var(--muted);
+  border-radius:8px; border:1px solid var(--border);
 }
 
-/* GRID + INPUTS */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+/* ── INPUT GRID ─────────────────────────────────────────────────────────────── */
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
 
-label{
-  display:block;font-weight:600;font-size:13px;margin-bottom:6px;
-  color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;
+label {
+  display:block; font-weight:600; font-size:13px; margin-bottom:6px;
+  color:var(--muted); text-transform:uppercase; letter-spacing:0.4px;
 }
 
-input[type=number],input[type=file]{
-  width:100%;padding:11px 13px;
-  border-radius:10px;border:1.5px solid var(--border);
-  font-size:15px;font-family:inherit;
-  background-color:var(--bg);color:var(--text);
-  outline:none;-webkit-appearance:none;appearance:none;
+/* Shared input styles — number, file, and text (search bar) */
+input[type=number],
+input[type=file],
+input[type=text] {
+  width:100%; padding:11px 13px;
+  border-radius:10px; border:1.5px solid var(--border);
+  font-size:15px; font-family:inherit;
+  background-color:var(--bg); color:var(--text);
+  outline:none; -webkit-appearance:none; appearance:none;
 }
-input[type=number]:focus,input[type=file]:focus{
+input[type=number]:focus,
+input[type=file]:focus,
+input[type=text]:focus {
   border-color:var(--accent);
   box-shadow:0 0 0 3px rgba(10,126,140,0.12);
 }
-input[type=file]{padding:9px;cursor:pointer}
+input[type=file] { padding:9px; cursor:pointer; }
 
-/* SPLIT SLIDER */
-.split-section{
-  margin-top:18px;padding:16px 18px;
+/* ── SPLIT SLIDER SECTION ───────────────────────────────────────────────────── */
+.split-section {
+  margin-top:18px; padding:16px 18px;
   background-color:var(--accent-light);
-  border-radius:12px;border:1px solid rgba(10,126,140,0.15);
+  border-radius:12px; border:1px solid rgba(10,126,140,0.15);
 }
-.split-header{
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:8px;margin-bottom:12px;
+.split-header {
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px; margin-bottom:12px;
 }
-.split-label{font-weight:700;font-size:14px;color:var(--accent)}
-.split-badges{display:flex;gap:8px;align-items:center}
-.badge{
-  padding:4px 10px;border-radius:999px;
-  font-size:13px;font-weight:700;font-family:'DM Mono',monospace;
-}
-.badge-equal{background-color:rgba(0,71,171,0.1);color:var(--darkblue)}
-.badge-personal{background-color:rgba(92,64,51,0.12);color:var(--darkbrown)}
-html.dark .badge-equal{background-color:rgba(96,165,250,0.15)}
-html.dark .badge-personal{background-color:rgba(245,158,11,0.15)}
-.badge-sep{color:var(--muted);font-size:13px}
+.split-label  { font-weight:700; font-size:14px; color:var(--accent); }
+.split-badges { display:flex; gap:8px; align-items:center; }
 
-.slider-wrap{display:block;width:100%}
-input[type=range]{
-  -webkit-appearance:none;appearance:none;
-  display:block;width:100%;min-width:0;
-  height:6px;border-radius:4px;
-  border:none;outline:none;padding:0;margin:0;cursor:pointer;
-  background:linear-gradient(to right,var(--darkblue) 70%,rgba(150,150,150,0.3) 70%);
+/* Small pill badges showing the current split percentages */
+.badge { padding:4px 10px; border-radius:999px; font-size:13px; font-weight:700; font-family:'DM Mono',monospace; }
+.badge-equal    { background-color:rgba(0,71,171,0.1);  color:var(--darkblue);  }
+.badge-personal { background-color:rgba(92,64,51,0.12); color:var(--darkbrown); }
+html.dark .badge-equal    { background-color:rgba(96,165,250,0.15);  }
+html.dark .badge-personal { background-color:rgba(245,158,11,0.15); }
+.badge-sep { color:var(--muted); font-size:13px; }
+
+/*
+  Range slider — display:block + min-width:0 fixes mobile Safari rendering
+  where the slider collapses to a tiny width without explicit block sizing.
+  Background is set directly via JS to avoid Safari not re-evaluating
+  CSS custom properties inside gradient track backgrounds.
+*/
+.slider-wrap { display:block; width:100%; }
+input[type=range] {
+  -webkit-appearance:none; appearance:none;
+  display:block; width:100%; min-width:0;
+  height:6px; border-radius:4px;
+  border:none; outline:none; padding:0; margin:0; cursor:pointer;
+  background:linear-gradient(to right, var(--darkblue) 60%, rgba(150,150,150,0.3) 60%);
 }
-input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:4px}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;appearance:none;
-  width:22px;height:22px;border-radius:50%;
+input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:4px; }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:22px; height:22px; border-radius:50%;
   background-color:var(--card);
   border:3px solid var(--accent);
   box-shadow:0 2px 8px rgba(10,126,140,0.35);
-  cursor:grab;margin-top:-8px;
+  cursor:grab; margin-top:-8px;
 }
-input[type=range]::-webkit-slider-thumb:active{cursor:grabbing}
-input[type=range]::-moz-range-thumb{
-  width:22px;height:22px;border-radius:50%;
-  background-color:var(--card);border:3px solid var(--accent);
-  cursor:grab;
+input[type=range]::-webkit-slider-thumb:active { cursor:grabbing; }
+input[type=range]::-moz-range-thumb {
+  width:22px; height:22px; border-radius:50%;
+  background-color:var(--card); border:3px solid var(--accent); cursor:grab;
 }
-.slider-ticks{
-  display:flex;justify-content:space-between;
-  margin-top:6px;font-size:11px;
-  color:var(--muted);font-family:'DM Mono',monospace;
+.slider-ticks {
+  display:flex; justify-content:space-between;
+  margin-top:6px; font-size:11px;
+  color:var(--muted); font-family:'DM Mono',monospace;
 }
 
-/* BUTTONS */
-.btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:11px 20px;border-radius:10px;
-  background-color:var(--accent);color:#fff;
-  font-weight:700;font-size:14px;font-family:inherit;
-  border:none;cursor:pointer;margin-top:14px;
+/* ── BUTTONS ────────────────────────────────────────────────────────────────── */
+/* Primary action button */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:11px 20px; border-radius:10px;
+  background-color:var(--accent); color:#fff;
+  font-weight:700; font-size:14px; font-family:inherit;
+  border:none; cursor:pointer; margin-top:14px;
   box-shadow:0 4px 14px rgba(10,126,140,0.2);
-  -webkit-appearance:none;appearance:none;
+  -webkit-appearance:none; appearance:none;
 }
-.btn.secondary{
-  background-color:var(--card);color:var(--accent);
-  border:1.5px solid var(--border);box-shadow:none;
+/* Secondary / outline button variant */
+.btn.secondary {
+  background-color:var(--card); color:var(--accent);
+  border:1.5px solid var(--border); box-shadow:none;
+}
+html.dark .btn.secondary { background-color:var(--card); }
+
+/* Small ghost share button shown after individual result */
+.btn-share {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:8px 16px; border-radius:10px;
+  background-color:var(--card); color:var(--accent);
+  font-weight:700; font-size:13px; font-family:inherit;
+  border:1.5px solid var(--border); cursor:pointer; margin-top:10px;
+  -webkit-appearance:none; appearance:none;
+}
+html.dark .btn-share { background-color:var(--card); }
+
+/* ── RESULT AREA ────────────────────────────────────────────────────────────── */
+.results { margin-top:20px; line-height:1.7; }
+
+/* Grid of summary stat boxes */
+.result-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:10px; margin:12px 0;
+}
+.result-box {
+  background-color:var(--bg); border-radius:10px;
+  padding:12px 14px; border:1px solid var(--border);
+}
+.result-box .rb-label {
+  font-size:11px; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.5px; color:var(--muted); margin-bottom:4px;
+}
+.result-box .rb-val {
+  font-size:17px; font-weight:700;
+  font-family:'DM Mono',monospace; color:var(--text);
 }
 
-/* RESULTS */
-.results{margin-top:20px;line-height:1.7}
-.result-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px;margin:12px 0;
-}
-.result-box{
-  background-color:var(--bg);border-radius:10px;
-  padding:12px 14px;border:1px solid var(--border);
-}
-.result-box .rb-label{
-  font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;
-}
-.result-box .rb-val{
-  font-size:17px;font-weight:700;
-  font-family:'DM Mono',monospace;color:var(--text);
-}
-.highlight-total{
-  margin-top:12px;padding:14px 16px;border-radius:10px;
-  background-color:var(--hl-bg);
-  border-left:5px solid var(--hl-border);
-  font-size:19px;font-weight:800;color:var(--hl-color);
-}
-.projection-box{
-  margin-top:10px;padding:12px 14px;border-radius:10px;
-  background-color:var(--proj-bg);
-  border:1px solid var(--proj-border);
-  font-size:13px;color:var(--proj-color);
-}
-.error{
-  margin-top:10px;padding:10px 14px;border-radius:8px;
-  background-color:var(--err-bg);
-  border:1px solid var(--err-border);
-  color:var(--err-color);font-size:14px;
+/* Large highlighted total incentive block */
+.highlight-total {
+  margin-top:12px; padding:14px 16px; border-radius:10px;
+  background-color:var(--hl-bg); border-left:5px solid var(--hl-border);
+  font-size:19px; font-weight:800; color:var(--hl-color);
 }
 
-/* TABLE */
-.table-wrap{margin-top:14px;overflow:auto;border-radius:10px;border:1px solid var(--border)}
-table{width:100%;border-collapse:collapse;min-width:700px}
-th,td{padding:10px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
-th{
-  background-color:var(--accent);color:#fff;
-  font-weight:700;font-size:12px;
-  text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;
+/* Projection box — shows what selling AED 1,695 extra would earn */
+.projection-box {
+  margin-top:10px; padding:12px 14px; border-radius:10px;
+  background-color:var(--proj-bg); border:1px solid var(--proj-border);
+  font-size:13px; color:var(--proj-color);
 }
-html.dark th{background-color:#063a3c}
-tr:last-child td{border-bottom:none}
-tr:nth-child(even) td{background-color:var(--row-even)}
-tr:hover td{background-color:var(--row-hover)}
 
-/* COLOUR HELPERS */
-.darkBlue{color:var(--darkblue);font-weight:700;font-family:'DM Mono',monospace}
-.darkBrown{color:var(--darkbrown);font-weight:700;font-family:'DM Mono',monospace}
-.salem{color:var(--accent)}
-html.dark .salem{color:#2dd4bf}
-.quote{
-  font-style:italic;color:var(--muted);font-size:13px;
-  margin-top:10px;padding-left:10px;border-left:3px solid var(--border);
+/* Validation / parse error box */
+.error {
+  margin-top:10px; padding:10px 14px; border-radius:8px;
+  background-color:var(--err-bg); border:1px solid var(--err-border);
+  color:var(--err-color); font-size:14px;
 }
-.tier-badge{
-  display:inline-block;padding:4px 12px;border-radius:999px;
-  font-size:13px;font-weight:700;margin-left:6px;
-  background-color:var(--tier-bg);color:var(--tier-color);
-}
-.tier-none{--tier-bg:rgba(192,57,43,0.1);--tier-color:var(--err-color)}
 
-@media(max-width:500px){
-  h1{font-size:20px}
-  .card{padding:16px}
-  .split-header{flex-direction:column;align-items:flex-start}
+/* ── BREAKDOWN CHART ────────────────────────────────────────────────────────── */
+/* Horizontal bar chart showing equal vs personal contribution */
+.chart-wrap {
+  margin-top:14px; padding:16px; border-radius:12px;
+  background-color:var(--bg); border:1px solid var(--border);
+}
+.chart-title {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.5px; color:var(--muted); margin-bottom:12px;
+}
+.bar-row   { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.bar-label { font-size:12px; font-weight:600; color:var(--muted); width:100px; flex-shrink:0; text-align:right; }
+.bar-track { flex:1; height:24px; background-color:var(--border); border-radius:6px; overflow:hidden; }
+/* Bar starts at width:0 and animates to data-w via JS after render */
+.bar-fill {
+  height:100%; border-radius:6px;
+  display:flex; align-items:center; padding-left:8px;
+  font-size:11px; font-weight:700; color:#fff;
+  white-space:nowrap; overflow:hidden;
+  transition:width 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-fill.blue  { background-color:var(--darkblue);  }
+.bar-fill.brown { background-color:var(--darkbrown); }
+.bar-amount { font-size:12px; font-weight:700; font-family:'DM Mono',monospace; color:var(--text); width:100px; flex-shrink:0; }
+
+/* ── SEARCH BAR (Bulk tab) ──────────────────────────────────────────────────── */
+.search-wrap { margin-top:14px; position:relative; }
+.search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; color:var(--muted); }
+.search-wrap input { padding-left:36px; }
+
+/* ── RESULTS TABLE ──────────────────────────────────────────────────────────── */
+.table-wrap { margin-top:10px; overflow:auto; border-radius:10px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+th, td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:left; font-size:14px; }
+th {
+  background-color:var(--accent); color:#fff;
+  font-weight:700; font-size:12px;
+  text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0;
+}
+html.dark th          { background-color:#063a3c; }
+tr:last-child td      { border-bottom:none; }
+tr:nth-child(even) td { background-color:var(--row-even); }
+tr:hover td           { background-color:var(--row-hover); }
+
+/* ── TOP 3 EARNER ROW TINTING ───────────────────────────────────────────────── */
+/* Subtle gold / silver / bronze row highlights for the top 3 incentive earners */
+.rank-1 td       { background-color:rgba(255,200,0,0.08) !important; }
+.rank-2 td       { background-color:rgba(180,180,180,0.08) !important; }
+.rank-3 td       { background-color:rgba(180,100,40,0.08) !important; }
+.rank-1:hover td { background-color:rgba(255,200,0,0.15) !important; }
+.rank-2:hover td { background-color:rgba(180,180,180,0.15) !important; }
+.rank-3:hover td { background-color:rgba(180,100,40,0.15) !important; }
+
+/* ── COLOUR UTILITY CLASSES ─────────────────────────────────────────────────── */
+.darkBlue  { color:var(--darkblue);  font-weight:700; font-family:'DM Mono',monospace; }
+.darkBrown { color:var(--darkbrown); font-weight:700; font-family:'DM Mono',monospace; }
+.salem     { color:var(--accent); }
+html.dark .salem { color:#2dd4bf; }
+
+/* Motivational quote shown after projection */
+.quote {
+  font-style:italic; color:var(--muted); font-size:13px;
+  margin-top:10px; padding-left:10px; border-left:3px solid var(--border);
+}
+
+/* Incentive tier badge pill */
+.tier-badge {
+  display:inline-block; padding:4px 12px; border-radius:999px;
+  font-size:13px; font-weight:700; margin-left:6px;
+  background-color:var(--tier-bg); color:var(--tier-color);
+}
+.tier-none { --tier-bg:rgba(192,57,43,0.1); --tier-color:var(--err-color); }
+
+/* Empty search result message */
+.no-results { padding:20px; text-align:center; color:var(--muted); font-size:13px; }
+
+/* ── CLIPBOARD TOAST NOTIFICATION ───────────────────────────────────────────── */
+/* Slides up from the bottom when a result is copied to clipboard */
+.toast {
+  position:fixed; bottom:28px; left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background-color:#1a2332; color:#fff;
+  padding:10px 22px; border-radius:999px;
+  font-size:13px; font-weight:600; letter-spacing:0.2px;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.25s, transform 0.25s;
+  z-index:9999; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+@media(max-width:500px) {
+  h1 { font-size:20px; }
+  .card { padding:16px; }
+  .split-header { flex-direction:column; align-items:flex-start; }
+  .bar-label  { width:70px; font-size:11px; }
+  .bar-amount { width:75px; font-size:11px; }
 }
 </style>
 </head>
 <body>
 <div class="app">
 
+  <!-- ── PAGE HEADER ── -->
   <div class="app-header">
     <div class="title-row">
       <h1>Smart Incentive Calculator</h1>
+      <!-- Dark mode toggle — emoji switches between ☀️ and 🌙 -->
       <div class="dark-toggle" id="darkToggle">☀️</div>
     </div>
-    <div class="version">v2.3</div>
+    <div class="version">v2.4</div>
   </div>
 
-  <!-- INDIVIDUAL -->
+  <!-- ── TAB NAVIGATION ── -->
+  <div class="tabs">
+    <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
+    <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       INDIVIDUAL TAB
+       Single salesperson incentive calculation
+  ══════════════════════════════════════════════════════════ -->
   <section id="individual" class="card">
     <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
+
+    <!-- Input fields -->
     <div class="grid">
       <div>
         <label for="ind-target">Sales Target (AED)</label>
@@ -309,17 +421,18 @@ html.dark .salem{color:#2dd4bf}
       </div>
     </div>
 
+    <!-- Pool split slider — default 60/40 -->
     <div class="split-section">
       <div class="split-header">
         <span class="split-label">Incentive Pool Split</span>
         <div class="split-badges">
-          <span class="badge badge-equal" id="ind-equal-badge">Equal 70%</span>
+          <span class="badge badge-equal"    id="ind-equal-badge">Equal 60%</span>
           <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="ind-personal-badge">Personal 30%</span>
+          <span class="badge badge-personal" id="ind-personal-badge">Personal 40%</span>
         </div>
       </div>
       <div class="slider-wrap">
-        <input type="range" id="ind-split" min="10" max="90" value="70" step="5"
+        <input type="range" id="ind-split" min="10" max="90" value="60" step="5"
           oninput="updateSlider('ind')" />
       </div>
       <div class="slider-ticks">
@@ -328,14 +441,20 @@ html.dark .salem{color:#2dd4bf}
     </div>
 
     <button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
+    <!-- Result output injected here by calculateIndividual() -->
     <div id="ind-results" class="results"></div>
   </section>
 
-  <!-- BULK -->
+  <!-- ══════════════════════════════════════════════════════════
+       BULK UPLOAD TAB
+       Process a full team Excel file at once
+  ══════════════════════════════════════════════════════════ -->
   <section id="bulk" class="card" style="display:none;margin-top:16px">
     <div class="note">
       Upload an Excel file. Alternating rows: odd rows = staff name (col A), even rows = total sales (col B). Extra columns ignored.
     </div>
+
+    <!-- Bulk inputs -->
     <div class="grid">
       <div>
         <label for="bulk-target">Sales Target (AED)</label>
@@ -347,17 +466,18 @@ html.dark .salem{color:#2dd4bf}
       </div>
     </div>
 
+    <!-- Pool split slider — default 60/40 -->
     <div class="split-section">
       <div class="split-header">
         <span class="split-label">Incentive Pool Split</span>
         <div class="split-badges">
-          <span class="badge badge-equal" id="bulk-equal-badge">Equal 70%</span>
+          <span class="badge badge-equal"    id="bulk-equal-badge">Equal 60%</span>
           <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="bulk-personal-badge">Personal 30%</span>
+          <span class="badge badge-personal" id="bulk-personal-badge">Personal 40%</span>
         </div>
       </div>
       <div class="slider-wrap">
-        <input type="range" id="bulk-split" min="10" max="90" value="70" step="5"
+        <input type="range" id="bulk-split" min="10" max="90" value="60" step="5"
           oninput="updateSlider('bulk')" />
       </div>
       <div class="slider-ticks">
@@ -367,17 +487,30 @@ html.dark .salem{color:#2dd4bf}
 
     <div>
       <button class="btn" onclick="calculateBulk()">Process Upload</button>
+      <!-- Download button revealed only after successful processing -->
       <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px">&#11015; Download</button>
     </div>
+    <!-- Bulk result output injected here by calculateBulk() -->
     <div id="bulk-results" style="margin-top:14px"></div>
   </section>
 
 </div>
+
+<!-- ── CLIPBOARD TOAST ── (fixed position, shown via JS) -->
+<div class="toast" id="toast">Copied!</div>
+
 <script>
-/* TABS */
+/* ============================================================
+   TAB SWITCHING
+   Shows/hides the Individual or Bulk section and
+   updates the active pill tab styling.
+============================================================ */
 function activateTab(name) {
-  document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
-  document.querySelectorAll('section.card').forEach(function(c){ c.style.display='none'; });
+  /* Remove active class from all pills */
+  document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
+  /* Hide all section cards */
+  document.querySelectorAll('section.card').forEach(function(c) { c.style.display = 'none'; });
+
   if (name === 'individual') {
     document.getElementById('tab-ind').classList.add('active');
     document.getElementById('individual').style.display = 'block';
@@ -387,38 +520,68 @@ function activateTab(name) {
   }
 }
 
-/* DARK MODE */
+/* ============================================================
+   DARK MODE TOGGLE
+   Toggles .dark class on <html> (not body) so CSS variables
+   cascade correctly in all browsers including iOS Safari.
+   Also refreshes slider gradients since Safari won't
+   re-evaluate CSS vars inside range track backgrounds.
+============================================================ */
 var darkToggle = document.getElementById('darkToggle');
 darkToggle.addEventListener('click', function() {
   var isDark = document.documentElement.classList.toggle('dark');
   darkToggle.textContent = isDark ? '🌙' : '☀️';
+  /* Re-apply slider backgrounds after theme change */
   updateSlider('ind');
   updateSlider('bulk');
 });
 
-/* SLIDER */
+/* ============================================================
+   SPLIT SLIDER UPDATE
+   Called on every slider input event. Updates the badge text
+   and sets the slider track gradient directly via JS because
+   Safari does not reliably re-evaluate CSS custom properties
+   inside linear-gradient on range inputs.
+   @param {string} prefix - 'ind' or 'bulk'
+============================================================ */
 function updateSlider(prefix) {
-  var slider = document.getElementById(prefix + '-split');
-  var eq = parseInt(slider.value, 10);
-  var pr = 100 - eq;
-  document.getElementById(prefix + '-equal-badge').textContent = 'Equal ' + eq + '%';
+  var slider  = document.getElementById(prefix + '-split');
+  var eq      = parseInt(slider.value, 10);   /* equal split % */
+  var pr      = 100 - eq;                      /* personal split % */
+
+  /* Update badge labels */
+  document.getElementById(prefix + '-equal-badge').textContent    = 'Equal '    + eq + '%';
   document.getElementById(prefix + '-personal-badge').textContent = 'Personal ' + pr + '%';
-  /* Set background directly — Safari does not re-evaluate CSS vars inside range track */
-  var isDark = document.documentElement.classList.contains('dark');
+
+  /* Set track gradient — hardcoded hex values avoid Safari CSS var issues */
+  var isDark    = document.documentElement.classList.contains('dark');
   var fillColor = isDark ? '#60a5fa' : '#0047AB';
   slider.style.background = 'linear-gradient(to right,' + fillColor + ' ' + eq + '%,rgba(150,150,150,0.3) ' + eq + '%)';
 }
+
+/* Initialise sliders to default 60/40 on page load */
 updateSlider('ind');
 updateSlider('bulk');
 
-/* TIER */
+/* ============================================================
+   TIER LOGIC — single source of truth
+   Returns the incentive tier and rate based on achievement %.
+   Tier gap fix: uses > 100 (not >= 101) to avoid a dead zone
+   where values like 100.5% matched no tier.
+   @param  {number} pct - achievement percentage
+   @return {object} { text, rate }
+============================================================ */
 function getTier(pct) {
-  if (pct >= 85 && pct <= 100) return { text:'Tier 1 (2.5%)', rate:0.025 };
-  if (pct > 100 && pct <= 110) return { text:'Tier 2 (3%)',   rate:0.03  };
-  if (pct > 110)               return { text:'Tier 3 (3.5%)', rate:0.035 };
-  return { text:'Below Target', rate:0 };
+  if (pct >= 85 && pct <= 100) return { text: 'Tier 1 (2.5%)', rate: 0.025 };
+  if (pct > 100 && pct <= 110) return { text: 'Tier 2 (3%)',   rate: 0.03  };
+  if (pct > 110)               return { text: 'Tier 3 (3.5%)', rate: 0.035 };
+  return { text: 'Below Target', rate: 0 };
 }
 
+/* ============================================================
+   MOTIVATIONAL QUOTES
+   Randomly selected and shown after the projection box.
+============================================================ */
 var quotes = [
   'Every sale brings you closer to success.',
   'Push a little harder — your future self will thank you.',
@@ -426,173 +589,452 @@ var quotes = [
   'Be the reason someone earns a compliment today.'
 ];
 
-/* INDIVIDUAL */
+/* ============================================================
+   TOAST NOTIFICATION
+   Shows a temporary bottom-centre message for clipboard events.
+   @param {string} msg - message to display
+============================================================ */
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+/* ============================================================
+   CLIPBOARD — COPY RESULT
+   Copies a plain-text incentive summary to the clipboard.
+   Uses modern Clipboard API with execCommand fallback for
+   older iOS Safari versions.
+   @param {string} text - formatted result string to copy
+============================================================ */
+function copyResult(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(function() { showToast('Result copied to clipboard!'); })
+      .catch(function() { fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+/* execCommand fallback for browsers without Clipboard API */
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity  = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('Result copied!');
+  } catch(e) {
+    showToast('Copy failed — please copy manually.');
+  }
+  document.body.removeChild(ta);
+}
+
+/* ============================================================
+   BREAKDOWN CHART BUILDER
+   Returns HTML for the animated equal/personal bar chart.
+   Bars start at width:0 and animate via animateBars() after
+   the HTML is injected into the DOM.
+   @param {number} eqAmt  - equal split AED amount
+   @param {number} prAmt  - personal split AED amount
+   @param {number} eqPct  - equal pool split % (e.g. 60)
+   @param {number} prPct  - personal pool split % (e.g. 40)
+   @return {string} HTML string
+============================================================ */
+function buildChart(eqAmt, prAmt, eqPct, prPct) {
+  if (eqAmt + prAmt <= 0) return '';
+
+  /* Scale bars relative to whichever is larger (100% width = max value) */
+  var max     = Math.max(eqAmt, prAmt);
+  var eqW     = Math.max(6, Math.round((eqAmt / max) * 100));
+  var prW     = Math.max(6, Math.round((prAmt / max) * 100));
+
+  /* Compute each bar's share of the total incentive amount */
+  var tot     = eqAmt + prAmt;
+  var eqShare = Math.round((eqAmt / tot) * 100);
+  var prShare = 100 - eqShare;
+
+  return '<div class="chart-wrap">' +
+    '<div class="chart-title">Incentive Breakdown</div>' +
+    /* Equal split bar */
+    '<div class="bar-row">' +
+      '<div class="bar-label">Equal (' + eqPct + '%)</div>' +
+      '<div class="bar-track">' +
+        '<div class="bar-fill blue" style="width:0%" data-w="' + eqW + '%">AED ' + eqAmt.toFixed(2) + '</div>' +
+      '</div>' +
+      '<div class="bar-amount darkBlue">' + eqShare + '% of total</div>' +
+    '</div>' +
+    /* Personal split bar */
+    '<div class="bar-row">' +
+      '<div class="bar-label">Personal (' + prPct + '%)</div>' +
+      '<div class="bar-track">' +
+        '<div class="bar-fill brown" style="width:0%" data-w="' + prW + '%">AED ' + prAmt.toFixed(2) + '</div>' +
+      '</div>' +
+      '<div class="bar-amount darkBrown">' + prShare + '% of total</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Triggers CSS transition on all bar fills after DOM render */
+function animateBars() {
+  document.querySelectorAll('.bar-fill[data-w]').forEach(function(el) {
+    var target = el.getAttribute('data-w');
+    /* Small delay ensures element is painted before transition starts */
+    setTimeout(function() { el.style.width = target; }, 60);
+  });
+}
+
+/* ============================================================
+   INDIVIDUAL CALCULATION
+   Reads inputs, computes tier / pool / equal split / personal
+   share, then renders: stat boxes → total highlight → projection
+   → breakdown chart → quote → share button.
+============================================================ */
 function calculateIndividual() {
+  /* Read and parse input values */
   var target   = parseFloat(document.getElementById('ind-target').value);
   var total    = parseFloat(document.getElementById('ind-total').value);
   var personal = parseFloat(document.getElementById('ind-personal').value);
   var count    = parseInt(document.getElementById('ind-count').value, 10);
   var eq       = parseInt(document.getElementById('ind-split').value, 10) / 100;
-  var out = document.getElementById('ind-results');
+  var out      = document.getElementById('ind-results');
 
-  if (!target || !total || !personal || !count) {
+  /* Validate — all fields required */
+  if (
+  isNaN(target) || target <= 0 ||
+  isNaN(total) || total < 0 ||
+  isNaN(personal) || personal < 0 ||
+  isNaN(count) || count <= 0
+  ) {
     out.innerHTML = '<div class="error">Please fill in all fields before calculating.</div>';
     return;
   }
 
-  var pct  = (total / target) * 100;
-  var tier = getTier(pct);
-  var pr   = 1 - eq;
-  var pool = total * tier.rate;
-  var eqSplit = (pool * eq) / count;
-  var p30     = (personal / total) * (pool * pr);
-  var totalInc = eqSplit + p30;
+  /* Core incentive maths */
+  var pct      = (total / target) * 100;        /* achievement % */
+  var tier     = getTier(pct);                   /* tier object { text, rate } */
+  var pr       = 1 - eq;                         /* personal portion as decimal */
+  var pool     = total * tier.rate;              /* total incentive pool */
+  var eqSplit  = (pool * eq) / count;            /* each person's equal share */
+  var p30      = (personal / total) * (pool * pr); /* personal contribution share */
+  var totalInc = eqSplit + p30;                  /* final incentive for this person */
+  var eqPct    = Math.round(eq * 100);
+  var prPct    = Math.round(pr * 100);
 
-  var extra = 1695;
-  var nt = total + extra, np = personal + extra;
-  var newTier = getTier((nt / target) * 100);
-  var newPool = nt * newTier.rate;
-  var newInc  = ((newPool * eq) / count) + (np / nt) * (newPool * pr);
-  var diff    = newInc - totalInc;
+  /* ── Projection: effect of selling an extra AED 1,695 package ── */
+  var extra    = 1695;
+  var nt       = total + extra;
+  var np       = personal + extra;
+  var newTier  = getTier((nt / target) * 100);
+  var newPool  = nt * newTier.rate;
+  var newInc   = ((newPool * eq) / count) + (np / nt) * (newPool * pr);
+  var diff     = newInc - totalInc;
 
+  /* ── Tier badge CSS class ── */
   var tClass = tier.rate === 0 ? 'tier-none' : '';
 
+  /* ── Projection HTML (only shown if currently in a paying tier) ── */
   var projHtml = '';
   if (tier.rate > 0) {
-    projHtml = '<div class="projection-box">&#128161; Sell extra AED ' + extra.toLocaleString() +
+    projHtml =
+      '<div class="projection-box">&#128161; Sell extra AED ' + extra.toLocaleString() +
       ': projected AED ' + newInc.toFixed(2) +
       ' (' + (diff >= 0 ? '+' : '') + diff.toFixed(2) +
-      (newTier.rate !== tier.rate ? ', upgrades to ' + newTier.text : '') + ')</div>';
+      (newTier.rate !== tier.rate ? ', upgrades to ' + newTier.text : '') + ')' +
+      '</div>';
   }
 
+  /* ── Plain-text share string (copied to clipboard) ──
+     Includes site URL at the bottom for attribution.     */
+  var shareText =
+    'Smart Incentive Calculator v2.4\n' +
+    '================================\n' +
+    'Tier: '          + tier.text + ' (' + pct.toFixed(2) + '% of target)\n' +
+    'Incentive Pool: AED ' + fmt(pool)              + '\n' +
+    'Equal Split ('   + eqPct + '%): AED ' + eqSplit.toFixed(3) + '\n' +
+    'Personal Share (' + prPct + '%): AED ' + p30.toFixed(3)    + '\n' +
+    '--------------------------------\n' +
+    'Total Incentive: AED ' + totalInc.toFixed(2)   + '\n\n' +
+    
+    'Calculated using https://hijast.github.io/IncentiveCal/';
+
+  /* ── Render result HTML ──
+     Order: stat boxes → total → projection → chart → quote → share button */
   out.innerHTML =
     '<div class="result-grid">' +
-      box('Tier', '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
+      box('Tier',        '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
       box('Achievement', pct.toFixed(2) + '%') +
-      box('Pool', 'AED ' + fmt(pool)) +
-      box('Equal (' + Math.round(eq*100) + '%)', '<span class="darkBlue">AED ' + eqSplit.toFixed(3) + '</span>') +
-      box('Personal (' + ((personal/total)*100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
+      box('Pool',        'AED ' + fmt(pool)) +
+      box('Equal ('   + eqPct + '%)', '<span class="darkBlue">AED '  + eqSplit.toFixed(3) + '</span>') +
+      box('Personal (' + ((personal / total) * 100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
     '</div>' +
     '<div class="highlight-total">Total Incentive: <span class="salem">AED ' + totalInc.toFixed(2) + '</span></div>' +
     projHtml +
-    '<div class="quote">' + quotes[Math.floor(Math.random() * quotes.length)] + '</div>';
+    /* Quote appears directly after projection (before chart) */
+    '<div class="quote">' + quotes[Math.floor(Math.random() * quotes.length)] + '</div>' +
+    buildChart(eqSplit, p30, eqPct, prPct) +
+    '<button class="btn-share" id="shareBtn">&#128279; Copy Result</button>';
+
+  /* Attach share button handler via JS to avoid inline quote-encoding issues */
+  document.getElementById('shareBtn').addEventListener('click', function() {
+    copyResult(shareText);
+  });
+
+  /* Trigger bar chart animation after DOM is updated */
+  animateBars();
 }
 
+/* ============================================================
+   RESULT BOX HELPER
+   Builds a single stat card HTML string.
+   @param {string} label - card label text
+   @param {string} val   - card value HTML (may contain spans)
+   @return {string} HTML string
+============================================================ */
 function box(label, val) {
-  return '<div class="result-box"><div class="rb-label">' + label +
-    '</div><div class="rb-val">' + val + '</div></div>';
+  return '<div class="result-box">' +
+    '<div class="rb-label">' + label + '</div>' +
+    '<div class="rb-val">'   + val   + '</div>' +
+  '</div>';
 }
 
-/* BULK */
-function calculateBulk() {
-  var target   = parseFloat(document.getElementById('bulk-target').value);
-  var fileInput = document.getElementById('bulk-file');
-  var file     = fileInput.files && fileInput.files[0];
-  var eq       = parseInt(document.getElementById('bulk-split').value, 10) / 100;
-  var out = document.getElementById('bulk-results');
-  var dwn = document.getElementById('downloadBtn');
-  out.innerHTML = ''; dwn.style.display = 'none'; window._bulkData = null;
+/* ============================================================
+   BULK CALCULATION
+   Module-level state for the current staff list and split
+   percentages — used by filterBulkTable() and renderBulkTable().
+============================================================ */
+var _allStaff  = [];   /* full sorted staff array after processing */
+var _bulkEqPct = 60;   /* equal split % displayed in table headers */
+var _bulkPrPct = 40;   /* personal split % displayed in table headers */
 
+function calculateBulk() {
+  /* Read inputs */
+  var target    = parseFloat(document.getElementById('bulk-target').value);
+  var file      = document.getElementById('bulk-file').files[0];
+  var eq        = parseInt(document.getElementById('bulk-split').value, 10) / 100;
+  var out       = document.getElementById('bulk-results');
+  var dwn       = document.getElementById('downloadBtn');
+
+  /* Reset state */
+  out.innerHTML = '';
+  dwn.style.display = 'none';
+  window._bulkData  = null;
+  _allStaff         = [];
+
+  /* Validate inputs */
   if (!target || !file) {
     out.innerHTML = '<div class="error">Please provide a target and select a file.</div>';
     return;
   }
 
+  /* Read the Excel file as an ArrayBuffer */
   var reader = new FileReader();
   reader.onload = function(e) {
     try {
-      var wb    = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+      /* Parse workbook — use first sheet only */
+      var wb    = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
       var sheet = wb.Sheets[wb.SheetNames[0]];
-      var rows  = XLSX.utils.sheet_to_json(sheet, { header:1 });
-      if (rows.length < 3) { out.innerHTML = '<div class="error">File too short.</div>'; return; }
+      var rows  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
+      if (rows.length < 3) {
+        out.innerHTML = '<div class="error">File too short — need at least a header row plus one staff entry.</div>';
+        return;
+      }
+
+      /* Parse alternating-row format:
+         Row N   = staff name in column A (index 0)
+         Row N+1 = total sales in column B (index 1)  */
       var staff = [];
       for (var r = 1; r < rows.length; r += 2) {
-        var name = rows[r] && rows[r][0];
+        var name = rows[r]   && rows[r][0];
         var tv   = rows[r+1] && rows[r+1][1];
         var tn   = (tv === undefined || tv === null) ? NaN : Number(tv);
-        if (name && !isNaN(tn)) staff.push({ Staff:String(name).trim(), Total:tn });
+        if (name && !isNaN(tn)) {
+          staff.push({ Staff: String(name).trim(), Total: tn });
+        }
       }
-      if (!staff.length) { out.innerHTML = '<div class="error">No valid staff rows found.</div>'; return; }
 
+      if (!staff.length) {
+        out.innerHTML = '<div class="error">No valid staff rows found. Check the alternating-row format.</div>';
+        return;
+      }
+
+      /* ── Team-level maths ── */
       var pr        = 1 - eq;
-      var teamTotal = staff.reduce(function(s,c){ return s + c.Total; }, 0);
+      var teamTotal = staff.reduce(function(s, c) { return s + c.Total; }, 0);
       var pct       = (teamTotal / target) * 100;
       var tier      = getTier(pct);
       var pool      = teamTotal * tier.rate;
-      var eqSplit   = (pool * eq) / staff.length;
+      var eqSplit   = (pool * eq) / staff.length;  /* equal share per person */
 
+      /* ── Per-person maths ── */
       staff.forEach(function(s) {
         s.PersonalPct = ((s.Total / teamTotal) * 100).toFixed(3);
-        s.P30         = (s.Total / teamTotal) * (pool * pr);
+        s.P30         = (s.Total / teamTotal) * (pool * pr);  /* personal contribution */
         s.EqSplit     = Number(eqSplit.toFixed(3));
         s.TotalInc    = Number((eqSplit + s.P30).toFixed(2));
       });
-      staff.sort(function(a,b){ return b.TotalInc - a.TotalInc; });
 
-      var tClass = tier.rate === 0 ? 'tier-none' : '';
-      var html =
-        '<div class="result-grid" style="margin-bottom:8px">' +
-          box('Tier', '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
-          box('Achievement', pct.toFixed(2) + '%') +
-          box('Team Total', 'AED ' + fmt(teamTotal)) +
-          box('Equal / Person', '<span class="darkBlue">AED ' + eqSplit.toFixed(3) + '</span>') +
-        '</div>' +
-        '<div class="table-wrap"><table><thead><tr>' +
-          '<th>#</th><th>Staff</th><th>Total (AED)</th><th>Personal %</th>' +
-          '<th>Personal ' + Math.round(pr*100) + '% (AED)</th>' +
-          '<th>Equal ' + Math.round(eq*100) + '% (AED)</th>' +
-          '<th>Total Incentive (AED)</th>' +
-        '</tr></thead><tbody>';
+      /* Sort descending by total incentive for ranking */
+      staff.sort(function(a, b) { return b.TotalInc - a.TotalInc; });
 
-      staff.forEach(function(s, i) {
-        html += '<tr>' +
-          '<td style="color:var(--muted);font-size:12px">' + (i+1) + '</td>' +
-          '<td><strong>' + esc(s.Staff) + '</strong></td>' +
-          '<td>' + s.Total.toFixed(2) + '</td>' +
-          '<td>' + s.PersonalPct + '%</td>' +
-          '<td class="darkBrown">' + s.P30.toFixed(3) + '</td>' +
-          '<td class="darkBlue">' + s.EqSplit.toFixed(3) + '</td>' +
-          '<td><strong>' + s.TotalInc.toFixed(2) + '</strong></td>' +
-        '</tr>';
-      });
-      html += '</tbody></table></div>';
-      out.innerHTML = html;
+      /* Store globally for search filtering */
+      _allStaff  = staff;
+      _bulkEqPct = Math.round(eq * 100);
+      _bulkPrPct = Math.round(pr * 100);
 
+      /* Prepare clean export object for Excel download */
       window._bulkData = staff.map(function(s) {
         return {
-          Staff:s.Staff, Total:Number(s.Total.toFixed(2)),
-          PersonalPct:Number(s.PersonalPct),
-          Personal30:Number(s.P30.toFixed(3)),
-          EqualSplit:Number(s.EqSplit.toFixed(3)),
-          TotalIncentive:Number(s.TotalInc.toFixed(2))
+          Staff:          s.Staff,
+          Total:          Number(s.Total.toFixed(2)),
+          PersonalPct:    Number(s.PersonalPct),
+          Personal30:     Number(s.P30.toFixed(3)),
+          EqualSplit:     Number(s.EqSplit.toFixed(3)),
+          TotalIncentive: Number(s.TotalInc.toFixed(2))
         };
       });
+
+      /* ── Build summary stats HTML ── */
+      var tClass = tier.rate === 0 ? 'tier-none' : '';
+      var summaryHtml =
+        '<div class="result-grid" style="margin-bottom:8px">' +
+          box('Tier',           '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
+          box('Achievement',    pct.toFixed(2) + '%') +
+          box('Team Total',     'AED ' + fmt(teamTotal)) +
+          box('Equal / Person', '<span class="darkBlue">AED ' + eqSplit.toFixed(3) + '</span>') +
+        '</div>';
+
+      /* ── Search bar (filters the results table in real time) ── */
+      var searchHtml =
+        '<div class="search-wrap">' +
+          '<span class="search-icon">&#128269;</span>' +
+          '<input type="text" id="bulk-search" placeholder="Search staff name..." oninput="filterBulkTable()" />' +
+        '</div>';
+
+      /* Inject summary + search + table container */
+      out.innerHTML = summaryHtml + searchHtml + '<div id="bulk-table-container"></div>';
+
+      /* Render full table initially */
+      renderBulkTable(_allStaff);
       dwn.style.display = 'inline-flex';
+
     } catch(err) {
+      console.error(err);
       out.innerHTML = '<div class="error">Failed to parse file. Check it is a valid .xlsx or .xls.</div>';
     }
   };
   reader.readAsArrayBuffer(file);
 }
 
+/* ============================================================
+   BULK TABLE FILTER
+   Called on every keystroke in the search input.
+   Filters _allStaff by name and re-renders the table.
+============================================================ */
+function filterBulkTable() {
+  var q = document.getElementById('bulk-search').value.toLowerCase().trim();
+  var filtered = q
+    ? _allStaff.filter(function(s) { return s.Staff.toLowerCase().indexOf(q) !== -1; })
+    : _allStaff;
+  renderBulkTable(filtered);
+}
+
+/* ============================================================
+   BULK TABLE RENDERER
+   Builds the ranked results table HTML and injects it.
+   Top 3 earners get medal emojis and coloured row tinting.
+   Rank and medal are based on position in _allStaff (the full
+   sorted list) so they are preserved during search filtering.
+   @param {Array} staff - array of staff objects to display
+============================================================ */
+function renderBulkTable(staff) {
+  var container = document.getElementById('bulk-table-container');
+  if (!container) return;
+
+  if (!staff.length) {
+    container.innerHTML = '<div class="no-results">No staff match your search.</div>';
+    return;
+  }
+
+  var html =
+    '<div class="table-wrap"><table><thead><tr>' +
+      '<th>Rank</th>' +
+      '<th>Staff</th>' +
+      '<th>Total (AED)</th>' +
+      '<th>Personal %</th>' +
+      '<th>Personal ' + _bulkPrPct + '% (AED)</th>' +
+      '<th>Equal '    + _bulkEqPct + '% (AED)</th>' +
+      '<th>Total Incentive (AED)</th>' +
+    '</tr></thead><tbody>';
+
+  staff.forEach(function(s) {
+    /* Get the original rank from the full sorted list */
+    var orig      = _allStaff.indexOf(s);
+    var rankClass = orig === 0 ? 'rank-1' : orig === 1 ? 'rank-2' : orig === 2 ? 'rank-3' : '';
+    var medal     = orig === 0 ? '🥇 '   : orig === 1 ? '🥈 '   : orig === 2 ? '🥉 '   : '';
+
+    html +=
+      '<tr class="' + rankClass + '">' +
+        '<td style="color:var(--muted);font-size:12px">' + medal + (orig + 1) + '</td>' +
+        '<td><strong>' + esc(s.Staff) + '</strong></td>' +
+        '<td>' + s.Total.toFixed(2) + '</td>' +
+        '<td>' + s.PersonalPct + '%</td>' +
+        '<td class="darkBrown">' + s.P30.toFixed(3)    + '</td>' +
+        '<td class="darkBlue">'  + s.EqSplit.toFixed(3) + '</td>' +
+        '<td><strong>' + s.TotalInc.toFixed(2) + '</strong></td>' +
+      '</tr>';
+  });
+
+  container.innerHTML = html + '</tbody></table></div>';
+}
+
+/* ============================================================
+   EXCEL DOWNLOAD
+   Exports the processed bulk results to a .xlsx file using
+   SheetJS. Only available after a successful bulk calculation.
+============================================================ */
 function downloadBulk() {
   if (!window._bulkData || !window._bulkData.length) return;
   var ws = XLSX.utils.json_to_sheet(window._bulkData);
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
-  XLSX.writeFile(wb, 'Bulk_Incentives_v2.3.xlsx');
+  XLSX.writeFile(wb, 'Bulk_Incentives_v2.4.xlsx');
 }
 
-function fmt(n) { return Number(n).toLocaleString('en-AE',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+/* ============================================================
+   UTILITY HELPERS
+============================================================ */
+
+/* Format a number as AED currency with 2 decimal places */
+function fmt(n) {
+  return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* Escape user-provided strings before injecting as HTML */
 function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-['ind-target','ind-total','ind-personal','ind-count'].forEach(function(id) {
+/* Allow Enter key to trigger calculation from any individual input field */
+['ind-target', 'ind-total', 'ind-personal', 'ind-count'].forEach(function(id) {
   var el = document.getElementById(id);
-  if (el) el.addEventListener('keydown', function(e){ if(e.key==='Enter') calculateIndividual(); });
+  if (el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') calculateIndividual();
+    });
+  }
 });
 </script>
 </body>
