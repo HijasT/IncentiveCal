@@ -1,134 +1,134 @@
-# Smart Incentive Calculator
+# Smart Incentive Calculator  
+### Version 3.1
 
-### Version 2.3
+A fully client-side incentive calculator with **Individual** and **Bulk Excel** modes.  
+Supports automatic month/year sheet detection, package + sales extraction, and real-time incentive recalculation.
 
-A fast, browser-based incentive calculator with two modes:
-**Individual Incentive Calculation** and **Bulk Excel-Based Incentive Calculation**.
+> 🔒 Runs entirely in the browser — no uploads, no servers, no tracking.  
+> Your Excel file never leaves your device.
 
-> 🔒 All processing is fully client-side — no data is stored or transmitted anywhere.
-
------
+---
 
 ## Features
 
-- Tier-based incentive logic (2.5%, 3.0%, 3.5%)
-- **Adjustable split slider** — choose any Equal/Personal split from 10/90 to 90/10 (default: 70/30)
-- Accurate tier detection with no gaps between tiers
-- Bulk mode supports alternating-row Excel sheets (SS format)
-- Ranked incentive output table
-- Download bulk results as a spreadsheet (.xlsx)
-- Dark mode support
-- Default salesperson count: **28**
+### Individual Mode
+- Tier-based incentive calculation  
+- Adjustable **Equal / Personal** split (10/90 → 90/10)  
+- Projection for an additional AED 1,695 sale  
+- Animated bar chart  
+- Copy-to-clipboard result  
+- Clean UI with light/dark mode  
 
------
+### Bulk Mode
+- Select **Month + Year** → sheet is auto-detected  
+- Reads two-row per-staff format:
+  - Row 1: Staff name  
+  - Row 2: Package count (top), Sales value (bottom)
+- Extracts:
+  - Staff name  
+  - Packages  
+  - Sales (AED)
+- Applies:
+  - Achievement %  
+  - Tier selection  
+  - Incentive pool  
+  - Equal share  
+  - Personal share  
+- Ranked results with medals for top 3  
+- Search staff  
+- Remove staff and recalculate instantly  
+- Download results as Excel  
+
+---
 
 ## Incentive Tiers
 
-|Achievement        |Tier        |Rate|
-|-------------------|------------|----|
-|Below 85% of target|No Incentive|0%  |
-|85% – 100%         |Tier 1      |2.5%|
-|100.01% – 110%     |Tier 2      |3.0%|
-|Above 110%         |Tier 3      |3.5%|
+| Achievement | Tier | Rate |
+|------------|------|------|
+| Below 85%  | No Incentive | 0% |
+| 85% – 100% | Tier 1 | 2.5% |
+| 100.01% – 110% | Tier 2 | 3.0% |
+| Above 110% | Tier 3 | 3.5% |
 
------
+Tier detection is gap-free and handles decimals cleanly.
 
-## Incentive Split Slider
+---
 
-Both Individual and Bulk modes include a **split slider** to control how the incentive pool is divided:
+## Incentive Split
 
-- **Equal share** — distributed equally across all salespersons
-- **Personal share** — distributed proportionally based on each person’s individual sales
+Both modes include a simple slider:
 
-The default is **70% Equal / 30% Personal**. You can drag the slider to any 5% increment between 10/90 and 90/10. The results table and column headers update to reflect the chosen split.
+- **Equal Share** → every staff receives the same amount  
+- **Personal Share** → based on individual sales contribution  
 
------
+Range: **10% to 90%**, in 5% increments.
 
-## Excel Upload Requirements
+All calculations and table headers update instantly.
 
-Your Excel sheet must follow the **alternating-row (SS) format**:
+---
 
-|Row|Column A (Staff)       |Column B (Sales)|
-|---|-----------------------|----------------|
-|1  |Header                 |Header          |
-|2  |Staff Name             |                |
-|3  |                       |Total Sales     |
-|4  |Staff Name             |                |
-|5  |                       |Total Sales     |
-|…  |Repeats in same pattern|                |
+## Excel Format (Bulk Mode)
 
-**Notes:**
+The tool supports the commonly used 2-row merged-cell format:
 
-- Only the total sales value (second row of each pair, column B) is used
-- Daily sales, package counts, averages, and extra columns are all ignored
-- Empty or invalid rows are skipped automatically
-- Accepted formats: `.xlsx`, `.xls`
+| Row | Column A | Other Columns |
+|-----|----------|----------------|
+| Staff Row | Staff Name (merged) | Package counts |
+| Sales Row | *(blank)* | Total sales values (AED) |
 
------
+Additionally:
 
-## Using the Calculator
+- Month columns may appear under different sheet names:  
+  `Feb 26`, `Feb26`, `February 2026`, etc.  
+- The tool automatically finds the correct sheet.
+- Special rows like `Grand Total`, `Total`, etc. are ignored.
+- Empty/invalid staff rows are skipped.
 
-### Online Version
+---
 
-**https://hijast.github.io/IncentiveCal/**
+## How to Use
 
-### Local Version
+### Online Version  
+https://hijast.github.io/IncentiveCal/
 
-1. Download `index.html`
-1. Open it directly in any modern browser
-1. No installation or internet connection required
+### Local Usage  
+Download `index.html` → open it directly in your browser.  
+No installation or internet required.
 
------
+---
 
-## Bulk Mode Instructions
+## Bulk Mode Steps
 
-1. Click the **Bulk Upload** tab
-1. Set the **Sales Target (AED)**
-1. Adjust the **split slider** if needed (default 70/30)
-1. Upload your Excel file
-1. Click **Process Upload** — the tool will:
-- Detect all staff and their totals
-- Calculate team achievement and apply the correct tier
-- Compute each person’s equal share and personal share
-- Rank staff by total incentive (highest first)
-1. Click **Download Results** to export an `.xlsx` file
+1. Open **Bulk Upload**  
+2. Select **Month** and **Year**  
+3. Adjust split slider (default: 60/40)  
+4. Upload the Excel file  
+5. Click **Process**  
+   - Sheet auto-detected  
+   - Staff extracted  
+   - Packages + sales parsed  
+   - Incentives calculated  
+6. Remove staff if necessary  
+7. Download the updated results  
 
------
+---
 
 ## Version History
 
-### v2.3
+### v3.1
+- Added month/year sheet auto-detection  
+- Added package + sales extraction from 2-row staff format  
+- Removed manual target and staff count inputs  
+- Added removable staff functionality with live recalculation  
+- Improved ranking table layout  
+- Enlarged and emphasized total incentive column  
+- Display staff count at top  
+- Removed redundant top-10 ranking section  
+- Removed CSV download option  
+- UI polish and performance improvements  
 
-- Fixed tier detection gap — values between 100% and 101% now correctly resolve to Tier 2
-- Unified tier logic into a single `getTier()` function used by all calculation paths
-- Added **incentive split slider** to both Individual and Bulk modes (default 70/30, range 10/90–90/10)
-- Default salesperson count changed to **28**
-- Bulk upload description now accurately reflects the alternating-row format
-- Projection box now flags when an extra sale would trigger a tier upgrade
-- Download filename updated to v2.3
-- UI and typography refresh
-
-### v2.2
-
-- Corrected alternating-row staff & total sales detection
-- Polished UI tabs to pill-style navigation
-- Improved input validation in bulk mode
-- Cleaned internal code structure
-
-### v2.1
-
-- Added Bulk Incentive Calculator
-- Added Excel parsing and ranked output
-- Added download feature
-
-### v1.x
-
-- Base Individual Incentive Calculator
-- Added projections for additional sales
-- Formatting and UI improvements
-
------
+---
 
 ## License
 
-MIT License. Free for personal and workplace use.
+MIT License — free for personal, professional, and commercial use.
