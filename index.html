@@ -3,37 +3,39 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smart Incentive Calculator v3.1</title>
+<title>Smart Incentive Calculator v4.0</title>
+
 <!-- SheetJS library for Excel parsing and export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
 /* ── FONTS ─────────────────────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
 /* ── LIGHT MODE CSS VARIABLES ──────────────────────────────────────────────── */
 :root {
-  --bg:#f0f4f8;               /* page background */
-  --card:#ffffff;             /* card surface */
-  --accent:#0A7E8C;           /* primary brand teal */
-  --accent-light:#e8f7f8;     /* teal tint for split section background */
-  --muted:#6b7a8a;            /* secondary text / labels */
-  --darkblue:#0047AB;         /* equal-split colour */
-  --darkbrown:#5C4033;        /* personal-split colour */
-  --border:#e1e8ed;           /* borders and dividers */
-  --text:#1a2332;             /* primary body text */
-  --row-even:#f8fbfc;         /* alternating table row */
-  --row-hover:#eef8f9;        /* table row hover */
-  --hl-bg:#e0f7f4;            /* total incentive highlight background */
-  --hl-color:#035059;         /* total incentive highlight text */
-  --hl-border:#0A7E8C;        /* total incentive highlight left border */
-  --proj-bg:#fffbeb;          /* projection box background */
-  --proj-border:#fde68a;      /* projection box border */
-  --proj-color:#78350f;       /* projection box text */
-  --err-bg:#fdf2f0;           /* error box background */
-  --err-border:#f5c6c0;       /* error box border */
-  --err-color:#c0392b;        /* error text */
-  --tier-bg:rgba(10,126,140,0.1);  /* tier badge background */
-  --tier-color:#0A7E8C;            /* tier badge text */
+  --bg:#f0f4f8;
+  --card:#ffffff;
+  --accent:#0A7E8C;
+  --accent-light:#e8f7f8;
+  --muted:#6b7a8a;
+  --darkblue:#0047AB;
+  --darkbrown:#5C4033;
+  --border:#e1e8ed;
+  --text:#1a2332;
+  --row-even:#f8fbfc;
+  --row-hover:#eef8f9;
+  --hl-bg:#e0f7f4;
+  --hl-color:#035059;
+  --hl-border:#0A7E8C;
+  --proj-bg:#fffbeb;
+  --proj-border:#fde68a;
+  --proj-color:#78350f;
+  --err-bg:#fdf2f0;
+  --err-border:#f5c6c0;
+  --err-color:#c0392b;
+  --tier-bg:rgba(10,126,140,0.1);
+  --tier-color:#0A7E8C;
 }
 
 /* ── DARK MODE CSS VARIABLES ───────────────────────────────────────────────── */
@@ -67,10 +69,10 @@ html.dark body {
   color:#e2e8f0;
 }
 
-/* ── RESET ──────────────────────────────────────────────────────────────────── */
+/* ── RESET ─────────────────────────────────────────────────────────────────── */
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 
-/* ── BODY LAYOUT ────────────────────────────────────────────────────────────── */
+/* ── BODY LAYOUT ───────────────────────────────────────────────────────────── */
 body {
   font-family:'DM Sans','Segoe UI',sans-serif;
   background-color:var(--bg);
@@ -82,14 +84,14 @@ body {
 }
 .app { width:100%; max-width:1000px; }
 
-/* ── HEADER ─────────────────────────────────────────────────────────────────── */
+/* ── HEADER ───────────────────────────────────────────────────────────────── */
 .app-header { margin-bottom:22px; }
 .title-row  { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
 h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
 .version    { font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; }
 .dark-toggle{ cursor:pointer; font-size:22px; user-select:none; line-height:1; }
 
-/* ── PILL TABS ──────────────────────────────────────────────────────────────── */
+/* ── PILL TABS ─────────────────────────────────────────────────────────────── */
 .tabs { display:flex; gap:8px; margin:14px 0; }
 .pill {
   padding:9px 18px; border-radius:999px;
@@ -103,7 +105,7 @@ h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
   box-shadow:0 4px 14px rgba(10,126,140,0.3);
 }
 
-/* ── CARD ───────────────────────────────────────────────────────────────────── */
+/* ── CARD ─────────────────────────────────────────────────────────────────── */
 .card {
   background-color:var(--card);
   border-radius:16px;
@@ -111,14 +113,14 @@ h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
   padding:24px;
 }
 
-/* ── NOTE / INFO BOX ────────────────────────────────────────────────────────── */
+/* ── NOTE / INFO BOX ───────────────────────────────────────────────────────── */
 .note {
   font-size:12px; margin-bottom:14px; padding:8px 12px;
   background-color:var(--bg); color:var(--muted);
   border-radius:8px; border:1px solid var(--border);
 }
 
-/* ── INPUT GRID ─────────────────────────────────────────────────────────────── */
+/* ── INPUT GRID ───────────────────────────────────────────────────────────── */
 .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
 
 label {
@@ -126,7 +128,6 @@ label {
   color:var(--muted); text-transform:uppercase; letter-spacing:0.4px;
 }
 
-/* Shared input styles — number, file, text, select */
 input[type=number],
 input[type=file],
 input[type=text],
@@ -146,7 +147,7 @@ select:focus {
 }
 input[type=file] { padding:9px; cursor:pointer; }
 
-/* ── SPLIT SLIDER SECTION ───────────────────────────────────────────────────── */
+/* ── SPLIT SLIDER SECTION ─────────────────────────────────────────────────── */
 .split-section {
   margin-top:18px; padding:16px 18px;
   background-color:var(--accent-light);
@@ -169,7 +170,6 @@ html.dark .badge-equal    { background-color:rgba(96,165,250,0.15);  }
 html.dark .badge-personal { background-color:rgba(245,158,11,0.15); }
 .badge-sep { color:var(--muted); font-size:13px; }
 
-/* Slider */
 .slider-wrap { display:block; width:100%; }
 input[type=range] {
   -webkit-appearance:none; appearance:none;
@@ -198,7 +198,7 @@ input[type=range]::-moz-range-thumb {
   color:var(--muted); font-family:'DM Mono',monospace;
 }
 
-/* ── BUTTONS ────────────────────────────────────────────────────────────────── */
+/* ── BUTTONS ───────────────────────────────────────────────────────────────── */
 .btn {
   display:inline-flex; align-items:center; gap:6px;
   padding:11px 20px; border-radius:10px;
@@ -238,14 +238,11 @@ html.dark .btn-share { background-color:var(--card); }
   border-color:var(--err-border);
   color:var(--err-color);
 }
-html.dark .btn-mini {
-  background-color:var(--card);
-}
+html.dark .btn-mini { background-color:var(--card); }
 
-/* ── RESULT AREA ────────────────────────────────────────────────────────────── */
+/* ── RESULT AREA ───────────────────────────────────────────────────────────── */
 .results { margin-top:20px; line-height:1.7; }
 
-/* Grid of summary stat boxes */
 .result-grid {
   display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
   gap:10px; margin:12px 0;
@@ -263,21 +260,18 @@ html.dark .btn-mini {
   font-family:'DM Mono',monospace; color:var(--text);
 }
 
-/* Highlighted total */
 .highlight-total {
   margin-top:12px; padding:14px 16px; border-radius:10px;
   background-color:var(--hl-bg); border-left:5px solid var(--hl-border);
   font-size:19px; font-weight:800; color:var(--hl-color);
 }
 
-/* Projection box */
 .projection-box {
   margin-top:10px; padding:12px 14px; border-radius:10px;
   background-color:var(--proj-bg); border:1px solid var(--proj-border);
   font-size:13px; color:var(--proj-color);
 }
 
-/* Validation / parse error box */
 .error {
   margin-top:10px; padding:10px 14px; border-radius:8px;
   background-color:var(--err-bg); border:1px solid var(--err-border);
@@ -326,7 +320,6 @@ tr:last-child td      { border-bottom:none; }
 tr:nth-child(even) td { background-color:var(--row-even); }
 tr:hover td           { background-color:var(--row-hover); }
 
-/* Top 3 row tint */
 .rank-1 td       { background-color:rgba(255,200,0,0.08) !important; }
 .rank-2 td       { background-color:rgba(180,180,180,0.08) !important; }
 .rank-3 td       { background-color:rgba(180,100,40,0.08) !important; }
@@ -334,7 +327,6 @@ tr:hover td           { background-color:var(--row-hover); }
 .rank-2:hover td { background-color:rgba(180,180,180,0.15) !important; }
 .rank-3:hover td { background-color:rgba(180,100,40,0.15) !important; }
 
-/* Bulk total incentive styling (bigger & bolder) */
 .total-inc {
   font-weight:800;
   font-size:16px;
@@ -343,16 +335,14 @@ tr:hover td           { background-color:var(--row-hover); }
 /* ── COLOUR UTILITY CLASSES ─────────────────────────────────────────────────── */
 .darkBlue  { color:var(--darkblue);  font-weight:700; font-family:'DM Mono',monospace; }
 .darkBrown { color:var(--darkbrown); font-weight:700; font-family:'DM Mono',monospace; }
-.salem     { color:var(--accent); }
-html.dark .salem { color:#2dd4bf; }
+.accentText { color:var(--accent); }
+html.dark .accentText { color:#2dd4bf; }
 
-/* Motivational quote */
 .quote {
   font-style:italic; color:var(--muted); font-size:13px;
   margin-top:10px; padding-left:10px; border-left:3px solid var(--border);
 }
 
-/* Incentive tier badge pill */
 .tier-badge {
   display:inline-block; padding:4px 12px; border-radius:999px;
   font-size:13px; font-weight:700; margin-left:6px;
@@ -360,10 +350,8 @@ html.dark .salem { color:#2dd4bf; }
 }
 .tier-none { --tier-bg:rgba(192,57,43,0.1); --tier-color:var(--err-color); }
 
-/* Empty search result message */
 .no-results { padding:20px; text-align:center; color:var(--muted); font-size:13px; }
 
-/* ── CLIPBOARD TOAST ───────────────────────────────────────────────────────── */
 .toast {
   position:fixed; bottom:28px; left:50%;
   transform:translateX(-50%) translateY(10px);
@@ -377,7 +365,6 @@ html.dark .salem { color:#2dd4bf; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
 
-/* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
 @media(max-width:500px) {
   h1 { font-size:20px; }
   .card { padding:16px; }
@@ -387,29 +374,25 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
 }
 </style>
 </head>
+
 <body>
 <div class="app">
 
-  <!-- ── PAGE HEADER ── -->
   <div class="app-header">
     <div class="title-row">
       <h1>Smart Incentive Calculator</h1>
       <div class="dark-toggle" id="darkToggle">☀️</div>
     </div>
-    <div class="version">v3.1</div>
+    <div class="version">v4.0</div>
   </div>
 
-  <!-- ── TAB NAVIGATION ── -->
   <div class="tabs">
     <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
     <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
-       INDIVIDUAL TAB
-  ══════════════════════════════════════════════════════════ -->
   <section id="individual" class="card">
-    <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
+    <div class="note">This tool runs entirely in your browser. The Excel file stays on your PC.</div>
 
     <div class="grid">
       <div>
@@ -430,19 +413,17 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
       </div>
     </div>
 
-    <!-- Pool split slider — default 60/40 -->
     <div class="split-section">
       <div class="split-header">
         <span class="split-label">Incentive Pool Split</span>
         <div class="split-badges">
-          <span class="badge badge-equal"    id="ind-equal-badge">Equal 60%</span>
+          <span class="badge badge-equal" id="ind-equal-badge">Equal 60%</span>
           <span class="badge-sep">/</span>
           <span class="badge badge-personal" id="ind-personal-badge">Personal 40%</span>
         </div>
       </div>
       <div class="slider-wrap">
-        <input type="range" id="ind-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('ind')" />
+        <input type="range" id="ind-split" min="10" max="90" value="60" step="5" oninput="updateSlider('ind')" />
       </div>
       <div class="slider-ticks">
         <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
@@ -453,33 +434,22 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
     <div id="ind-results" class="results"></div>
   </section>
 
-  <!-- ══════════════════════════════════════════════════════════
-       BULK UPLOAD TAB
-  ══════════════════════════════════════════════════════════ -->
   <section id="bulk" class="card" style="display:none;margin-top:16px">
     <div class="note">
-      Upload the monthly Staff Sales Tracker workbook. Choose the month and year; the tool will auto-detect the correct sheet (e.g. “Feb 26” / “Feb26”), read target, staff packages and sales, and calculate incentives.
+      Upload the monthly Staff Sales Tracker workbook. Choose month and year. I detect the matching sheet name and pick the correct month total column from the header row.
     </div>
 
-    <!-- Bulk controls: month, year, file -->
     <div class="grid">
       <div>
         <label for="bulk-month">Month</label>
         <select id="bulk-month">
-          <option value="Jan">Jan</option>
-          <option value="Feb">Feb</option>
-          <option value="Mar">Mar</option>
-          <option value="Apr">Apr</option>
-          <option value="May">May</option>
-          <option value="Jun">Jun</option>
-          <option value="Jul">Jul</option>
-          <option value="Aug">Aug</option>
-          <option value="Sep">Sep</option>
-          <option value="Oct">Oct</option>
-          <option value="Nov">Nov</option>
-          <option value="Dec">Dec</option>
+          <option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option>
+          <option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option>
+          <option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option>
+          <option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option>
         </select>
       </div>
+
       <div>
         <label for="bulk-year">Year</label>
         <select id="bulk-year">
@@ -489,25 +459,24 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
           <option value="2027">2027</option>
         </select>
       </div>
+
       <div>
         <label for="bulk-file">Excel File (.xlsx, .xls)</label>
         <input id="bulk-file" type="file" accept=".xlsx,.xls" />
       </div>
     </div>
 
-    <!-- Pool split slider — default 60/40 -->
     <div class="split-section">
       <div class="split-header">
         <span class="split-label">Incentive Pool Split</span>
         <div class="split-badges">
-          <span class="badge badge-equal"    id="bulk-equal-badge">Equal 60%</span>
+          <span class="badge badge-equal" id="bulk-equal-badge">Equal 60%</span>
           <span class="badge-sep">/</span>
           <span class="badge badge-personal" id="bulk-personal-badge">Personal 40%</span>
         </div>
       </div>
       <div class="slider-wrap">
-        <input type="range" id="bulk-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('bulk')" />
+        <input type="range" id="bulk-split" min="10" max="90" value="60" step="5" oninput="updateSlider('bulk')" />
       </div>
       <div class="slider-ticks">
         <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
@@ -527,634 +496,7 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
 
 <div class="toast" id="toast">Copied!</div>
 
-<script>
-/* ============================================================
-   TAB SWITCHING
-============================================================ */
-function activateTab(name) {
-  document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('section.card').forEach(function(c) { c.style.display = 'none'; });
-
-  if (name === 'individual') {
-    document.getElementById('tab-ind').classList.add('active');
-    document.getElementById('individual').style.display = 'block';
-  } else {
-    document.getElementById('tab-bulk').classList.add('active');
-    document.getElementById('bulk').style.display = 'block';
-  }
-}
-
-/* ============================================================
-   DARK MODE TOGGLE
-============================================================ */
-var darkToggle = document.getElementById('darkToggle');
-darkToggle.addEventListener('click', function() {
-  var isDark = document.documentElement.classList.toggle('dark');
-  darkToggle.textContent = isDark ? '🌙' : '☀️';
-  updateSlider('ind');
-  updateSlider('bulk');
-});
-
-/* ============================================================
-   SPLIT SLIDER UPDATE
-============================================================ */
-function updateSlider(prefix) {
-  var slider  = document.getElementById(prefix + '-split');
-  var eq      = parseInt(slider.value, 10);
-  var pr      = 100 - eq;
-
-  document.getElementById(prefix + '-equal-badge').textContent    = 'Equal '    + eq + '%';
-  document.getElementById(prefix + '-personal-badge').textContent = 'Personal ' + pr + '%';
-
-  var isDark    = document.documentElement.classList.contains('dark');
-  var fillColor = isDark ? '#60a5fa' : '#0047AB';
-  slider.style.background = 'linear-gradient(to right,' + fillColor + ' ' + eq + '%,rgba(150,150,150,0.3) ' + eq + '%)';
-}
-
-updateSlider('ind');
-updateSlider('bulk');
-
-/* ============================================================
-   TIER LOGIC
-============================================================ */
-function getTier(pct) {
-  if (pct >= 85 && pct <= 100) return { text: 'Tier 1 (2.5%)', rate: 0.025 };
-  if (pct > 100 && pct <= 110) return { text: 'Tier 2 (3%)',   rate: 0.03  };
-  if (pct > 110)               return { text: 'Tier 3 (3.5%)', rate: 0.035 };
-  return { text: 'Below Target', rate: 0 };
-}
-
-/* ============================================================
-   MOTIVATIONAL QUOTES
-============================================================ */
-var quotes = [
-  'Every sale brings you closer to success.',
-  'Push a little harder — your future self will thank you.',
-  'Small wins compound into big results.',
-  'Be the reason someone earns a compliment today.'
-];
-
-/* ============================================================
-   TOAST NOTIFICATION
-============================================================ */
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2500);
-}
-
-/* ============================================================
-   CLIPBOARD COPY HELPERS
-============================================================ */
-function copyResult(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(function() { showToast('Result copied to clipboard!'); })
-      .catch(function() { fallbackCopy(text); });
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity  = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try {
-    document.execCommand('copy');
-    showToast('Result copied!');
-  } catch(e) {
-    showToast('Copy failed — please copy manually.');
-  }
-  document.body.removeChild(ta);
-}
-
-/* ============================================================
-   INDIVIDUAL BREAKDOWN CHART
-============================================================ */
-function buildChart(eqAmt, prAmt, eqPct, prPct) {
-  if (eqAmt + prAmt <= 0) return '';
-
-  var max     = Math.max(eqAmt, prAmt);
-  var eqW     = Math.max(6, Math.round((eqAmt / max) * 100));
-  var prW     = Math.max(6, Math.round((prAmt / max) * 100));
-  var tot     = eqAmt + prAmt;
-  var eqShare = Math.round((eqAmt / tot) * 100);
-  var prShare = 100 - eqShare;
-
-  return '<div class="chart-wrap">' +
-    '<div class="chart-title">Incentive Breakdown</div>' +
-    '<div class="bar-row">' +
-      '<div class="bar-label">Equal (' + eqPct + '%)</div>' +
-      '<div class="bar-track">' +
-        '<div class="bar-fill blue" style="width:0%" data-w="' + eqW + '%">AED ' + eqAmt.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div class="bar-amount darkBlue">' + eqShare + '% of total</div>' +
-    '</div>' +
-    '<div class="bar-row">' +
-      '<div class="bar-label">Personal (' + prPct + '%)</div>' +
-      '<div class="bar-track">' +
-        '<div class="bar-fill brown" style="width:0%" data-w="' + prW + '%">AED ' + prAmt.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div class="bar-amount darkBrown">' + prShare + '% of total</div>' +
-    '</div>' +
-  '</div>';
-}
-
-function animateBars() {
-  document.querySelectorAll('.bar-fill[data-w]').forEach(function(el) {
-    var target = el.getAttribute('data-w');
-    setTimeout(function() { el.style.width = target; }, 60);
-  });
-}
-
-/* ============================================================
-   INDIVIDUAL CALCULATION
-============================================================ */
-function calculateIndividual() {
-  var target   = parseFloat(document.getElementById('ind-target').value);
-  var total    = parseFloat(document.getElementById('ind-total').value);
-  var personal = parseFloat(document.getElementById('ind-personal').value);
-  var count    = parseInt(document.getElementById('ind-count').value, 10);
-  var eq       = parseInt(document.getElementById('ind-split').value, 10) / 100;
-  var out      = document.getElementById('ind-results');
-
-  if (
-    isNaN(target)   || target <= 0 ||
-    isNaN(total)    || total < 0   ||
-    isNaN(personal) || personal < 0 ||
-    isNaN(count)    || count <= 0
-  ) {
-    out.innerHTML = '<div class="error">Please fill in all fields with valid numbers before calculating.</div>';
-    return;
-  }
-
-  var pct      = (total / target) * 100;
-  var tier     = getTier(pct);
-  var pr       = 1 - eq;
-  var pool     = total * tier.rate;
-  var eqSplit  = (pool * eq) / count;
-  var p30      = (personal / total) * (pool * pr);
-  var totalInc = eqSplit + p30;
-  var eqPct    = Math.round(eq * 100);
-  var prPct    = Math.round(pr * 100);
-
-  var extra    = 1695;
-  var nt       = total + extra;
-  var np       = personal + extra;
-  var newTier  = getTier((nt / target) * 100);
-  var newPool  = nt * newTier.rate;
-  var newInc   = ((newPool * eq) / count) + (np / nt) * (newPool * pr);
-  var diff     = newInc - totalInc;
-
-  var tClass = tier.rate === 0 ? 'tier-none' : '';
-
-  var projHtml = '';
-  if (tier.rate > 0) {
-    projHtml =
-      '<div class="projection-box">&#128161; Sell extra AED ' + extra.toLocaleString() +
-      ': projected AED ' + newInc.toFixed(2) +
-      ' (' + (diff >= 0 ? '+' : '') + diff.toFixed(2) +
-      (newTier.rate !== tier.rate ? ', upgrades to ' + newTier.text : '') + ')' +
-      '</div>';
-  }
-
-  var shareText =
-    'Smart Incentive Calculator v3.1\n' +
-    '================================\n' +
-    'Tier: '          + tier.text + ' (' + pct.toFixed(2) + '% of target)\n' +
-    'Incentive Pool: AED ' + fmt(pool)              + '\n' +
-    'Equal Split ('   + eqPct + '%): AED ' + eqSplit.toFixed(3) + '\n' +
-    'Personal Share (' + prPct + '%): AED ' + p30.toFixed(3)    + '\n' +
-    '--------------------------------\n' +
-    'Total Incentive: AED ' + totalInc.toFixed(2)   + '\n\n' +
-    'Calculated using https://hijast.github.io/IncentiveCal/';
-
-  out.innerHTML =
-    '<div class="result-grid">' +
-      box('Tier',        '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
-      box('Achievement', pct.toFixed(2) + '%') +
-      box('Pool',        'AED ' + fmt(pool)) +
-      box('Equal ('   + eqPct + '%)', '<span class="darkBlue">AED '  + eqSplit.toFixed(3) + '</span>') +
-      box('Personal (' + ((personal / total) * 100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
-    '</div>' +
-    '<div class="highlight-total">Total Incentive: <span class="salem">AED ' + totalInc.toFixed(2) + '</span></div>' +
-    projHtml +
-    '<div class="quote">' + quotes[Math.floor(Math.random() * quotes.length)] + '</div>' +
-    buildChart(eqSplit, p30, eqPct, prPct) +
-    '<button class="btn-share" id="shareBtn">&#128279; Copy Result</button>';
-
-  document.getElementById('shareBtn').addEventListener('click', function() {
-    copyResult(shareText);
-  });
-
-  animateBars();
-}
-
-/* ============================================================
-   RESULT BOX HELPER
-============================================================ */
-function box(label, val) {
-  return '<div class="result-box">' +
-    '<div class="rb-label">' + label + '</div>' +
-    '<div class="rb-val">'   + val   + '</div>' +
-  '</div>';
-}
-
-/* ============================================================
-   BULK GLOBAL STATE
-============================================================ */
-var _allStaff    = [];   // full staff array after processing
-var _bulkEqPct   = 60;   // equal split % for labels
-var _bulkPrPct   = 40;   // personal split % for labels
-var _bulkEq      = 0.60; // equal split as decimal
-var _bulkPr      = 0.40; // personal split as decimal
-var _bulkTarget  = null; // target detected from sheet, for the month
-
-/* ============================================================
-   NUM / ESC HELPERS
-============================================================ */
-function num(x) {
-  if (x === null || x === undefined) return NaN;
-  var s = String(x).replace(/,/g, '').trim();
-  if (!s) return NaN;
-  var n = Number(s);
-  return isNaN(n) ? NaN : n;
-}
-
-function fmt(n) {
-  return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/* ============================================================
-   DETECT TARGET VALUE IN SHEET (layout agnostic)
-============================================================ */
-function detectTarget(rows) {
-  for (var tr = 0; tr < rows.length; tr++) {
-    var row = rows[tr] || [];
-    for (var tc = 0; tc < row.length; tc++) {
-      var cell = row[tc];
-      if (typeof cell === 'string' && cell.toLowerCase().indexOf('target') !== -1) {
-        // search right
-        for (var vc = tc + 1; vc < row.length; vc++) {
-          var val = num(row[vc]);
-          if (val > 0) return val;
-        }
-        // fallback left
-        for (var vcl = tc - 1; vcl >= 0; vcl--) {
-          var valLeft = num(row[vcl]);
-          if (valLeft > 0) return valLeft;
-        }
-      }
-    }
-  }
-  return null;
-}
-
-/* ============================================================
-   BULK MATH + RENDER
-============================================================ */
-function applyBulkMathAndRender() {
-  var out      = document.getElementById('bulk-results');
-  var dwn      = document.getElementById('downloadBtn');
-  var printBtn = document.getElementById('printBtn');
-
-  if (!_allStaff.length || !_bulkTarget || _bulkTarget <= 0) {
-    out.innerHTML = '<div class="error">No valid staff data or target to calculate incentives.</div>';
-    if (dwn) dwn.style.display = 'none';
-    if (printBtn) printBtn.style.display = 'none';
-    window._bulkData = null;
-    return;
-  }
-
-  var staff = _allStaff.slice();
-  var teamTotal = staff.reduce(function(sum, s) { return sum + s.Sales; }, 0);
-  var pct       = (teamTotal / _bulkTarget) * 100;
-  var tier      = getTier(pct);
-  var pool      = teamTotal * tier.rate;
-  var eqSplit   = staff.length > 0 ? (pool * _bulkEq) / staff.length : 0;
-
-  staff.forEach(function(s) {
-    var personalPct = teamTotal > 0 ? (s.Sales / teamTotal) * 100 : 0;
-    var pShare      = teamTotal > 0 ? (s.Sales / teamTotal) * (pool * _bulkPr) : 0;
-    s.PersonalPct   = personalPct.toFixed(3);
-    s.P30           = pShare;
-    s.EqSplit       = Number(eqSplit.toFixed(3));
-    s.TotalInc      = Number((eqSplit + pShare).toFixed(2));
-  });
-
-  staff.sort(function(a, b) { return b.TotalInc - a.TotalInc; });
-
-  _allStaff   = staff;
-  _bulkEqPct  = Math.round(_bulkEq * 100);
-  _bulkPrPct  = Math.round(_bulkPr * 100);
-
-  window._bulkData = staff.map(function(s) {
-    return {
-      Staff:          s.Staff,
-      Packages:       s.Packages,
-      Sales:          Number(s.Sales.toFixed(2)),
-      PersonalPct:    Number(s.PersonalPct),
-      PersonalShare:  Number(s.P30.toFixed(3)),
-      EqualSplit:     Number(s.EqSplit.toFixed(3)),
-      TotalIncentive: Number(s.TotalInc.toFixed(2))
-    };
-  });
-
-  var tClass = tier.rate === 0 ? 'tier-none' : '';
-  var summaryHtml =
-    '<div class="result-grid" style="margin-bottom:8px">' +
-      box('Tier',           '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
-      box('Achievement',    pct.toFixed(2) + '%') +
-      box('Team Total',     'AED ' + fmt(teamTotal)) +
-      box('Staff Count',    _allStaff.length) +
-      box('Equal / Person', '<span class="darkBlue">AED ' + (eqSplit || 0).toFixed(3) + '</span>') +
-    '</div>';
-
-  var searchHtml =
-    '<div class="search-wrap">' +
-      '<span class="search-icon">&#128269;</span>' +
-      '<input type="text" id="bulk-search" placeholder="Search staff name..." oninput="filterBulkTable()" />' +
-    '</div>';
-
-  out.innerHTML = summaryHtml + searchHtml + '<div id="bulk-table-container"></div>';
-
-  renderBulkTable(_allStaff);
-
-  if (dwn)      dwn.style.display = 'inline-flex';
-  if (printBtn) printBtn.style.display = 'inline-flex';
-}
-
-/* ============================================================
-   BULK CALCULATION
-============================================================ */
-function calculateBulk() {
-  var month      = document.getElementById('bulk-month').value;
-  var year       = parseInt(document.getElementById('bulk-year').value, 10);
-  var file       = document.getElementById('bulk-file').files[0];
-  var eq         = parseInt(document.getElementById('bulk-split').value, 10) / 100;
-  var out        = document.getElementById('bulk-results');
-  var dwn        = document.getElementById('downloadBtn');
-  var printBtn   = document.getElementById('printBtn');
-
-  out.innerHTML      = '';
-  if (dwn)      dwn.style.display = 'none';
-  if (printBtn) printBtn.style.display = 'none';
-  window._bulkData   = null;
-  _allStaff          = [];
-  _bulkTarget        = null;
-
-  if (!file || !month || isNaN(year)) {
-    out.innerHTML = '<div class="error">Please choose month, year, and select an Excel file.</div>';
-    return;
-  }
-
-  _bulkEq = eq;
-  _bulkPr = 1 - eq;
-
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-
-      var yy          = String(year).slice(-2);
-      var candidates  = [month + ' ' + yy, month + yy];
-      var sheetName   = null;
-      for (var i = 0; i < wb.SheetNames.length; i++) {
-        var raw     = wb.SheetNames[i];
-        var trimmed = raw.trim();
-        var lower   = trimmed.toLowerCase();
-        for (var j = 0; j < candidates.length; j++) {
-          if (lower === candidates[j].toLowerCase()) {
-            sheetName = raw;
-            break;
-          }
-        }
-        if (sheetName) break;
-      }
-
-      if (!sheetName) {
-        out.innerHTML = '<div class="error">Could not find a sheet for ' + month + ' ' + yy +
-          '. Expected names like "' + month + ' ' + yy + '" or "' + month + yy + '".</div>';
-        return;
-      }
-
-      var sheet = wb.Sheets[sheetName];
-      var rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-
-      if (!rows.length) {
-        out.innerHTML = '<div class="error">Selected sheet "' + esc(sheetName) + '" is empty.</div>';
-        return;
-      }
-
-      var detectedTarget = detectTarget(rows);
-      if (!detectedTarget || detectedTarget <= 0) {
-        out.innerHTML = '<div class="error">Could not detect a valid target value in sheet "' +
-          esc(sheetName) + '". Make sure there is a row with "Target" and a numeric value.</div>';
-        return;
-      }
-      _bulkTarget = detectedTarget;
-
-      var headerIdx = -1;
-      for (var r = 0; r < rows.length; r++) {
-        var row0 = rows[r] && rows[r][0];
-        if (row0 && String(row0).trim().toUpperCase() === 'STAFF') {
-          headerIdx = r;
-          break;
-        }
-      }
-      if (headerIdx === -1) {
-        out.innerHTML = '<div class="error">Could not find a header row with "STAFF" in column A.</div>';
-        return;
-      }
-
-      var headerRow = rows[headerIdx] || [];
-
-      var monthLabel1 = (month + ' ' + yy).toLowerCase();
-      var monthLabel2 = (month + yy).toLowerCase();
-      var monthColIdx = -1;
-
-      for (var c = 0; c < headerRow.length; c++) {
-        var cell = headerRow[c];
-        if (!cell) continue;
-        var text  = String(cell).replace(/\s+/g, ' ').trim();
-        var lower = text.toLowerCase();
-        var hasMonth = (lower.indexOf(monthLabel1) !== -1) || (lower.indexOf(monthLabel2) !== -1);
-        var hasTotal = lower.indexOf('total') !== -1;
-        if (hasMonth && hasTotal) {
-          monthColIdx = c;
-          break;
-        }
-      }
-
-      if (monthColIdx === -1) {
-        out.innerHTML = '<div class="error">Could not find a "' + month + ' ' + yy +
-          ' Total" style column in the header row.</div>';
-        return;
-      }
-
-      var staff = [];
-      for (var iRow = headerIdx + 1; iRow < rows.length; iRow += 2) {
-        var row1 = rows[iRow]     || [];
-        var row2 = rows[iRow + 1] || [];
-
-        var nameCell = row1[0];
-        if (!nameCell) continue;
-
-        var cleanName = String(nameCell).trim();
-        var lowerName = cleanName.toLowerCase();
-
-        if (
-          lowerName.indexOf('grand total') === 0 ||
-          lowerName.indexOf('grand totals') === 0 ||
-          lowerName.indexOf('total ') === 0 ||
-          lowerName === 'total'
-        ) {
-          continue;
-        }
-
-        var packages = num(row1[monthColIdx]);
-        var sales    = num(row2[monthColIdx]);
-
-        if (isNaN(packages) && isNaN(sales)) continue;
-
-        staff.push({
-          Staff:    cleanName,
-          Packages: isNaN(packages) ? 0 : packages,
-          Sales:    isNaN(sales)    ? 0 : sales
-        });
-      }
-
-      if (!staff.length) {
-        out.innerHTML = '<div class="error">No valid staff rows found for ' + month + ' ' + yy +
-          '. Check the alternating 2-row-per-staff pattern.</div>';
-        return;
-      }
-
-      _allStaff = staff;
-      applyBulkMathAndRender();
-
-    } catch(err) {
-      console.error(err);
-      out.innerHTML = '<div class="error">Failed to parse file. Check that it is a valid .xlsx or .xls workbook.</div>';
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-/* ============================================================
-   BULK SEARCH FILTER
-============================================================ */
-function filterBulkTable() {
-  var q = document.getElementById('bulk-search').value.toLowerCase().trim();
-  var filtered = q
-    ? _allStaff.filter(function(s) { return s.Staff.toLowerCase().indexOf(q) !== -1; })
-    : _allStaff;
-
-  renderBulkTable(filtered);
-}
-
-/* ============================================================
-   REMOVE STAFF + RECALC
-============================================================ */
-function removeStaff(origIndex) {
-  origIndex = parseInt(origIndex, 10);
-  if (isNaN(origIndex) || origIndex < 0 || origIndex >= _allStaff.length) return;
-
-  _allStaff.splice(origIndex, 1);
-  applyBulkMathAndRender();
-}
-
-/* ============================================================
-   BULK TABLE RENDERER
-============================================================ */
-function renderBulkTable(staff) {
-  var container = document.getElementById('bulk-table-container');
-  if (!container) return;
-
-  if (!staff.length) {
-    container.innerHTML = '<div class="no-results">No staff match your search.</div>';
-    return;
-  }
-
-  var html =
-    '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Rank</th>' +
-      '<th>Staff</th>' +
-      '<th>Packages</th>' +
-      '<th>Total (AED)</th>' +
-      '<th>Personal %</th>' +
-      '<th>Personal ' + _bulkPrPct + '% (AED)</th>' +
-      '<th>Equal '    + _bulkEqPct + '% (AED)</th>' +
-      '<th>Total Incentive (AED)</th>' +
-      '<th>Remove</th>' +
-    '</tr></thead><tbody>';
-
-  staff.forEach(function(s) {
-    var orig      = _allStaff.indexOf(s);
-    var rankClass = orig === 0 ? 'rank-1' : orig === 1 ? 'rank-2' : orig === 2 ? 'rank-3' : '';
-    var medal     = orig === 0 ? '🥇 '   : orig === 1 ? '🥈 '   : orig === 2 ? '🥉 '   : '';
-
-    html +=
-      '<tr class="' + rankClass + '">' +
-        '<td style="color:var(--muted);font-size:12px">' + medal + (orig + 1) + '</td>' +
-        '<td><strong>' + esc(s.Staff) + '</strong></td>' +
-        '<td>' + (s.Packages || 0) + '</td>' +
-        '<td>' + s.Sales.toFixed(2) + '</td>' +
-        '<td>' + s.PersonalPct + '%</td>' +
-        '<td class="darkBrown">' + s.P30.toFixed(3)    + '</td>' +
-        '<td class="darkBlue">'  + s.EqSplit.toFixed(3) + '</td>' +
-        '<td><span class="total-inc">' + s.TotalInc.toFixed(2) + '</span></td>' +
-        '<td><button type="button" class="btn-mini" onclick="removeStaff(' + orig + ')">✕</button></td>' +
-      '</tr>';
-  });
-
-  container.innerHTML = html + '</tbody></table></div>';
-}
-
-/* ============================================================
-   EXCEL DOWNLOAD
-============================================================ */
-function downloadBulk() {
-  if (!window._bulkData || !window._bulkData.length) return;
-  var ws = XLSX.utils.json_to_sheet(window._bulkData);
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
-  XLSX.writeFile(wb, 'Bulk_Incentives_v3.1.xlsx');
-}
-
-/* ============================================================
-   PRINT / PDF
-============================================================ */
-function printBulk() {
-  window.print();
-}
-
-/* ============================================================
-   ENTER KEY TRIGGER FOR INDIVIDUAL
-============================================================ */
-['ind-target', 'ind-total', 'ind-personal', 'ind-count'].forEach(function(id) {
-  var el = document.getElementById(id);
-  if (el) {
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') calculateIndividual();
-    });
-  }
-});
-</script>
+<!-- Everything goes into app.js, but the HTML onclick hooks still work -->
+<script defer src="app.js"></script>
 </body>
 </html>
