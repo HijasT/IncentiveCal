@@ -1,8 +1,24 @@
 (function () {
   "use strict";
-
   /* I keep the HTML simple and move logic here so GitHub hosting stays clean.
      The HTML uses onclick handlers, so I expose a few functions on window. */
+
+  // If anything blows up (CDN blocked, typo, whatever), I want the UI to tell me.
+  window.addEventListener("error", function (ev) {
+    try {
+      var out = document.getElementById("bulk-results");
+      if (out) {
+        out.innerHTML =
+          '<div class="error">JavaScript error: ' +
+          esc(ev.message || "Unknown error") +
+          "</div>";
+      }
+    } catch (e) {
+      // If even error rendering fails, at least the console will show it.
+      console.error(ev);
+    }
+  });
+  
 
   /* ============================================================
      Local quotes only
@@ -447,173 +463,193 @@
   /* ============================================================
      Bulk processing
   ============================================================ */
-  function calculateBulk() {
-    var month = document.getElementById("bulk-month").value;
-    var year = parseInt(document.getElementById("bulk-year").value, 10);
-    var file = document.getElementById("bulk-file").files[0];
-    var eq = parseInt(document.getElementById("bulk-split").value, 10) / 100;
-
+   function calculateBulk() {
     var out = document.getElementById("bulk-results");
     var dwn = document.getElementById("downloadBtn");
     var printBtn = document.getElementById("printBtn");
 
-    out.innerHTML = "";
+    // This line is the canary in the coal mine.
+    // If you don’t see it, onclick isn’t firing or calculateBulk isn’t available.
+    if (out) out.innerHTML = '<div class="note">Processing… reading workbook.</div>';
+
     if (dwn) dwn.style.display = "none";
     if (printBtn) printBtn.style.display = "none";
 
-    window._bulkData = null;
-    _allStaff = [];
-    _bulkTarget = null;
+    try {
+      var monthEl = document.getElementById("bulk-month");
+      var yearEl = document.getElementById("bulk-year");
+      var fileEl = document.getElementById("bulk-file");
+      var splitEl = document.getElementById("bulk-split");
 
-    if (!file || !month || isNaN(year)) {
-      out.innerHTML = '<div class="error">Please choose month, year, and select an Excel file.</div>';
-      return;
-    }
+      if (!monthEl || !yearEl || !fileEl || !splitEl) {
+        if (out) out.innerHTML = '<div class="error">Bulk UI inputs not found. Check element IDs in HTML.</div>';
+        return;
+      }
 
-    _bulkEq = eq;
-    _bulkPr = 1 - eq;
+      var month = monthEl.value;
+      var year = parseInt(yearEl.value, 10);
+      var file = fileEl.files && fileEl.files[0];
+      var eq = parseInt(splitEl.value, 10) / 100;
 
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        var wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+      window._bulkData = null;
+      _allStaff = [];
+      _bulkTarget = null;
 
-        var yy = String(year).slice(-2);
-        var candidates = [month + " " + yy, month + yy];
+      if (!file || !month || isNaN(year)) {
+        if (out) out.innerHTML = '<div class="error">Please choose month, year, and select an Excel file.</div>';
+        return;
+      }
 
-        var sheetName = null;
-        for (var i = 0; i < wb.SheetNames.length; i++) {
-          var raw = wb.SheetNames[i];
-          var lower = raw.trim().toLowerCase();
-          for (var j = 0; j < candidates.length; j++) {
-            if (lower === candidates[j].toLowerCase()) {
-              sheetName = raw;
+      // If your company blocks CDNs, XLSX will be undefined.
+      if (typeof XLSX === "undefined") {
+        if (out) {
+          out.innerHTML =
+            '<div class="error">Excel parser (XLSX) is not available. Your network may be blocking the CDN.</div>' +
+            '<div class="note">Fix: allow cdnjs.cloudflare.com or download xlsx.full.min.js locally and reference it from the repo.</div>';
+        }
+        return;
+      }
+
+      _bulkEq = eq;
+      _bulkPr = 1 - eq;
+
+      var reader = new FileReader();
+
+      reader.onerror = function () {
+        if (out) out.innerHTML = '<div class="error">Could not read the file. Browser blocked the read.</div>';
+      };
+
+      reader.onload = function (e) {
+        try {
+          if (out) out.innerHTML = '<div class="note">Workbook loaded. Detecting sheet and month column…</div>';
+
+          var wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+
+          var yy = String(year).slice(-2);
+          var candidates = [month + " " + yy, month + yy];
+
+          var sheetName = null;
+          for (var i = 0; i < wb.SheetNames.length; i++) {
+            var raw = wb.SheetNames[i];
+            var lower = raw.trim().toLowerCase();
+            for (var j = 0; j < candidates.length; j++) {
+              if (lower === candidates[j].toLowerCase()) {
+                sheetName = raw;
+                break;
+              }
+            }
+            if (sheetName) break;
+          }
+
+          if (!sheetName) {
+            if (out) {
+              out.innerHTML =
+                '<div class="error">Sheet not found for ' + esc(month + " " + yy) + ".</div>" +
+                '<div class="note">Expected sheet name like: "' + esc(month + " " + yy) + '" or "' + esc(month + yy) + '".</div>' +
+                '<div class="note">Found sheets: ' + esc(wb.SheetNames.join(", ")) + "</div>";
+            }
+            return;
+          }
+
+          var sheet = wb.Sheets[sheetName];
+          var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+
+          if (!rows.length) {
+            if (out) out.innerHTML = '<div class="error">Selected sheet is empty: ' + esc(sheetName) + "</div>";
+            return;
+          }
+
+          var detectedTarget = detectTarget(rows);
+          if (!detectedTarget || detectedTarget <= 0) {
+            if (out) out.innerHTML = '<div class="error">Target not detected in sheet "' + esc(sheetName) + '".</div>';
+            return;
+          }
+          _bulkTarget = detectedTarget;
+
+          var headerIdx = -1;
+          for (var r = 0; r < rows.length; r++) {
+            var row0 = rows[r] && rows[r][0];
+            if (row0 && String(row0).trim().toUpperCase() === "STAFF") {
+              headerIdx = r;
               break;
             }
           }
-          if (sheetName) break;
-        }
-
-        if (!sheetName) {
-          out.innerHTML =
-            '<div class="error">Could not find a sheet for ' +
-            month +
-            " " +
-            yy +
-            '. Expected "' +
-            month +
-            " " +
-            yy +
-            '" or "' +
-            month +
-            yy +
-            '".</div>';
-          return;
-        }
-
-        var sheet = wb.Sheets[sheetName];
-        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-
-        if (!rows.length) {
-          out.innerHTML = '<div class="error">Selected sheet "' + esc(sheetName) + '" is empty.</div>';
-          return;
-        }
-
-        var detectedTarget = detectTarget(rows);
-        if (!detectedTarget || detectedTarget <= 0) {
-          out.innerHTML =
-            '<div class="error">Could not detect a valid target in sheet "' +
-            esc(sheetName) +
-            '".</div>';
-          return;
-        }
-        _bulkTarget = detectedTarget;
-
-        var headerIdx = -1;
-        for (var r = 0; r < rows.length; r++) {
-          var row0 = rows[r] && rows[r][0];
-          if (row0 && String(row0).trim().toUpperCase() === "STAFF") {
-            headerIdx = r;
-            break;
-          }
-        }
-        if (headerIdx === -1) {
-          out.innerHTML = '<div class="error">Could not find header row with "STAFF" in column A.</div>';
-          return;
-        }
-
-        var headerRow = rows[headerIdx] || [];
-
-        var monthLabel1 = (month + " " + yy).toLowerCase();
-        var monthLabel2 = (month + yy).toLowerCase();
-        var monthColIdx = -1;
-
-        for (var c = 0; c < headerRow.length; c++) {
-          var cell = headerRow[c];
-          if (!cell) continue;
-          var text = String(cell).replace(/\s+/g, " ").trim().toLowerCase();
-          var hasMonth = text.indexOf(monthLabel1) !== -1 || text.indexOf(monthLabel2) !== -1;
-          var hasTotal = text.indexOf("total") !== -1;
-          if (hasMonth && hasTotal) {
-            monthColIdx = c;
-            break;
-          }
-        }
-
-        if (monthColIdx === -1) {
-          out.innerHTML =
-            '<div class="error">Could not find "' + month + " " + yy + ' Total" column in header.</div>';
-          return;
-        }
-
-        var staff = [];
-        for (var iRow = headerIdx + 1; iRow < rows.length; iRow += 2) {
-          var row1 = rows[iRow] || [];
-          var row2 = rows[iRow + 1] || [];
-
-          var nameCell = row1[0];
-          if (!nameCell) continue;
-
-          var cleanName = String(nameCell).trim();
-          var lowerName = cleanName.toLowerCase();
-
-          if (
-            lowerName.indexOf("grand total") === 0 ||
-            lowerName.indexOf("grand totals") === 0 ||
-            lowerName.indexOf("total ") === 0 ||
-            lowerName === "total"
-          ) {
-            continue;
+          if (headerIdx === -1) {
+            if (out) out.innerHTML = '<div class="error">Header row not found (expected "STAFF" in column A).</div>';
+            return;
           }
 
-          var packages = num(row1[monthColIdx]);
-          var sales = num(row2[monthColIdx]);
+          var headerRow = rows[headerIdx] || [];
+          var monthLabel1 = (month + " " + yy).toLowerCase();
+          var monthLabel2 = (month + yy).toLowerCase();
+          var monthColIdx = -1;
 
-          if (isNaN(packages) && isNaN(sales)) continue;
+          for (var c = 0; c < headerRow.length; c++) {
+            var cell = headerRow[c];
+            if (!cell) continue;
+            var text = String(cell).replace(/\s+/g, " ").trim().toLowerCase();
+            var hasMonth = text.indexOf(monthLabel1) !== -1 || text.indexOf(monthLabel2) !== -1;
+            var hasTotal = text.indexOf("total") !== -1;
+            if (hasMonth && hasTotal) {
+              monthColIdx = c;
+              break;
+            }
+          }
 
-          staff.push({
-            Staff: cleanName,
-            Packages: isNaN(packages) ? 0 : packages,
-            Sales: isNaN(sales) ? 0 : sales
-          });
+          if (monthColIdx === -1) {
+            if (out) out.innerHTML = '<div class="error">Month total column not found for ' + esc(month + " " + yy) + ".</div>";
+            return;
+          }
+
+          var staff = [];
+          for (var iRow = headerIdx + 1; iRow < rows.length; iRow += 2) {
+            var row1 = rows[iRow] || [];
+            var row2 = rows[iRow + 1] || [];
+
+            var nameCell = row1[0];
+            if (!nameCell) continue;
+
+            var cleanName = String(nameCell).trim();
+            var lowerName = cleanName.toLowerCase();
+
+            if (
+              lowerName.indexOf("grand total") === 0 ||
+              lowerName.indexOf("grand totals") === 0 ||
+              lowerName.indexOf("total ") === 0 ||
+              lowerName === "total"
+            ) continue;
+
+            var packages = num(row1[monthColIdx]);
+            var sales = num(row2[monthColIdx]);
+
+            if (isNaN(packages) && isNaN(sales)) continue;
+
+            staff.push({
+              Staff: cleanName,
+              Packages: isNaN(packages) ? 0 : packages,
+              Sales: isNaN(sales) ? 0 : sales
+            });
+          }
+
+          if (!staff.length) {
+            if (out) out.innerHTML = '<div class="error">No staff rows detected for this month column.</div>';
+            return;
+          }
+
+          _allStaff = staff;
+          applyBulkMathAndRender();
+        } catch (err2) {
+          console.error(err2);
+          if (out) out.innerHTML = '<div class="error">Bulk parsing failed: ' + esc(err2.message || String(err2)) + "</div>";
         }
+      };
 
-        if (!staff.length) {
-          out.innerHTML =
-            '<div class="error">No valid staff rows found for ' + month + " " + yy + ".</div>";
-          return;
-        }
-
-        _allStaff = staff;
-        applyBulkMathAndRender();
-      } catch (err) {
-        console.error(err);
-        out.innerHTML = '<div class="error">Failed to parse workbook. Check the file is valid.</div>';
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error(err);
+      if (out) out.innerHTML = '<div class="error">Bulk processing failed: ' + esc(err.message || String(err)) + "</div>";
+    }
+  }}
 
   /* ============================================================
      Bulk search filter
