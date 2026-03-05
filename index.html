@@ -1,22 +1,34 @@
 <!DOCTYPE html>
+<!--
+SMART INCENTIVE CALCULATOR
+
+Copyright (c) 2026 HT
+
+License: You may use, copy, modify, and share this software for personal and
+general business use EXCEPT Smart Salem (and its affiliates/subsidiaries and
+employees/contractors acting on its behalf) are explicitly prohibited from
+using, copying, deploying, distributing, or creating derivative works from it.
+
+This restriction applies to both source and compiled/minified versions.
+
+Proof-of-origin marker: SIC-HT-SS-RESTRICT-2026
+-->
 <html lang="en">
 <head>
-  <title>Smart Incentive Calculator v4.2</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="author" content="HT">
+<meta name="copyright" content="Copyright (c) 2026 HT">
+<meta name="license" content="Restricted: Smart Salem prohibited">
+<meta name="sic-marker" content="SIC-HT-SS-RESTRICT-2026">
+<title>Smart Incentive Calculator v4.3</title>
 
 <link rel="icon" type="image/png" sizes="16x16" href="./assets/brand/favicon-16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="./assets/brand/favicon-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="./assets/brand/favicon-64.png">
-
 <link rel="apple-touch-icon" sizes="180x180" href="./assets/brand/apple-touch-icon-180.png">
-
-<!-- Optional: helps on mobile and some legacy browsers -->
 <link rel="manifest" href="./assets/brand/site.webmanifest">
-
-<!-- Optional: nicer tab color on mobile -->
 <meta name="theme-color" content="#0A7E8C">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-
 
 <!-- SheetJS library for Excel parsing and export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -394,9 +406,9 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
   <div class="app-header">
     <div class="title-row">
       <h1>Smart Incentive Calculator</h1>
-      <div class="dark-toggle" id="darkToggle">☀️</div>
+      <div class="dark-toggle" id="darkToggle" role="button" tabindex="0" aria-label="Toggle dark mode">☀️</div>
     </div>
-    <div class="version">v4.2</div>
+    <div class="version">v4.3</div>
   </div>
 
   <div class="tabs">
@@ -565,6 +577,22 @@ html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
 <div class="toast" id="toast">Copied!</div>
 
 <script>
+/* Watermark: do not remove.
+   Restriction: Smart Salem prohibited.
+   Marker: SIC-HT-SS-RESTRICT-2026
+*/
+(function () {
+  // Intentionally kept simple so it survives minification/copying.
+  window.__SIC_WATERMARK__ = {
+    marker: "SIC-HT-SS-RESTRICT-2026",
+    author: "HT",
+    year: 2026,
+    restriction: "Smart Salem prohibited from use/copy/deploy/derivatives"
+  };
+
+  // Low-noise console watermark (not UI)
+  try { console.info("SIC marker:", window.__SIC_WATERMARK__.marker); } catch (e) {}
+})();
 function activateTab(name) {
   document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('section.card').forEach(function(c) { c.style.display = 'none'; });
@@ -579,11 +607,36 @@ function activateTab(name) {
 }
 
 var darkToggle = document.getElementById('darkToggle');
-darkToggle.addEventListener('click', function() {
-  var isDark = document.documentElement.classList.toggle('dark');
-  darkToggle.textContent = isDark ? '🌙' : '☀️';
+
+function applyTheme(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    darkToggle.textContent = '🌙';
+  } else {
+    document.documentElement.classList.remove('dark');
+    darkToggle.textContent = '☀️';
+  }
+  try { localStorage.setItem('sic_dark', isDark ? '1' : '0'); } catch(e) {}
   updateSlider('ind');
   updateSlider('bulk');
+}
+
+(function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem('sic_dark'); } catch(e) {}
+  applyTheme(saved === '1');
+})();
+
+darkToggle.addEventListener('click', function() {
+  var isDark = !document.documentElement.classList.contains('dark');
+  applyTheme(isDark);
+});
+
+darkToggle.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    darkToggle.click();
+  }
 });
 
 function updateSlider(prefix) {
@@ -599,8 +652,6 @@ function updateSlider(prefix) {
   slider.style.background = 'linear-gradient(to right,' + fillColor + ' ' + eq + '%,rgba(150,150,150,0.3) ' + eq + '%)';
 }
 
-updateSlider('ind');
-updateSlider('bulk');
 
 function getTier(pct) {
   if (pct >= 85 && pct <= 100) return { text: 'Tier 1 (2.5%)', rate: 0.025 };
@@ -715,7 +766,8 @@ function calculateIndividual() {
   var pr       = 1 - eq;
   var pool     = total * tier.rate;
   var eqSplit  = (pool * eq) / count;
-  var p30      = (personal / total) * (pool * pr);
+  var personalRatio = total > 0 ? (personal / total) : 0;
+  var p30      = personalRatio * (pool * pr);
   var totalInc = eqSplit + p30;
   var eqPct    = Math.round(eq * 100);
   var prPct    = Math.round(pr * 100);
@@ -740,7 +792,7 @@ function calculateIndividual() {
   }
 
   var shareText =
-    'Smart Incentive Calculator v3.1\n' +
+    'Smart Incentive Calculator\n' +
     '================================\n' +
     'Tier: '          + tier.text + ' (' + pct.toFixed(2) + '% of target)\n' +
     'Incentive Pool: AED ' + fmt(pool)              + '\n' +
@@ -756,7 +808,7 @@ function calculateIndividual() {
       box('Achievement', pct.toFixed(2) + '%') +
       box('Pool',        'AED ' + fmt(pool)) +
       box('Equal ('   + eqPct + '%)', '<span class="darkBlue">AED '  + eqSplit.toFixed(3) + '</span>') +
-      box('Personal (' + ((personal / total) * 100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
+      box('Personal (' + (personalRatio * 100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
     '</div>' +
     '<div class="highlight-total">Total Incentive: <span class="salem">AED ' + totalInc.toFixed(2) + '</span></div>' +
     projHtml +
@@ -968,10 +1020,37 @@ Fixes your 2025 pain:
 - Sometimes it only says "Oct Total"
 We score columns and pick the best one.
 */
-function findMonthTotalCol(headerRow, monthStr, yy2) {
+function columnLooksNumeric(rows, headerIdx, colIdx) {
+  // Check a handful of rows below the header. We expect numbers in a real total column.
+  var checks = 0;
+  var numeric = 0;
+
+  for (var r = headerIdx + 1; r < rows.length && checks < 16; r++) {
+    var row = rows[r] || [];
+    if (!row || !row.length) continue;
+
+    checks++;
+    var v = num(row[colIdx]);
+    if (!isNaN(v)) numeric++;
+  }
+
+  // Require at least a few numeric hits to trust this as the month total column
+  return numeric >= 4;
+}
+
+/*
+Find the best "Month Total" column in the header row with validation.
+Handles:
+- "Oct 25 Total"
+- "Oct25 Total"
+- "Oct Total" (year omitted)
+Scores candidates, then validates by checking that the column actually contains numbers.
+*/
+function findMonthTotalCol(rows, headerIdx, monthStr, yy2) {
+  var headerRow = rows[headerIdx] || [];
   var vars = monthVariants(monthStr);
-  var bestIdx = -1;
-  var bestScore = -999;
+
+  var candidates = [];
 
   for (var c = 0; c < headerRow.length; c++) {
     var cell = headerRow[c];
@@ -980,7 +1059,6 @@ function findMonthTotalCol(headerRow, monthStr, yy2) {
     var text  = String(cell).replace(/\s+/g, ' ').trim();
     var lower = text.toLowerCase();
 
-    // Must contain "total" somewhere, otherwise it's not a total column.
     if (lower.indexOf('total') === -1) continue;
 
     // Must contain the month token (oct/october)
@@ -992,37 +1070,45 @@ function findMonthTotalCol(headerRow, monthStr, yy2) {
 
     var score = 0;
 
-    // Strong preference: exact "oct 25" or "oct25" somewhere
-    var label1 = (monthStr + ' ' + yy2).toLowerCase();  // "Oct 25"
-    var label2 = (monthStr + yy2).toLowerCase();        // "Oct25"
+    // Prefer exact "Oct 25" / "Oct25"
+    var label1 = (monthStr + ' ' + yy2).toLowerCase();
+    var label2 = (monthStr + yy2).toLowerCase();
     if (lower.indexOf(label1) !== -1) score += 12;
     if (lower.replace(/\s+/g,'').indexOf(label2.replace(/\s+/g,'')) !== -1) score += 11;
 
-    // If the header includes any 2-digit year, count it.
+    // If header has a 2-digit year token, verify
     var yrMatch = lower.match(/\b\d{2}\b/);
     if (yrMatch) {
       if (yrMatch[0] === String(yy2)) score += 6;
-      else score -= 3; // wrong year token, suspicious
+      else score -= 3;
     } else {
-      // Month-only "Oct Total": acceptable fallback (your 2025 issue)
+      // Accept month-only headers like "Oct Total"
       score += 3;
     }
 
-    // Avoid YTD / grand totals that contain month names sometimes
+    // Avoid traps
     if (lower.indexOf('ytd') !== -1) score -= 6;
     if (lower.indexOf('grand') !== -1) score -= 6;
 
-    // Slight preference for shorter, cleaner headers
+    // Prefer cleaner headers
     score += Math.max(0, 6 - Math.floor(lower.length / 12));
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestIdx = c;
-    }
+    // Prefer columns after "STAFF" column A
+    if (c === 0) score -= 5;
+
+    candidates.push({ idx: c, score: score });
   }
 
-  return bestIdx;
+  candidates.sort(function(a,b){ return b.score - a.score; });
+
+  for (var i = 0; i < candidates.length; i++) {
+    var idx = candidates[i].idx;
+    if (columnLooksNumeric(rows, headerIdx, idx)) return idx;
+  }
+
+  return candidates.length ? candidates[0].idx : -1;
 }
+
 
 /* Staff name normalization for dedupe (same person, different spacing/case) */
 function staffKey(name) {
@@ -1138,7 +1224,7 @@ function pickBestSheetForMonth(wb, expectedMonthStr, expectedYear) {
     var monthColIdx = -1;
     if (headerIdx !== -1) {
       var headerRow = rows[headerIdx] || [];
-      monthColIdx = findMonthTotalCol(headerRow, expectedMonthStr, yy2);
+      monthColIdx = findMonthTotalCol(rows, headerIdx, expectedMonthStr, yy2);
       if (monthColIdx !== -1) structural += 10;
     }
 
@@ -1230,7 +1316,8 @@ function renderBulkDiagnostics(outEl, meta) {
       '<div class="bulk-warn" style="margin-top:10px">' +
         '<strong>Sheet candidates (focus month)</strong><br>' +
         meta.focusCandidates.slice(0,8).map(function(c){
-          return '"' + esc(c.name) + '" (' + c.score + ')';
+          var used = (meta.sheetPicks && meta.sheetPicks[0] && meta.sheetPicks[0].sheetUsed === c.name) ? " USED" : "";
+          return "\"" + esc(c.name) + "\" (" + c.score + ")" + used;
         }).join(', ') +
       '</div>';
   }
@@ -1403,14 +1490,25 @@ function calculateBulk() {
           candidates: pick.matches
         });
 
+        // If multiple sheets could represent this same month, warn (helps catch naming collisions)
+        var dupCandidates = (pick.matches || [])
+          .filter(function(x){
+            var p = parseMonthYearFromName(x.name);
+            return p && p.monthNum === mnum && (!p.year || p.year === y);
+          })
+          .map(function(x){ return x.name; });
+
+        var uniqueDup = Array.from(new Set(dupCandidates));
+        if (uniqueDup.length > 1) {
+          warnings.push('Duplicate month sheets for ' + monthLabel + ': ' +
+            uniqueDup.slice(0, 5).join(', ') + (uniqueDup.length > 5 ? '…' : ''));
+        }
+
         if (!pick.chosen) {
           warnings.push('Missing month sheet for ' + monthLabel);
           continue;
         }
 
-        // Track duplicate months (same mk) mapped to multiple possible sheets
-        if (!seenMonthSheets[mk]) seenMonthSheets[mk] = [];
-        seenMonthSheets[mk].push(pick.chosen);
 
         // Parse chosen sheet
         var sheet = wb.Sheets[pick.chosen];
@@ -1434,7 +1532,7 @@ function calculateBulk() {
 
         var headerRow = rows[headerIdx] || [];
         var yy2 = String(y).slice(-2);
-        var monthColIdx = findMonthTotalCol(headerRow, monStr, yy2);
+        var monthColIdx = findMonthTotalCol(rows, headerIdx, monStr, yy2);
 
         if (monthColIdx === -1) {
           warnings.push('Missing "' + monStr + ' Total" column in sheet "' + pick.chosen + '" (' + monthLabel + ')');
@@ -1450,16 +1548,6 @@ function calculateBulk() {
         monthData[mk] = { target: target, staff: staff, sheet: pick.chosen };
       }
 
-      // Duplicate month warning (same month key chosen from multiple sheets)
-      Object.keys(seenMonthSheets).forEach(function(k){
-        var arr = seenMonthSheets[k] || [];
-        // "duplicate" means: there were multiple sheets that could represent this month,
-        // not necessarily that we used them all. Still useful to warn.
-        var unique = Array.from(new Set(arr));
-        if (unique.length > 1) {
-          warnings.push('Duplicate month detected for ' + k + ': ' + unique.join(', '));
-        }
-      });
 
       // Build expected month list and missing-month warning
       var expectedKeys = months.map(function(x){ return monthKey(x.year, x.monthNum); });
@@ -1570,11 +1658,10 @@ function filterBulkTable() {
   renderBulkTable(filtered);
 }
 
-function removeStaff(origIndex) {
-  origIndex = parseInt(origIndex, 10);
-  if (isNaN(origIndex) || origIndex < 0 || origIndex >= _allStaff.length) return;
-
-  _allStaff.splice(origIndex, 1);
+function removeStaffByKey(key) {
+  key = String(key || '').trim();
+  if (!key) return;
+  _allStaff = _allStaff.filter(function(s) { return staffKey(s.Staff) !== key; });
   applyBulkMathAndRender();
 }
 
@@ -1610,12 +1697,12 @@ function renderBulkTable(staff) {
         '<td style="color:var(--muted);font-size:12px">' + medal + (orig + 1) + '</td>' +
         '<td><strong>' + esc(s.Staff) + '</strong></td>' +
         '<td>' + (s.Packages || 0) + '</td>' +
-        '<td>' + s.Sales.toFixed(2) + '</td>' +
+        '<td>' + fmt(s.Sales) + '</td>' +
         '<td>' + s.PersonalPct + '%</td>' +
-        '<td class="darkBrown">' + s.P30.toFixed(3)    + '</td>' +
-        '<td class="darkBlue">'  + s.EqSplit.toFixed(3) + '</td>' +
-        '<td><span class="total-inc">' + s.TotalInc.toFixed(2) + '</span></td>' +
-        '<td><button type="button" class="btn-mini" onclick="removeStaff(' + orig + ')">✕</button></td>' +
+        '<td class="darkBrown">' + fmt(s.P30) + '</td>' +
+        '<td class="darkBlue">'  + fmt(s.EqSplit) + '</td>' +
+        '<td><span class="total-inc">' + fmt(s.TotalInc) + '</span></td>' +
+        '<td><button type="button" class="btn-mini" onclick="removeStaffByKey(' + JSON.stringify(staffKey(s.Staff)) + ')">✕</button></td>' +
       '</tr>';
   });
 
@@ -1627,8 +1714,13 @@ function downloadBulk() {
   if (!window._bulkData || !window._bulkData.length) return;
   var ws = XLSX.utils.json_to_sheet(window._bulkData);
   var wb = XLSX.utils.book_new();
+  wb.Props = {
+  Title: "Smart Incentive Calculator",
+  Author: "HT",
+  Comments: "Restricted: Smart Salem prohibited. Marker: SIC-HT-SS-RESTRICT-2026"
+};
   XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
-  XLSX.writeFile(wb, 'Bulk_Incentives_v4.2.xlsx');
+  XLSX.writeFile(wb, 'Bulk_Incentives_v4.3.xlsx');
 }
 
 function printBulk() {
