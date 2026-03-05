@@ -12,7 +12,8 @@
   <img src="https://img.shields.io/badge/version-4.2-blue">
   <img src="https://img.shields.io/badge/platform-browser-orange">
   <img src="https://img.shields.io/badge/privacy-100%25%20local-success">
-  <img src="https://img.shields.io/badge/license-MIT-green">
+  <img src="https://img.shields.io/badge/license-Custom-blue">
+  [![License](https://img.shields.io/badge/license-Custom-blue)](LICENSE.txt)
 </p>
 
 ---
@@ -337,6 +338,11 @@ Reliability and validation improvements.
 
 # License
 
-MIT License  
+## License
 
-Free for personal, professional, and commercial use.
+This project is distributed under a custom license.
+
+Smart Salem and its affiliates are explicitly prohibited from using,
+deploying, copying, or distributing this software.
+
+See LICENSE.txt for full details.
