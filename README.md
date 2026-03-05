@@ -9,11 +9,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.2-blue">
+  <img src="https://img.shields.io/badge/version-4.3-blue">
   <img src="https://img.shields.io/badge/platform-browser-orange">
   <img src="https://img.shields.io/badge/privacy-100%25%20local-success">
   <img src="https://img.shields.io/badge/license-Custom-blue">
-  [![License](https://img.shields.io/badge/license-Custom-blue)](LICENSE.txt)
 </p>
 
 ---
@@ -332,6 +331,24 @@ Reliability and validation improvements.
 - Staff name deduplication
 - Improved month column detection (e.g. **Oct Total** fallback)
 
+---
+
+### v4.3
+Watermark and licensing update with stability improvements.
+
+- Added visible footer watermark and copyright notice in UI
+- Added code watermark markers inside HTML and JavaScript
+- Added metadata watermark in exported Excel files
+- Introduced LICENSE.txt with usage restriction
+- Removed version number from share/copy text
+- Fixed divide-by-zero issue in Individual mode
+- Improved duplicate month sheet detection
+- Improved staff removal logic using stable keys
+- Dark mode preference now persists using localStorage
+- Improved diagnostics panel to highlight the sheet actually used
+- Improved currency formatting in bulk table using comma formatting
+- Improved month total column detection reliability
+- Added accessibility improvements for dark mode toggle
 </details>
 
 ---
