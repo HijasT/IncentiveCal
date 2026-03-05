@@ -1,1145 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smart Incentive Calculator v3.1</title>
-
-<!-- SheetJS library for Excel parsing and export -->
+<meta charset="utf-8">
+<title>Smart Incentive Calculator v4.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-/* ── FONTS ─────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-/* ── LIGHT MODE CSS VARIABLES ──────────────────────────────────────────────── */
-:root {
-  --bg:#f0f4f8;
-  --card:#ffffff;
-  --accent:#0A7E8C;
-  --accent-light:#e8f7f8;
-  --muted:#6b7a8a;
-  --darkblue:#0047AB;
-  --darkbrown:#5C4033;
-  --border:#e1e8ed;
-  --text:#1a2332;
-  --row-even:#f8fbfc;
-  --row-hover:#eef8f9;
-  --hl-bg:#e0f7f4;
-  --hl-color:#035059;
-  --hl-border:#0A7E8C;
-  --proj-bg:#fffbeb;
-  --proj-border:#fde68a;
-  --proj-color:#78350f;
-  --err-bg:#fdf2f0;
-  --err-border:#f5c6c0;
-  --err-color:#c0392b;
-  --tier-bg:rgba(10,126,140,0.1);
-  --tier-color:#0A7E8C;
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f4f7fb;
+margin:0;
+padding:30px;
+color:#1b2a3a;
 }
 
-/* ── DARK MODE CSS VARIABLES ───────────────────────────────────────────────── */
-html.dark {
-  --bg:#0d1117;
-  --card:#161b22;
-  --accent-light:rgba(10,126,140,0.12);
-  --muted:#8899aa;
-  --darkblue:#60a5fa;
-  --darkbrown:#f59e0b;
-  --border:#2d3748;
-  --text:#e2e8f0;
-  --row-even:#0f1820;
-  --row-hover:#0d2025;
-  --hl-bg:#062a27;
-  --hl-color:#7df3e1;
-  --hl-border:#00bfa6;
-  --proj-bg:#1a1200;
-  --proj-border:#92400e;
-  --proj-color:#fbbf24;
-  --err-bg:#1a0a0a;
-  --err-border:#6b2020;
-  --err-color:#f87171;
-  --tier-bg:rgba(10,126,140,0.25);
-  --tier-color:#2dd4bf;
+.container{
+max-width:1100px;
+margin:auto;
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
-html.dark body { background-color:#0d1117; color:#e2e8f0; }
-
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-
-body {
-  font-family:'DM Sans','Segoe UI',sans-serif;
-  background-color:var(--bg);
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  padding:32px 16px;
-  min-height:100vh;
-}
-.app { width:100%; max-width:1000px; }
-
-.app-header { margin-bottom:22px; }
-.title-row  { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
-.version    { font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; }
-.dark-toggle{ cursor:pointer; font-size:22px; user-select:none; line-height:1; }
-
-.tabs { display:flex; gap:8px; margin:14px 0; }
-.pill {
-  padding:9px 18px; border-radius:999px;
-  background-color:var(--card); color:var(--muted);
-  cursor:pointer; font-weight:600; font-size:14px;
-  border:1px solid var(--border); font-family:inherit;
-}
-.pill.active {
-  background-color:var(--accent); color:#fff;
-  border-color:var(--accent);
-  box-shadow:0 4px 14px rgba(10,126,140,0.3);
+h1{
+margin-top:0;
+color:#0A7E8C;
 }
 
-.card {
-  background-color:var(--card);
-  border-radius:16px;
-  box-shadow:0 2px 16px rgba(16,24,40,0.07), 0 0 0 1px var(--border);
-  padding:24px;
+.section{
+margin-top:25px;
+padding-top:20px;
+border-top:1px solid #e6e6e6;
 }
 
-.note {
-  font-size:12px; margin-bottom:14px; padding:8px 12px;
-  background-color:var(--bg); color:var(--muted);
-  border-radius:8px; border:1px solid var(--border);
+label{
+display:block;
+font-weight:bold;
+margin-top:12px;
 }
 
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
-
-label {
-  display:block; font-weight:600; font-size:13px; margin-bottom:6px;
-  color:var(--muted); text-transform:uppercase; letter-spacing:0.4px;
+select,input{
+width:100%;
+padding:8px;
+margin-top:4px;
 }
 
-input[type=number],
-input[type=file],
-input[type=text],
-select {
-  width:100%; padding:11px 13px;
-  border-radius:10px; border:1.5px solid var(--border);
-  font-size:15px; font-family:inherit;
-  background-color:var(--bg); color:var(--text);
-  outline:none; -webkit-appearance:none; appearance:none;
-}
-input[type=number]:focus,
-input[type=file]:focus,
-input[type=text]:focus,
-select:focus {
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(10,126,140,0.12);
-}
-input[type=file] { padding:9px; cursor:pointer; }
-
-.split-section {
-  margin-top:18px; padding:16px 18px;
-  background-color:var(--accent-light);
-  border-radius:12px; border:1px solid rgba(10,126,140,0.15);
-}
-.split-header {
-  display:flex; justify-content:space-between; align-items:center;
-  flex-wrap:wrap; gap:8px; margin-bottom:12px;
-}
-.split-label  { font-weight:700; font-size:14px; color:var(--accent); }
-.split-badges { display:flex; gap:8px; align-items:center; }
-
-.badge {
-  padding:4px 10px; border-radius:999px;
-  font-size:13px; font-weight:700; font-family:'DM Mono',monospace;
-}
-.badge-equal    { background-color:rgba(0,71,171,0.1);  color:var(--darkblue);  }
-.badge-personal { background-color:rgba(92,64,51,0.12); color:var(--darkbrown); }
-html.dark .badge-equal    { background-color:rgba(96,165,250,0.15);  }
-html.dark .badge-personal { background-color:rgba(245,158,11,0.15); }
-.badge-sep { color:var(--muted); font-size:13px; }
-
-.slider-wrap { display:block; width:100%; }
-input[type=range] {
-  -webkit-appearance:none; appearance:none;
-  display:block; width:100%; min-width:0;
-  height:6px; border-radius:4px;
-  border:none; outline:none; padding:0; margin:0; cursor:pointer;
-  background:linear-gradient(to right, var(--darkblue) 60%, rgba(150,150,150,0.3) 60%);
-}
-input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:4px; }
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; appearance:none;
-  width:22px; height:22px; border-radius:50%;
-  background-color:var(--card);
-  border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(10,126,140,0.35);
-  cursor:grab; margin-top:-8px;
-}
-input[type=range]::-webkit-slider-thumb:active { cursor:grabbing; }
-input[type=range]::-moz-range-thumb {
-  width:22px; height:22px; border-radius:50%;
-  background-color:var(--card); border:3px solid var(--accent); cursor:grab;
-}
-.slider-ticks {
-  display:flex; justify-content:space-between;
-  margin-top:6px; font-size:11px;
-  color:var(--muted); font-family:'DM Mono',monospace;
+button{
+margin-top:15px;
+padding:10px 20px;
+background:#0A7E8C;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
 }
 
-.btn {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:11px 20px; border-radius:10px;
-  background-color:var(--accent); color:#fff;
-  font-weight:700; font-size:14px; font-family:inherit;
-  border:none; cursor:pointer; margin-top:14px;
-  box-shadow:0 4px 14px rgba(10,126,140,0.2);
-  -webkit-appearance:none; appearance:none;
-}
-.btn.secondary {
-  background-color:var(--card); color:var(--accent);
-  border:1.5px solid var(--border); box-shadow:none;
-}
-html.dark .btn.secondary { background-color:var(--card); }
-
-.btn-share {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:8px 16px; border-radius:10px;
-  background-color:var(--card); color:var(--accent);
-  font-weight:700; font-size:13px; font-family:inherit;
-  border:1.5px solid var(--border); cursor:pointer; margin-top:10px;
-  -webkit-appearance:none; appearance:none;
-}
-html.dark .btn-share { background-color:var(--card); }
-
-.btn-mini {
-  padding:4px 10px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background-color:var(--card);
-  font-size:11px;
-  cursor:pointer;
-  font-family:'DM Sans','Segoe UI',sans-serif;
-}
-.btn-mini:hover {
-  background-color:var(--err-bg);
-  border-color:var(--err-border);
-  color:var(--err-color);
-}
-html.dark .btn-mini { background-color:var(--card); }
-
-.results { margin-top:20px; line-height:1.7; }
-
-.result-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px; margin:12px 0;
-}
-.result-box {
-  background-color:var(--bg); border-radius:10px;
-  padding:12px 14px; border:1px solid var(--border);
-}
-.result-box .rb-label {
-  font-size:11px; font-weight:600; text-transform:uppercase;
-  letter-spacing:0.5px; color:var(--muted); margin-bottom:4px;
-}
-.result-box .rb-val {
-  font-size:17px; font-weight:700;
-  font-family:'DM Mono',monospace; color:var(--text);
+button.secondary{
+background:#eee;
+color:#333;
 }
 
-.highlight-total {
-  margin-top:12px; padding:14px 16px; border-radius:10px;
-  background-color:var(--hl-bg); border-left:5px solid var(--hl-border);
-  font-size:19px; font-weight:800; color:var(--hl-color);
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
 }
 
-.projection-box {
-  margin-top:10px; padding:12px 14px; border-radius:10px;
-  background-color:var(--proj-bg); border:1px solid var(--proj-border);
-  font-size:13px; color:var(--proj-color);
+th,td{
+padding:8px;
+border-bottom:1px solid #ddd;
+text-align:left;
 }
 
-.error {
-  margin-top:10px; padding:10px 14px; border-radius:8px;
-  background-color:var(--err-bg); border:1px solid var(--err-border);
-  color:var(--err-color); font-size:14px;
+th{
+background:#0A7E8C;
+color:white;
 }
 
-.chart-wrap {
-  margin-top:14px; padding:16px; border-radius:12px;
-  background-color:var(--bg); border:1px solid var(--border);
-}
-.chart-title {
-  font-size:11px; font-weight:700; text-transform:uppercase;
-  letter-spacing:0.5px; color:var(--muted); margin-bottom:12px;
-}
-.bar-row   { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.bar-label { font-size:12px; font-weight:600; color:var(--muted); width:100px; flex-shrink:0; text-align:right; }
-.bar-track { flex:1; height:24px; background-color:var(--border); border-radius:6px; overflow:hidden; }
-.bar-fill {
-  height:100%; border-radius:6px;
-  display:flex; align-items:center; padding-left:8px;
-  font-size:11px; font-weight:700; color:#fff;
-  white-space:nowrap; overflow:hidden;
-  transition:width 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-.bar-fill.blue  { background-color:var(--darkblue);  }
-.bar-fill.brown { background-color:var(--darkbrown); }
-.bar-amount { font-size:12px; font-weight:700; font-family:'DM Mono',monospace; color:var(--text); width:100px; flex-shrink:0; }
-
-.search-wrap { margin-top:14px; position:relative; }
-.search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; pointer-events:none; color:var(--muted); }
-.search-wrap input { padding-left:36px; }
-
-.table-wrap { margin-top:10px; overflow:auto; border-radius:10px; border:1px solid var(--border); }
-table { width:100%; border-collapse:collapse; min-width:700px; }
-th, td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:left; font-size:14px; }
-th {
-  background-color:var(--accent); color:#fff;
-  font-weight:700; font-size:12px;
-  text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0;
-}
-html.dark th          { background-color:#063a3c; }
-tr:last-child td      { border-bottom:none; }
-tr:nth-child(even) td { background-color:var(--row-even); }
-tr:hover td           { background-color:var(--row-hover); }
-
-.rank-1 td       { background-color:rgba(255,200,0,0.08) !important; }
-.rank-2 td       { background-color:rgba(180,180,180,0.08) !important; }
-.rank-3 td       { background-color:rgba(180,100,40,0.08) !important; }
-.rank-1:hover td { background-color:rgba(255,200,0,0.15) !important; }
-.rank-2:hover td { background-color:rgba(180,180,180,0.15) !important; }
-.rank-3:hover td { background-color:rgba(180,100,40,0.15) !important; }
-
-.total-inc { font-weight:800; font-size:16px; }
-
-.darkBlue  { color:var(--darkblue);  font-weight:700; font-family:'DM Mono',monospace; }
-.darkBrown { color:var(--darkbrown); font-weight:700; font-family:'DM Mono',monospace; }
-.salem     { color:var(--accent); }
-html.dark .salem { color:#2dd4bf; }
-
-.quote {
-  font-style:italic; color:var(--muted); font-size:13px;
-  margin-top:10px; padding-left:10px; border-left:3px solid var(--border);
+.badge{
+display:inline-block;
+padding:4px 10px;
+border-radius:10px;
+background:#ffeeba;
+color:#856404;
+font-size:12px;
 }
 
-.tier-badge {
-  display:inline-block; padding:4px 12px; border-radius:999px;
-  font-size:13px; font-weight:700; margin-left:6px;
-  background-color:var(--tier-bg); color:var(--tier-color);
-}
-.tier-none { --tier-bg:rgba(192,57,43,0.1); --tier-color:var(--err-color); }
-
-.no-results { padding:20px; text-align:center; color:var(--muted); font-size:13px; }
-
-.toast {
-  position:fixed; bottom:28px; left:50%;
-  transform:translateX(-50%) translateY(10px);
-  background-color:#1a2332; color:#fff;
-  padding:10px 22px; border-radius:999px;
-  font-size:13px; font-weight:600; letter-spacing:0.2px;
-  opacity:0; pointer-events:none;
-  transition:opacity 0.25s, transform 0.25s;
-  z-index:9999; white-space:nowrap;
-}
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
-
-/* Bulk sheet info box */
-.bulk-info {
-  margin-top:10px;
-  padding:10px 14px;
-  border-radius:10px;
-  background-color:var(--bg);
-  border:1px solid var(--border);
-  color:var(--muted);
-  font-size:13px;
-}
-.bulk-info strong { color:var(--text); }
-.bulk-warn {
-  margin-top:8px;
-  padding:10px 14px;
-  border-radius:10px;
-  background-color:var(--proj-bg);
-  border:1px solid var(--proj-border);
-  color:var(--proj-color);
-  font-size:13px;
+.chart-box{
+margin-top:25px;
 }
 
-@media(max-width:500px) {
-  h1 { font-size:20px; }
-  .card { padding:16px; }
-  .split-header { flex-direction:column; align-items:flex-start; }
-  .bar-label  { width:70px; font-size:11px; }
-  .bar-amount { width:75px; font-size:11px; }
+.warning{
+margin-top:10px;
+padding:10px;
+background:#fff3cd;
+border:1px solid #ffeeba;
+border-radius:6px;
 }
+
 </style>
 </head>
 
 <body>
-<div class="app">
 
-  <div class="app-header">
-    <div class="title-row">
-      <h1>Smart Incentive Calculator</h1>
-      <div class="dark-toggle" id="darkToggle">☀️</div>
-    </div>
-    <div class="version">v3.1</div>
-  </div>
+<div class="container">
 
-  <div class="tabs">
-    <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
-    <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
-  </div>
+<h1>Smart Incentive Calculator v4.2</h1>
 
-  <section id="individual" class="card">
-    <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
+<div class="section">
 
-    <div class="grid">
-      <div>
-        <label for="ind-target">Sales Target (AED)</label>
-        <input id="ind-target" type="number" placeholder="700000" />
-      </div>
-      <div>
-        <label for="ind-total">Total Sales (AED)</label>
-        <input id="ind-total" type="number" placeholder="735000" />
-      </div>
-      <div>
-        <label for="ind-personal">Personal Sales (AED)</label>
-        <input id="ind-personal" type="number" placeholder="30450" />
-      </div>
-      <div>
-        <label for="ind-count">Number of Salespersons</label>
-        <input id="ind-count" type="number" value="28" />
-      </div>
-    </div>
+<label>Excel File</label>
+<input type="file" id="fileInput">
 
-    <div class="split-section">
-      <div class="split-header">
-        <span class="split-label">Incentive Pool Split</span>
-        <div class="split-badges">
-          <span class="badge badge-equal"    id="ind-equal-badge">Equal 60%</span>
-          <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="ind-personal-badge">Personal 40%</span>
-        </div>
-      </div>
-      <div class="slider-wrap">
-        <input type="range" id="ind-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('ind')" />
-      </div>
-      <div class="slider-ticks">
-        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-      </div>
-    </div>
+<label>Period Type</label>
+<select id="periodType">
+<option value="monthly">Monthly</option>
+<option value="quarterly">Quarterly</option>
+<option value="yearly">Yearly</option>
+<option value="overall">Overall</option>
+</select>
 
-    <button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
-    <div id="ind-results" class="results"></div>
-  </section>
+<label>Month</label>
+<select id="month">
+<option>Jan</option>
+<option>Feb</option>
+<option>Mar</option>
+<option>Apr</option>
+<option>May</option>
+<option>Jun</option>
+<option>Jul</option>
+<option>Aug</option>
+<option>Sep</option>
+<option>Oct</option>
+<option>Nov</option>
+<option>Dec</option>
+</select>
 
-  <section id="bulk" class="card" style="display:none;margin-top:16px">
-    <div class="note">
-      Upload the monthly Staff Sales Tracker workbook. Choose the month and year; the tool will auto-detect the correct sheet (e.g. “Feb 26” / “Feb26”), read target, staff packages and sales, and calculate incentives.
-    </div>
+<label>Year</label>
+<input id="year" type="number" value="2026">
 
-    <div class="grid">
-      <div>
-        <label for="bulk-month">Month</label>
-        <select id="bulk-month">
-          <option value="Jan">Jan</option>
-          <option value="Feb">Feb</option>
-          <option value="Mar">Mar</option>
-          <option value="Apr">Apr</option>
-          <option value="May">May</option>
-          <option value="Jun">Jun</option>
-          <option value="Jul">Jul</option>
-          <option value="Aug">Aug</option>
-          <option value="Sep">Sep</option>
-          <option value="Oct">Oct</option>
-          <option value="Nov">Nov</option>
-          <option value="Dec">Dec</option>
-        </select>
-      </div>
-      <div>
-        <label for="bulk-year">Year</label>
-        <select id="bulk-year">
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026" selected>2026</option>
-          <option value="2027">2027</option>
-        </select>
-      </div>
-      <div>
-        <label for="bulk-file">Excel File (.xlsx, .xls)</label>
-        <input id="bulk-file" type="file" accept=".xlsx,.xls" />
-      </div>
-    </div>
+<label>Total Target Override (AED)</label>
+<input id="overrideTarget" type="number">
 
-    <div class="split-section">
-      <div class="split-header">
-        <span class="split-label">Incentive Pool Split</span>
-        <div class="split-badges">
-          <span class="badge badge-equal"    id="bulk-equal-badge">Equal 60%</span>
-          <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="bulk-personal-badge">Personal 40%</span>
-        </div>
-      </div>
-      <div class="slider-wrap">
-        <input type="range" id="bulk-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('bulk')" />
-      </div>
-      <div class="slider-ticks">
-        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-      </div>
-    </div>
-
-    <div>
-      <button class="btn" onclick="calculateBulk()">Process Upload</button>
-      <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px">&#11015; Download Excel</button>
-      <button class="btn secondary" id="printBtn" onclick="printBulk()" style="display:none;margin-left:10px">🖨 Print / PDF</button>
-    </div>
-
-    <div id="bulk-results" style="margin-top:14px"></div>
-  </section>
+<button onclick="processFile()">Process</button>
 
 </div>
 
-<div class="toast" id="toast">Copied!</div>
+<div id="sheetInfo"></div>
+
+<div id="tableContainer"></div>
+
+<div class="chart-box">
+<canvas id="leaderChart"></canvas>
+</div>
+
+<div class="chart-box">
+<canvas id="trendChart"></canvas>
+</div>
+
+<button class="secondary" onclick="exportCSV()">Export CSV</button>
+
+</div>
 
 <script>
-function activateTab(name) {
-  document.querySelectorAll('.pill').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('section.card').forEach(function(c) { c.style.display = 'none'; });
 
-  if (name === 'individual') {
-    document.getElementById('tab-ind').classList.add('active');
-    document.getElementById('individual').style.display = 'block';
-  } else {
-    document.getElementById('tab-bulk').classList.add('active');
-    document.getElementById('bulk').style.display = 'block';
-  }
+let staffData=[]
+let monthlyHistory={}
+let workbook
+
+function processFile(){
+
+const file=document.getElementById("fileInput").files[0]
+
+if(!file){
+alert("Upload Excel file")
+return
 }
 
-var darkToggle = document.getElementById('darkToggle');
-darkToggle.addEventListener('click', function() {
-  var isDark = document.documentElement.classList.toggle('dark');
-  darkToggle.textContent = isDark ? '🌙' : '☀️';
-  updateSlider('ind');
-  updateSlider('bulk');
-});
+const reader=new FileReader()
 
-function updateSlider(prefix) {
-  var slider  = document.getElementById(prefix + '-split');
-  var eq      = parseInt(slider.value, 10);
-  var pr      = 100 - eq;
+reader.onload=e=>{
 
-  document.getElementById(prefix + '-equal-badge').textContent    = 'Equal '    + eq + '%';
-  document.getElementById(prefix + '-personal-badge').textContent = 'Personal ' + pr + '%';
+workbook=XLSX.read(new Uint8Array(e.target.result),{type:"array"})
 
-  var isDark    = document.documentElement.classList.contains('dark');
-  var fillColor = isDark ? '#60a5fa' : '#0047AB';
-  slider.style.background = 'linear-gradient(to right,' + fillColor + ' ' + eq + '%,rgba(150,150,150,0.3) ' + eq + '%)';
+const period=document.getElementById("periodType").value
+
+const month=document.getElementById("month").value
+const year=document.getElementById("year").value
+
+let sheetsUsed=[]
+
+if(period==="monthly"){
+
+const name=findSheet(month,year)
+
+if(!name){
+warn("Sheet not found")
+return
 }
 
-updateSlider('ind');
-updateSlider('bulk');
+sheetsUsed=[name]
 
-function getTier(pct) {
-  if (pct >= 85 && pct <= 100) return { text: 'Tier 1 (2.5%)', rate: 0.025 };
-  if (pct > 100 && pct <= 110) return { text: 'Tier 2 (3%)',   rate: 0.03  };
-  if (pct > 110)               return { text: 'Tier 3 (3.5%)', rate: 0.035 };
-  return { text: 'Below Target', rate: 0 };
 }
 
-var quotes = [
-  'Every sale brings you closer to success.',
-  'Push a little harder — your future self will thank you.',
-  'Targets are just numbers someone invented to ruin your lunch break',
-  'Closing a deal feels amazing. Until the next target appears.',
-  'Work hard, close deals, and remember the spreadsheet is always watching.',
-  'Targets are temporary. The anxiety is permanent.',
-  'One sale at a time. Panic later.',
-  'Keep showing up. The numbers eventually notice.',
-  'Small wins compound into big results.',
-  'Be the reason someone earns a compliment today.'
-];
+if(period==="quarterly"){
 
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2500);
+const q=getQuarter(month)
+
+const months=qMonths(q)
+
+months.forEach(m=>{
+const s=findSheet(m,year)
+if(s) sheetsUsed.push(s)
+})
+
 }
 
-function copyResult(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text)
-      .then(function() { showToast('Result copied to clipboard!'); })
-      .catch(function() { fallbackCopy(text); });
-  } else {
-    fallbackCopy(text);
-  }
+if(period==="yearly"){
+
+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+.forEach(m=>{
+const s=findSheet(m,year)
+if(s) sheetsUsed.push(s)
+})
+
 }
 
-function fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity  = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try {
-    document.execCommand('copy');
-    showToast('Result copied!');
-  } catch(e) {
-    showToast('Copy failed — please copy manually.');
-  }
-  document.body.removeChild(ta);
+if(period==="overall"){
+
+workbook.SheetNames.forEach(s=>{
+if(/\d\d/.test(s)) sheetsUsed.push(s)
+})
+
 }
 
-function buildChart(eqAmt, prAmt, eqPct, prPct) {
-  if (eqAmt + prAmt <= 0) return '';
+aggregateSheets(sheetsUsed)
 
-  var max     = Math.max(eqAmt, prAmt);
-  var eqW     = Math.max(6, Math.round((eqAmt / max) * 100));
-  var prW     = Math.max(6, Math.round((prAmt / max) * 100));
-  var tot     = eqAmt + prAmt;
-  var eqShare = Math.round((eqAmt / tot) * 100);
-  var prShare = 100 - eqShare;
+showSheets(sheetsUsed)
 
-  return '<div class="chart-wrap">' +
-    '<div class="chart-title">Incentive Breakdown</div>' +
-    '<div class="bar-row">' +
-      '<div class="bar-label">Equal (' + eqPct + '%)</div>' +
-      '<div class="bar-track">' +
-        '<div class="bar-fill blue" style="width:0%" data-w="' + eqW + '%">AED ' + eqAmt.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div class="bar-amount darkBlue">' + eqShare + '% of total</div>' +
-    '</div>' +
-    '<div class="bar-row">' +
-      '<div class="bar-label">Personal (' + prPct + '%)</div>' +
-      '<div class="bar-track">' +
-        '<div class="bar-fill brown" style="width:0%" data-w="' + prW + '%">AED ' + prAmt.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div class="bar-amount darkBrown">' + prShare + '% of total</div>' +
-    '</div>' +
-  '</div>';
+renderTable()
+
+renderLeaderboard()
+
+renderTrend()
+
 }
 
-function animateBars() {
-  document.querySelectorAll('.bar-fill[data-w]').forEach(function(el) {
-    var target = el.getAttribute('data-w');
-    setTimeout(function() { el.style.width = target; }, 60);
-  });
+reader.readAsArrayBuffer(file)
+
 }
 
-function calculateIndividual() {
-  var target   = parseFloat(document.getElementById('ind-target').value);
-  var total    = parseFloat(document.getElementById('ind-total').value);
-  var personal = parseFloat(document.getElementById('ind-personal').value);
-  var count    = parseInt(document.getElementById('ind-count').value, 10);
-  var eq       = parseInt(document.getElementById('ind-split').value, 10) / 100;
-  var out      = document.getElementById('ind-results');
+function findSheet(m,y){
 
-  if (
-    isNaN(target)   || target <= 0 ||
-    isNaN(total)    || total < 0   ||
-    isNaN(personal) || personal < 0 ||
-    isNaN(count)    || count <= 0
-  ) {
-    out.innerHTML = '<div class="error">Please fill in all fields with valid numbers before calculating.</div>';
-    return;
-  }
+const yy=y.toString().slice(-2)
 
-  var pct      = (total / target) * 100;
-  var tier     = getTier(pct);
-  var pr       = 1 - eq;
-  var pool     = total * tier.rate;
-  var eqSplit  = (pool * eq) / count;
-  var p30      = (personal / total) * (pool * pr);
-  var totalInc = eqSplit + p30;
-  var eqPct    = Math.round(eq * 100);
-  var prPct    = Math.round(pr * 100);
+return workbook.SheetNames.find(s=>{
 
-  var extra    = 1695;
-  var nt       = total + extra;
-  var np       = personal + extra;
-  var newTier  = getTier((nt / target) * 100);
-  var newPool  = nt * newTier.rate;
-  var newInc   = ((newPool * eq) / count) + (np / nt) * (newPool * pr);
-  var diff     = newInc - totalInc;
+const n=s.toLowerCase()
 
-  var tClass = tier.rate === 0 ? 'tier-none' : '';
-  var projHtml = '';
-  if (tier.rate > 0) {
-    projHtml =
-      '<div class="projection-box">&#128161; Sell extra AED ' + extra.toLocaleString() +
-      ': projected AED ' + newInc.toFixed(2) +
-      ' (' + (diff >= 0 ? '+' : '') + diff.toFixed(2) +
-      (newTier.rate !== tier.rate ? ', upgrades to ' + newTier.text : '') + ')' +
-      '</div>';
-  }
+return n.includes(m.toLowerCase()) && n.includes(yy)
 
-  var shareText =
-    'Smart Incentive Calculator v3.1\n' +
-    '================================\n' +
-    'Tier: '          + tier.text + ' (' + pct.toFixed(2) + '% of target)\n' +
-    'Incentive Pool: AED ' + fmt(pool)              + '\n' +
-    'Equal Split ('   + eqPct + '%): AED ' + eqSplit.toFixed(3) + '\n' +
-    'Personal Share (' + prPct + '%): AED ' + p30.toFixed(3)    + '\n' +
-    '--------------------------------\n' +
-    'Total Incentive: AED ' + totalInc.toFixed(2)   + '\n\n' +
-    'Calculated using https://hijast.github.io/IncentiveCal/';
+})
 
-  out.innerHTML =
-    '<div class="result-grid">' +
-      box('Tier',        '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
-      box('Achievement', pct.toFixed(2) + '%') +
-      box('Pool',        'AED ' + fmt(pool)) +
-      box('Equal ('   + eqPct + '%)', '<span class="darkBlue">AED '  + eqSplit.toFixed(3) + '</span>') +
-      box('Personal (' + ((personal / total) * 100).toFixed(2) + '%)', '<span class="darkBrown">AED ' + p30.toFixed(3) + '</span>') +
-    '</div>' +
-    '<div class="highlight-total">Total Incentive: <span class="salem">AED ' + totalInc.toFixed(2) + '</span></div>' +
-    projHtml +
-    '<div class="quote">' + quotes[Math.floor(Math.random() * quotes.length)] + '</div>' +
-    buildChart(eqSplit, p30, eqPct, prPct) +
-    '<button class="btn-share" id="shareBtn">&#128279; Copy Result</button>';
-
-  document.getElementById('shareBtn').addEventListener('click', function() {
-    copyResult(shareText);
-  });
-
-  animateBars();
 }
 
-function box(label, val) {
-  return '<div class="result-box">' +
-    '<div class="rb-label">' + label + '</div>' +
-    '<div class="rb-val">'   + val   + '</div>' +
-  '</div>';
+function aggregateSheets(list){
+
+staffData=[]
+monthlyHistory={}
+
+list.forEach(sheetName=>{
+
+const sheet=workbook.Sheets[sheetName]
+
+const rows=XLSX.utils.sheet_to_json(sheet,{header:1})
+
+for(let i=0;i<rows.length;i++){
+
+const r=rows[i]
+
+if(!r[0]) continue
+
+if(r[0].toString().toLowerCase()==="staff"){
+
+const name=rows[i+1][0]
+
+const packages=Number(rows[i+1][1]||0)
+
+const sales=Number(rows[i+2][1]||0)
+
+let staff=staffData.find(s=>s.name===name)
+
+if(!staff){
+
+staff={
+name,
+packages:0,
+sales:0
 }
 
-var _allStaff    = [];
-var _bulkEqPct   = 60;
-var _bulkPrPct   = 40;
-var _bulkEq      = 0.60;
-var _bulkPr      = 0.40;
-var _bulkTarget  = null;
+staffData.push(staff)
 
-function num(x) {
-  if (x === null || x === undefined) return NaN;
-  var s = String(x).replace(/,/g, '').trim();
-  if (!s) return NaN;
-  var n = Number(s);
-  return isNaN(n) ? NaN : n;
 }
 
-function fmt(n) {
-  return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+staff.packages+=packages
+staff.sales+=sales
+
+if(!monthlyHistory[name]) monthlyHistory[name]=[]
+
+monthlyHistory[name].push(sales)
+
 }
 
-function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
-function detectTarget(rows) {
-  for (var tr = 0; tr < rows.length; tr++) {
-    var row = rows[tr] || [];
-    for (var tc = 0; tc < row.length; tc++) {
-      var cell = row[tc];
-      if (typeof cell === 'string' && cell.toLowerCase().indexOf('target') !== -1) {
-        for (var vc = tc + 1; vc < row.length; vc++) {
-          var val = num(row[vc]);
-          if (val > 0) return val;
-        }
-        for (var vcl = tc - 1; vcl >= 0; vcl--) {
-          var valLeft = num(row[vcl]);
-          if (valLeft > 0) return valLeft;
-        }
-      }
-    }
-  }
-  return null;
+})
+
+rankStaff()
+
 }
 
-/* Better sheet-name normalization so Oct25 / Oct 25 / Oct-25 etc work */
-function normSheetName(s) {
-  return String(s || '')
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[\.\-_]/g, ' ')
-    .replace(/\s+/g, ' ');
+function rankStaff(){
+
+staffData.sort((a,b)=>{
+
+if(b.sales!==a.sales) return b.sales-a.sales
+if(b.packages!==a.packages) return b.packages-a.packages
+return 0
+
+})
+
 }
 
-function monthVariants(mon) {
-  var m = mon.toLowerCase();
-  var map = {
-    jan:'january', feb:'february', mar:'march', apr:'april', may:'may', jun:'june',
-    jul:'july', aug:'august', sep:'september', oct:'october', nov:'november', dec:'december'
-  };
-  return [m, map[m] || m];
+function renderTable(){
+
+let html="<table><tr><th>Rank</th><th>Name</th><th>Packages</th><th>Sales</th></tr>"
+
+staffData.forEach((s,i)=>{
+
+html+=`<tr>
+<td>${i+1}</td>
+<td>${s.name}</td>
+<td>${s.packages}</td>
+<td>${s.sales.toFixed(2)}</td>
+</tr>`
+
+})
+
+html+="</table>"
+
+document.getElementById("tableContainer").innerHTML=html
+
 }
 
-/* Score-based matching to pick the best sheet */
-function pickSheetName(sheetNames, month, yy) {
-  var vars = monthVariants(month);
-  var scores = [];
+function renderLeaderboard(){
 
-  for (var i = 0; i < sheetNames.length; i++) {
-    var raw = sheetNames[i];
-    var n = normSheetName(raw);
+const ctx=document.getElementById("leaderChart")
 
-    var score = 0;
-    var hasYY = (n.indexOf(yy) !== -1);
-    if (hasYY) score += 3;
+new Chart(ctx,{
+type:"bar",
+data:{
+labels:staffData.map(s=>s.name),
+datasets:[{
+label:"Sales",
+data:staffData.map(s=>s.sales)
+}]
+}
+})
 
-    var hasMonth = false;
-    for (var v = 0; v < vars.length; v++) {
-      if (n.indexOf(vars[v]) !== -1) { hasMonth = true; break; }
-    }
-    if (hasMonth) score += 3;
-
-    /* Exact-ish patterns get bonus */
-    for (var v2 = 0; v2 < vars.length; v2++) {
-      var a = vars[v2] + ' ' + yy;
-      var b = vars[v2] + yy;
-      if (n === a) score += 6;
-      if (n.replace(/\s+/g,'') === b) score += 5;
-    }
-
-    if (score > 0) scores.push({ name: raw, score: score });
-  }
-
-  scores.sort(function(a,b){ return b.score - a.score; });
-  return { chosen: scores.length ? scores[0].name : null, matches: scores };
 }
 
-function renderBulkSheetInfo(outEl, selectedMonth, selectedYear, chosenSheet, matches) {
-  var yy = String(selectedYear).slice(-2);
+function renderTrend(){
 
-  var html =
-    '<div class="bulk-info">' +
-      'Selected: <strong>' + esc(selectedMonth) + ' ' + esc(yy) + '</strong><br>' +
-      'Sheet used: <strong>' + esc(chosenSheet) + '</strong>' +
-    '</div>';
+const staff=staffData[0]
 
-  if (matches && matches.length > 1) {
-    var topList = matches.slice(0, 8).map(function(m){
-      return '"' + esc(m.name) + '" (' + m.score + ')';
-    }).join(', ');
+if(!staff) return
 
-    html +=
-      '<div class="bulk-warn">' +
-        'Multiple sheets matched this month. Using the best match.<br>' +
-        '<strong>Candidates:</strong> ' + topList +
-      '</div>';
-  }
+const hist=monthlyHistory[staff.name]
 
-  outEl.innerHTML = html + outEl.innerHTML;
+const ctx=document.getElementById("trendChart")
+
+new Chart(ctx,{
+type:"line",
+data:{
+labels:hist.map((_,i)=>"M"+(i+1)),
+datasets:[{
+label:staff.name+" sales",
+data:hist
+}]
+}
+})
+
 }
 
-function applyBulkMathAndRender() {
-  var out      = document.getElementById('bulk-results');
-  var dwn      = document.getElementById('downloadBtn');
-  var printBtn = document.getElementById('printBtn');
+function showSheets(list){
 
-  if (!_allStaff.length || !_bulkTarget || _bulkTarget <= 0) {
-    out.innerHTML = '<div class="error">No valid staff data or target to calculate incentives.</div>';
-    if (dwn) dwn.style.display = 'none';
-    if (printBtn) printBtn.style.display = 'none';
-    window._bulkData = null;
-    return;
-  }
+document.getElementById("sheetInfo").innerHTML=
+"<div class='warning'>Sheets used: "+list.join(", ")+"</div>"
 
-  var staff = _allStaff.slice();
-  var teamTotal = staff.reduce(function(sum, s) { return sum + s.Sales; }, 0);
-  var pct       = (teamTotal / _bulkTarget) * 100;
-  var tier      = getTier(pct);
-  var pool      = teamTotal * tier.rate;
-  var eqSplit   = staff.length > 0 ? (pool * _bulkEq) / staff.length : 0;
-
-  staff.forEach(function(s) {
-    var personalPct = teamTotal > 0 ? (s.Sales / teamTotal) * 100 : 0;
-    var pShare      = teamTotal > 0 ? (s.Sales / teamTotal) * (pool * _bulkPr) : 0;
-    s.PersonalPct   = personalPct.toFixed(3);
-    s.P30           = pShare;
-    s.EqSplit       = Number(eqSplit.toFixed(3));
-    s.TotalInc      = Number((eqSplit + pShare).toFixed(2));
-  });
-
-  staff.sort(function(a, b) { return b.TotalInc - a.TotalInc; });
-
-  _allStaff   = staff;
-  _bulkEqPct  = Math.round(_bulkEq * 100);
-  _bulkPrPct  = Math.round(_bulkPr * 100);
-
-  window._bulkData = staff.map(function(s) {
-    return {
-      Staff:          s.Staff,
-      Packages:       s.Packages,
-      Sales:          Number(s.Sales.toFixed(2)),
-      PersonalPct:    Number(s.PersonalPct),
-      PersonalShare:  Number(s.P30.toFixed(3)),
-      EqualSplit:     Number(s.EqSplit.toFixed(3)),
-      TotalIncentive: Number(s.TotalInc.toFixed(2))
-    };
-  });
-
-  var tClass = tier.rate === 0 ? 'tier-none' : '';
-  var summaryHtml =
-    '<div class="result-grid" style="margin-bottom:8px">' +
-      box('Tier',           '<span class="tier-badge ' + tClass + '">' + tier.text + '</span>') +
-      box('Achievement',    pct.toFixed(2) + '%') +
-      box('Team Total',     'AED ' + fmt(teamTotal)) +
-      box('Staff Count',    _allStaff.length) +
-      box('Equal / Person', '<span class="darkBlue">AED ' + (eqSplit || 0).toFixed(3) + '</span>') +
-    '</div>';
-
-  var searchHtml =
-    '<div class="search-wrap">' +
-      '<span class="search-icon">&#128269;</span>' +
-      '<input type="text" id="bulk-search" placeholder="Search staff name..." oninput="filterBulkTable()" />' +
-    '</div>';
-
-  out.innerHTML = summaryHtml + searchHtml + '<div id="bulk-table-container"></div>';
-
-  renderBulkTable(_allStaff);
-
-  if (dwn)      dwn.style.display = 'inline-flex';
-  if (printBtn) printBtn.style.display = 'inline-flex';
 }
 
-function calculateBulk() {
-  var month      = document.getElementById('bulk-month').value;
-  var year       = parseInt(document.getElementById('bulk-year').value, 10);
-  var file       = document.getElementById('bulk-file').files[0];
-  var eq         = parseInt(document.getElementById('bulk-split').value, 10) / 100;
-  var out        = document.getElementById('bulk-results');
-  var dwn        = document.getElementById('downloadBtn');
-  var printBtn   = document.getElementById('printBtn');
+function warn(msg){
 
-  out.innerHTML      = '';
-  if (dwn)      dwn.style.display = 'none';
-  if (printBtn) printBtn.style.display = 'none';
-  window._bulkData   = null;
-  _allStaff          = [];
-  _bulkTarget        = null;
+document.getElementById("sheetInfo").innerHTML=
+"<div class='warning'>"+msg+"</div>"
 
-  if (!file || !month || isNaN(year)) {
-    out.innerHTML = '<div class="error">Please choose month, year, and select an Excel file.</div>';
-    return;
-  }
-
-  _bulkEq = eq;
-  _bulkPr = 1 - eq;
-
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-
-      var yy = String(year).slice(-2);
-      var pick = pickSheetName(wb.SheetNames, month, yy);
-      var sheetName = pick.chosen;
-      var matches = pick.matches;
-
-      if (!sheetName) {
-        out.innerHTML = '<div class="error">Could not find a sheet for ' + esc(month) + ' ' + esc(yy) + '.</div>';
-        return;
-      }
-
-      var sheet = wb.Sheets[sheetName];
-      var rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-
-      if (!rows.length) {
-        out.innerHTML = '<div class="error">Selected sheet "' + esc(sheetName) + '" is empty.</div>';
-        return;
-      }
-
-      var detectedTarget = detectTarget(rows);
-      if (!detectedTarget || detectedTarget <= 0) {
-        out.innerHTML = '<div class="error">Could not detect a valid target value in sheet "' +
-          esc(sheetName) + '". Make sure there is a row with "Target" and a numeric value.</div>';
-        return;
-      }
-      _bulkTarget = detectedTarget;
-
-      var headerIdx = -1;
-      for (var r = 0; r < rows.length; r++) {
-        var row0 = rows[r] && rows[r][0];
-        if (row0 && String(row0).trim().toUpperCase() === 'STAFF') {
-          headerIdx = r;
-          break;
-        }
-      }
-      if (headerIdx === -1) {
-        out.innerHTML = '<div class="error">Could not find a header row with "STAFF" in column A.</div>';
-        return;
-      }
-
-      var headerRow = rows[headerIdx] || [];
-
-      var monthLabel1 = (month + ' ' + yy).toLowerCase();
-      var monthLabel2 = (month + yy).toLowerCase();
-      var monthColIdx = -1;
-
-      for (var c = 0; c < headerRow.length; c++) {
-        var cell = headerRow[c];
-        if (!cell) continue;
-        var text  = String(cell).replace(/\s+/g, ' ').trim();
-        var lower = text.toLowerCase();
-        var hasMonth = (lower.indexOf(monthLabel1) !== -1) || (lower.indexOf(monthLabel2) !== -1);
-        var hasTotal = lower.indexOf('total') !== -1;
-        if (hasMonth && hasTotal) {
-          monthColIdx = c;
-          break;
-        }
-      }
-
-      if (monthColIdx === -1) {
-        out.innerHTML = '<div class="error">Could not find a "' + esc(month) + ' ' + esc(yy) +
-          ' Total" style column in the header row.</div>';
-        return;
-      }
-
-      var staff = [];
-      for (var iRow = headerIdx + 1; iRow < rows.length; iRow += 2) {
-        var row1 = rows[iRow]     || [];
-        var row2 = rows[iRow + 1] || [];
-
-        var nameCell = row1[0];
-        if (!nameCell) continue;
-
-        var cleanName = String(nameCell).trim();
-        var lowerName = cleanName.toLowerCase();
-
-        if (
-          lowerName.indexOf('grand total') === 0 ||
-          lowerName.indexOf('grand totals') === 0 ||
-          lowerName.indexOf('total ') === 0 ||
-          lowerName === 'total'
-        ) {
-          continue;
-        }
-
-        var packages = num(row1[monthColIdx]);
-        var sales    = num(row2[monthColIdx]);
-
-        if (isNaN(packages) && isNaN(sales)) continue;
-
-        staff.push({
-          Staff:    cleanName,
-          Packages: isNaN(packages) ? 0 : packages,
-          Sales:    isNaN(sales)    ? 0 : sales
-        });
-      }
-
-      if (!staff.length) {
-        out.innerHTML = '<div class="error">No valid staff rows found for ' + esc(month) + ' ' + esc(yy) +
-          '. Check the alternating 2-row-per-staff pattern.</div>';
-        return;
-      }
-
-      _allStaff = staff;
-      applyBulkMathAndRender();
-
-      /* show which sheet was used + candidates */
-      renderBulkSheetInfo(out, month, year, sheetName, matches);
-
-    } catch(err) {
-      console.error(err);
-      out.innerHTML = '<div class="error">Failed to parse file. Check that it is a valid .xlsx or .xls workbook.</div>';
-    }
-  };
-  reader.readAsArrayBuffer(file);
 }
 
-function filterBulkTable() {
-  var q = document.getElementById('bulk-search').value.toLowerCase().trim();
-  var filtered = q
-    ? _allStaff.filter(function(s) { return s.Staff.toLowerCase().indexOf(q) !== -1; })
-    : _allStaff;
+function getQuarter(m){
 
-  renderBulkTable(filtered);
+const map={
+Jan:1,Feb:1,Mar:1,
+Apr:2,May:2,Jun:2,
+Jul:3,Aug:3,Sep:3,
+Oct:4,Nov:4,Dec:4
 }
 
-function removeStaff(origIndex) {
-  origIndex = parseInt(origIndex, 10);
-  if (isNaN(origIndex) || origIndex < 0 || origIndex >= _allStaff.length) return;
+return map[m]
 
-  _allStaff.splice(origIndex, 1);
-  applyBulkMathAndRender();
 }
 
-function renderBulkTable(staff) {
-  var container = document.getElementById('bulk-table-container');
-  if (!container) return;
+function qMonths(q){
 
-  if (!staff.length) {
-    container.innerHTML = '<div class="no-results">No staff match your search.</div>';
-    return;
-  }
+if(q===1) return["Jan","Feb","Mar"]
+if(q===2) return["Apr","May","Jun"]
+if(q===3) return["Jul","Aug","Sep"]
+return["Oct","Nov","Dec"]
 
-  var html =
-    '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Rank</th>' +
-      '<th>Staff</th>' +
-      '<th>Packages</th>' +
-      '<th>Total (AED)</th>' +
-      '<th>Personal %</th>' +
-      '<th>Personal ' + _bulkPrPct + '% (AED)</th>' +
-      '<th>Equal '    + _bulkEqPct + '% (AED)</th>' +
-      '<th>Total Incentive (AED)</th>' +
-      '<th>Remove</th>' +
-    '</tr></thead><tbody>';
-
-  staff.forEach(function(s) {
-    var orig      = _allStaff.indexOf(s);
-    var rankClass = orig === 0 ? 'rank-1' : orig === 1 ? 'rank-2' : orig === 2 ? 'rank-3' : '';
-    var medal     = orig === 0 ? '🥇 '   : orig === 1 ? '🥈 '   : orig === 2 ? '🥉 '   : '';
-
-    html +=
-      '<tr class="' + rankClass + '">' +
-        '<td style="color:var(--muted);font-size:12px">' + medal + (orig + 1) + '</td>' +
-        '<td><strong>' + esc(s.Staff) + '</strong></td>' +
-        '<td>' + (s.Packages || 0) + '</td>' +
-        '<td>' + s.Sales.toFixed(2) + '</td>' +
-        '<td>' + s.PersonalPct + '%</td>' +
-        '<td class="darkBrown">' + s.P30.toFixed(3)    + '</td>' +
-        '<td class="darkBlue">'  + s.EqSplit.toFixed(3) + '</td>' +
-        '<td><span class="total-inc">' + s.TotalInc.toFixed(2) + '</span></td>' +
-        '<td><button type="button" class="btn-mini" onclick="removeStaff(' + orig + ')">✕</button></td>' +
-      '</tr>';
-  });
-
-  container.innerHTML = html + '</tbody></table></div>';
 }
 
-function downloadBulk() {
-  if (!window._bulkData || !window._bulkData.length) return;
-  var ws = XLSX.utils.json_to_sheet(window._bulkData);
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Incentives');
-  XLSX.writeFile(wb, 'Bulk_Incentives_v3.1.xlsx');
+function exportCSV(){
+
+let csv="Rank,Name,Packages,Sales\n"
+
+staffData.forEach((s,i)=>{
+csv+=`${i+1},${s.name},${s.packages},${s.sales}\n`
+})
+
+const blob=new Blob([csv],{type:"text/csv"})
+
+const a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="sales_report.csv"
+a.click()
+
 }
 
-function printBulk() {
-  window.print();
-}
-
-['ind-target', 'ind-total', 'ind-personal', 'ind-count'].forEach(function(id) {
-  var el = document.getElementById(id);
-  if (el) {
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') calculateIndividual();
-    });
-  }
-});
 </script>
+
 </body>
 </html>
