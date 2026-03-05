@@ -355,8 +355,6 @@ Watermark and licensing update with stability improvements.
 
 # License
 
-## License
-
 This project is distributed under a custom license.
 
 Smart Salem and its affiliates are explicitly prohibited from using,
