@@ -17,9 +17,7 @@
 
 ---
 
-## Live Demo
-
-**GitHub Pages**
+## Live
 
 https://hijast.github.io/IncentiveCal/
 
