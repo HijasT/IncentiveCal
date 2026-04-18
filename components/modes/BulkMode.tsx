@@ -11,7 +11,7 @@ interface StaffResult {
   sales: number;
   target: number;
   achievementPercent: number;
-  tierName: string | null;
+  tier: { name: string; rate: number } | null;
   baseIncentive: number;
   p1Share: number;
   p2Share: number;
@@ -106,7 +106,7 @@ export default function BulkMode() {
           sales: calc.sales,
           target: calc.target,
           achievementPercent: calc.achievementPercent,
-          tierName: calc.tierName,
+          tierName: calc.tier?.name || 'No Incentive',
           incentive: calc.totalIncentive,
           timestamp: new Date(),
         });
@@ -151,7 +151,7 @@ export default function BulkMode() {
           r.sales,
           r.target,
           r.achievementPercent,
-          r.tierName || 'N/A',
+          r.tier?.name || 'N/A',
           r.baseIncentive,
           r.p1Share,
           r.p2Share,
@@ -175,11 +175,12 @@ export default function BulkMode() {
 
   // Chart data
   const tierDistribution = results.reduce((acc: any[], result) => {
-    const existing = acc.find(item => item.name === (result.tierName || 'No Incentive'));
+    const tierLabel = result.tier?.name || 'No Incentive';
+    const existing = acc.find(item => item.name === tierLabel);
     if (existing) {
       existing.value += 1;
     } else {
-      acc.push({ name: result.tierName || 'No Incentive', value: 1 });
+      acc.push({ name: tierLabel, value: 1 });
     }
     return acc;
   }, []);
@@ -332,7 +333,7 @@ export default function BulkMode() {
                       <td className="py-3 px-2 text-right">{formatCurrency(result.sales)}</td>
                       <td className="py-3 px-2 text-right">{formatCurrency(result.target)}</td>
                       <td className="py-3 px-2 text-right font-semibold">{formatPercentage(result.achievementPercent)}</td>
-                      <td className="py-3 px-2">{result.tierName || '—'}</td>
+                      <td className="py-3 px-2">{result.tier?.name || '—'}</td>
                       <td className="py-3 px-2 text-right font-bold text-green-600 dark:text-green-400">
                         {formatCurrency(result.totalIncentive)}
                       </td>
