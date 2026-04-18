@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, Button, Alert, Spinner } from '@/components/common';
 import { excelParser, tierManager, analyticsTracker, formatCurrency, formatPercentage } from '@/lib';
 import { Upload, Download } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, HistogramChart } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface StaffResult {
   staffName: string;
