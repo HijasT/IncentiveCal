@@ -143,6 +143,7 @@ class AnalyticsTracker {
         topPerformers: [],
         improvementAreas: [],
         averageAchievementTrend: [],
+        recommendations: [],
       };
     }
 
@@ -160,10 +161,29 @@ class AnalyticsTracker {
       gap: 75 - r.achievementPercent,
     }));
 
+    // Generate recommendations based on data
+    const recommendations: string[] = [];
+    const avgAchievement = this.records.reduce((sum, r) => sum + r.achievementPercent, 0) / this.records.length;
+    const avgIncentive = this.records.reduce((sum, r) => sum + r.incentiveAmount, 0) / this.records.length;
+
+    if (avgAchievement < 75) {
+      recommendations.push('Focus on improving team achievement rates - currently below 75% target');
+    }
+    if (improvementAreas.length > 3) {
+      recommendations.push(`Consider mentoring programs for ${improvementAreas.length} team members below 75% achievement`);
+    }
+    if (topPerformers.length > 0 && topPerformers[0].achievement > 110) {
+      recommendations.push('Recognize top performers - they are exceeding targets significantly');
+    }
+    if (recommendations.length === 0) {
+      recommendations.push('Team is performing well - continue current strategy');
+    }
+
     return {
       topPerformers,
       improvementAreas,
       averageAchievementTrend: this.getTrendData(30),
+      recommendations,
     };
   }
 
