@@ -103,6 +103,15 @@ class AnalyticsTracker {
     const stats = this.getStats();
     const individualCount = this.records.filter(r => r.type === 'individual').length;
     const bulkCount = this.records.filter(r => r.type === 'bulk').length;
+
+    // Get most common tier with count
+    const tierCounts = this.records.reduce((acc: Record<string, number>, r) => {
+      acc[r.tierName] = (acc[r.tierName] || 0) + 1;
+      return acc;
+    }, {});
+
+    const mostCommonTierEntry = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0];
+    const mostCommonTier = mostCommonTierEntry ? { name: mostCommonTierEntry[0], count: mostCommonTierEntry[1] } : null;
     
     return {
       totalCalculations: stats.totalCalculations,
@@ -111,6 +120,7 @@ class AnalyticsTracker {
       averageAchievement: Math.round(stats.averageAchievement * 100) / 100,
       averageIncentive: Math.round(stats.averageIncentive * 100) / 100,
       totalIncentiveDistributed: Math.round(stats.totalIncentiveDistributed * 100) / 100,
+      mostCommonTier,
     };
   }
 
