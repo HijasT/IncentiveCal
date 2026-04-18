@@ -1,71 +1,21 @@
 /**
- * Validation & Utility Functions
- * Input validation, sanitization, formatting, error handling
+ * Validation & Sanitization Utilities
  */
 
-/**
- * Sanitize string input
- */
-export function sanitizeString(input: unknown): string {
-  if (typeof input !== 'string') {
-    return '';
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
   }
-  return input
-    .trim()
-    .replace(/[<>]/g, '') // Remove potential HTML tags
-    .slice(0, 200); // Limit length
 }
 
 /**
- * Sanitize number input
+ * Sanitize HTML to prevent XSS
  */
-export function sanitizeNumber(input: unknown): number | null {
-  const num = Number(input);
-  if (isNaN(num) || !isFinite(num)) {
-    return null;
-  }
-  return num;
-}
-
-/**
- * Format currency (AED)
- */
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-AE', {
-    style: 'currency',
-    currency: 'AED',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-/**
- * Format percentage
- */
-export function formatPercentage(value: number, decimals = 2): string {
-  return `${(value).toFixed(decimals)}%`;
-}
-
-/**
- * Validate email
- */
-export function validateEmail(email: string): boolean {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-}
-
-/**
- * Validate percentage (0-100)
- */
-export function validatePercentage(value: number): boolean {
-  return typeof value === 'number' && value >= 0 && value <= 100;
-}
-
-/**
- * Validate positive number
- */
-export function validatePositiveNumber(value: number): boolean {
-  return typeof value === 'number' && value > 0 && isFinite(value);
+export function sanitizeHtml(input: string): string {
+  const div = document.createElement('div');
+  div.textContent = input;
+  return div.innerHTML;
 }
 
 /**
@@ -83,136 +33,130 @@ export function escapeHtml(text: string): string {
 }
 
 /**
- * Clamp number between min and max
+ * Validate staff name
  */
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-/**
- * Debounce function
- */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-
-  return function (...args: Parameters<T>) {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-/**
- * Round to decimal places
- */
-export function roundTo(value: number, decimals: number): number {
-  const factor = Math.pow(10, decimals);
-  return Math.round(value * factor) / factor;
-}
-
-/**
- * Generate unique ID
- */
-export function generateId(prefix = 'id'): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
- * Check if object is empty
- */
-export function isEmpty(obj: Record<string, any>): boolean {
-  return Object.keys(obj).length === 0;
-}
-
-/**
- * Merge deep objects
- */
-export function deepMerge<T>(target: T, source: Partial<T>): T {
-  const result = { ...target };
-
-  for (const key in source) {
-    if (source.hasOwnProperty(key)) {
-      const sourceValue = source[key];
-      const targetValue = target[key];
-
-      if (
-        sourceValue &&
-        typeof sourceValue === 'object' &&
-        !Array.isArray(sourceValue) &&
-        targetValue &&
-        typeof targetValue === 'object' &&
-        !Array.isArray(targetValue)
-      ) {
-        result[key] = deepMerge(targetValue, sourceValue);
-      } else {
-        result[key] = sourceValue as T[Extract<keyof T, string>];
-      }
-    }
+export function validateStaffName(name: string): { valid: boolean; error?: string } {
+  if (!name || typeof name !== 'string') {
+    return { valid: false, error: 'Staff name is required' };
   }
 
-  return result;
-}
-
-/**
- * Calculate percentage from two numbers
- */
-export function calculatePercentage(current: number, total: number): number {
-  if (total === 0) return 0;
-  return (current / total) * 100;
-}
-
-/**
- * Compare two floats with tolerance
- */
-export function floatsEqual(a: number, b: number, tolerance = 0.001): boolean {
-  return Math.abs(a - b) < tolerance;
-}
-
-/**
- * Error class for application errors
- */
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public code: string = 'UNKNOWN_ERROR',
-    public statusCode: number = 400
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-/**
- * Validation result type
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-/**
- * Validate object against schema
- */
-export function validate(
-  obj: Record<string, any>,
-  schema: Record<string, (value: any) => boolean | string>
-): ValidationResult {
-  const errors: string[] = [];
-
-  for (const key in schema) {
-    const validator = schema[key];
-    const value = obj[key];
-    const result = validator(value);
-
-    if (result !== true) {
-      errors.push(typeof result === 'string' ? result : `${key} is invalid`);
-    }
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: 'Staff name cannot be empty' };
   }
 
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
+  if (trimmed.length > 100) {
+    return { valid: false, error: 'Staff name must be less than 100 characters' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate sales amount
+ */
+export function validateSales(sales: unknown): { valid: boolean; error?: string } {
+  if (sales === null || sales === undefined) {
+    return { valid: false, error: 'Sales amount is required' };
+  }
+
+  const num = Number(sales);
+  if (isNaN(num)) {
+    return { valid: false, error: 'Sales must be a valid number' };
+  }
+
+  if (num < 0) {
+    return { valid: false, error: 'Sales cannot be negative' };
+  }
+
+  if (!isFinite(num)) {
+    return { valid: false, error: 'Sales must be a finite number' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate target amount
+ */
+export function validateTarget(target: unknown): { valid: boolean; error?: string } {
+  if (target === null || target === undefined) {
+    return { valid: false, error: 'Target amount is required' };
+  }
+
+  const num = Number(target);
+  if (isNaN(num)) {
+    return { valid: false, error: 'Target must be a valid number' };
+  }
+
+  if (num <= 0) {
+    return { valid: false, error: 'Target must be greater than 0' };
+  }
+
+  if (!isFinite(num)) {
+    return { valid: false, error: 'Target must be a finite number' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate percentage split (0-100)
+ */
+export function validatePercentage(value: unknown): { valid: boolean; error?: string } {
+  if (value === null || value === undefined) {
+    return { valid: false, error: 'Percentage is required' };
+  }
+
+  const num = Number(value);
+  if (isNaN(num)) {
+    return { valid: false, error: 'Percentage must be a valid number' };
+  }
+
+  if (num < 0 || num > 100) {
+    return { valid: false, error: 'Percentage must be between 0 and 100' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Format currency value
+ */
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-AE', {
+    style: 'currency',
+    currency: 'AED',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/**
+ * Format percentage value
+ */
+export function formatPercentage(value: number): string {
+  return `${value.toFixed(2)}%`;
+}
+
+/**
+ * Format large numbers with commas
+ */
+export function formatNumber(value: number): string {
+  return value.toLocaleString('en-AE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/**
+ * Clean and validate JSON
+ */
+export function validateJSON(json: string): { valid: boolean; error?: string; data?: unknown } {
+  try {
+    const data = JSON.parse(json);
+    return { valid: true, data };
+  } catch (err) {
+    return { valid: false, error: 'Invalid JSON format' };
+  }
 }

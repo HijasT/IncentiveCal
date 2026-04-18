@@ -1,113 +1,177 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Input, Alert, Modal } from '@/components/common';
-import { configManager, formatPercentage } from '@/lib';
-import { Tier } from '@/lib/configManager';
+import { configManager, Tier } from '@/lib';
+import { Plus, Trash2, Download, Upload, RotateCcw } from 'lucide-react';
+
+interface TierForm {
+  name: string;
+  min: string;
+  max: string;
+  rate: string;
+}
 
 export default function SettingsPage() {
-  const [config, setConfig] = useState(configManager.getConfig());
-  const [splitEqual, setSplitEqual] = useState(config.defaultSplit.equal);
-  const [editingTier, setEditingTier] = useState<Tier | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [defaultSplit, setDefaultSplit] = useState(60);
   const [message, setMessage] = useState('');
-  const [importError, setImportError] = useState('');
-  const [jsonInput, setJsonInput] = useState('');
+  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<TierForm>({
+    name: '',
+    min: '',
+    max: '',
+    rate: '',
+  });
+
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  const loadConfig = () => {
+    try {
+      const config = configManager.getConfig();
+      setTiers(config.tiers);
+      setDefaultSplit(config.defaultSplit.equal);
+    } catch (err) {
+      setError('Failed to load configuration');
+    }
+  };
 
   const handleAddTier = () => {
-    const newTier: Tier = {
-      id: `tier_${Date.now()}`,
-      name: `Tier ${config.tiers.length + 1}`,
-      min: 0,
-      max: 100,
-      rate: 2.5,
-    };
-    setEditingTier(newTier);
-    setShowModal(true);
+    setFormData({ name: '', min: '', max: '', rate: '' });
+    setEditingId(null);
+    setIsEditing(true);
   };
 
   const handleEditTier = (tier: Tier) => {
-    setEditingTier(tier);
-    setShowModal(true);
+    setFormData({
+      name: tier.name,
+      min: tier.min.toString(),
+      max: tier.max === null ? '' : tier.max.toString(),
+      rate: tier.rate.toString(),
+    });
+    setEditingId(tier.id);
+    setIsEditing(true);
   };
 
   const handleSaveTier = () => {
-    if (!editingTier) return;
-
-    let updatedTiers: Tier[];
-    if (config.tiers.find((t) => t.id === editingTier.id)) {
-      updatedTiers = config.tiers.map((t) => (t.id === editingTier.id ? editingTier : t));
-    } else {
-      updatedTiers = [...config.tiers, editingTier];
-    }
-
-    const validation = configManager.validateTiers(updatedTiers);
-    if (!validation.length) {
-      const newConfig = {
-        ...config,
-        tiers: updatedTiers,
-        defaultSplit: { equal: splitEqual, personal: 100 - splitEqual },
-      };
-      configManager.updateConfig(newConfig);
-      setConfig(newConfig);
-      setShowModal(false);
-      setEditingTier(null);
-      setMessage('Tier saved successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } else {
-      setMessage(`Validation error: ${validation.join(', ')}`);
-    }
-  };
-
-  const handleDeleteTier = (tierId: string) => {
-    if (config.tiers.length <= 1) {
-      setMessage('Must keep at least one tier');
+    if (!formData.name || !formData.min || !formData.rate) {
+      setError('Name, min, and rate are required');
       return;
     }
 
-    const updatedTiers = config.tiers.filter((t) => t.id !== tierId);
-    const newConfig = {
-      ...config,
-      tiers: updatedTiers,
-    };
-    configManager.updateConfig(newConfig);
-    setConfig(newConfig);
-    setMessage('Tier deleted');
+    const min = parseFloat(formData.min);
+    const max = formData.max ? parseFloat(formData.max) : null;
+    const rate = parseFloat(formData.rate);
+
+    if (isNaN(min) || (max !== null && isNaN(max)) || isNaN(rate)) {
+      setError('Please enter valid numbers');
+      return;
+    }
+
+    if (max !== null && min >= max) {
+      setError('Min must be less than max');
+      return;
+    }
+
+    let newTiers = [...tiers];
+
+    if (editingId) {
+      newTiers = newTiers.map((t) =>
+        t.id === editingId
+          ? { ...t, name: formData.name, min, max, rate }
+          : t
+      );
+    } else {
+      const newTier: Tier = {
+        id: `tier-${Date.now()}`,
+        name: formData.name,
+        min,
+        max,
+        rate,
+      };
+      newTiers.push(newTier);
+    }
+
+    const validation = configManager.validateTiers(newTiers);
+    if (validation.length > 0) {
+      setError(validation.join(', '));
+      return;
+    }
+
+    setTiers(newTiers);
+    configManager.updateTiers(newTiers);
+    setMessage(editingId ? 'Tier updated successfully' : 'Tier added successfully');
+    setIsEditing(false);
+    setError('');
+    setTimeout(() => setMessage(''), 3000);
   };
 
-  const handleReset = () => {
-    if (confirm('Are you sure? This will reset to default tiers.')) {
-      configManager.resetToDefaults();
-      setConfig(configManager.getConfig());
-      setSplitEqual(configManager.getConfig().defaultSplit.equal);
-      setMessage('Reset to defaults');
-    }
+  const handleDeleteTier = (id: string) => {
+    const newTiers = tiers.filter((t) => t.id !== id);
+    setTiers(newTiers);
+    configManager.updateTiers(newTiers);
+    setMessage('Tier deleted successfully');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handleSplitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setDefaultSplit(value);
+    configManager.updateConfig({ defaultSplit: { equal: value, personal: 100 - value } });
+    setMessage('Default split updated');
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const handleExport = () => {
-    const json = configManager.exportAsJSON();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sic-config-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    setMessage('Configuration exported!');
+    try {
+      const json = configManager.exportAsJSON();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sic-config-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setMessage('Configuration exported');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError('Failed to export configuration');
+    }
   };
 
-  const handleImport = () => {
-    try {
-      const result = configManager.importFromJSON(jsonInput);
-      if (result.success) {
-        setConfig(configManager.getConfig());
-        setJsonInput('');
-        setImportError('');
-        setMessage('Configuration imported successfully!');
-      } else {
-        setImportError(result.error || 'Import failed');
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = event.target?.result as string;
+        const result = configManager.importFromJSON(json);
+        if (result.success) {
+          loadConfig();
+          setMessage('Configuration imported successfully');
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          setError(result.error || 'Failed to import configuration');
+        }
+      } catch (err) {
+        setError('Invalid file format');
       }
-    } catch (err) {
-      setImportError(`Error: ${err}`);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset to default configuration?')) {
+      configManager.resetToDefaults();
+      loadConfig();
+      setMessage('Reset to default configuration');
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
@@ -120,200 +184,195 @@ export default function SettingsPage() {
         </Alert>
       )}
 
-      {/* Tier Configuration */}
-      <Card title="⚙️ Tier Configuration" icon="🎯">
-        <div className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            <Button onClick={handleAddTier} variant="success" icon="➕">
-              Add Tier
-            </Button>
-            <Button onClick={handleExport} variant="secondary" icon="📥">
-              Export
-            </Button>
-            <Button onClick={handleReset} variant="danger" icon="🔄">
-              Reset
-            </Button>
-          </div>
+      {error && (
+        <Alert type="error" onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
 
-          {/* Tiers Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-slate-300 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
-                  <th className="text-left py-3 px-3">Name</th>
-                  <th className="text-center py-3 px-3">Min %</th>
-                  <th className="text-center py-3 px-3">Max %</th>
-                  <th className="text-center py-3 px-3">Rate %</th>
-                  <th className="text-center py-3 px-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {config.tiers.map((tier) => (
-                  <tr key={tier.id} className="border-b border-slate-100 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50">
-                    <td className="py-3 px-3 font-semibold">{tier.name}</td>
-                    <td className="py-3 px-3 text-center">{tier.min}%</td>
-                    <td className="py-3 px-3 text-center">{tier.max ?? '∞'}%</td>
-                    <td className="py-3 px-3 text-center font-bold text-teal-600 dark:text-teal-400">
-                      {tier.rate}%
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <div className="flex gap-2 justify-center">
+      {/* Current Split */}
+      <Card title="⚖️ Default P1/P2 Split" icon="📊">
+        <div className="space-y-4">
+          <div>
+            <label className="label-text">
+              Equal Share (P1): {defaultSplit}%
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={defaultSplit}
+              onChange={handleSplitChange}
+              className="w-full"
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              Personal Share (P2): {100 - defaultSplit}%
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tier Management */}
+      <Card title="🎯 Tier Configuration" icon="⚙️">
+        <div className="space-y-4">
+          <Button
+            onClick={handleAddTier}
+            variant="primary"
+            icon="➕"
+            className="w-full"
+          >
+            Add New Tier
+          </Button>
+
+          {tiers.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <th className="text-left py-2 px-2">Name</th>
+                    <th className="text-left py-2 px-2">Min %</th>
+                    <th className="text-left py-2 px-2">Max %</th>
+                    <th className="text-left py-2 px-2">Rate %</th>
+                    <th className="text-left py-2 px-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tiers.map((tier) => (
+                    <tr
+                      key={tier.id}
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                    >
+                      <td className="py-3 px-2">{tier.name}</td>
+                      <td className="py-3 px-2">{tier.min}%</td>
+                      <td className="py-3 px-2">
+                        {tier.max === null ? '∞' : `${tier.max}%`}
+                      </td>
+                      <td className="py-3 px-2 font-semibold text-green-600 dark:text-green-400">
+                        {tier.rate}%
+                      </td>
+                      <td className="py-3 px-2 flex gap-2">
                         <button
                           onClick={() => handleEditTier(tier)}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold"
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => handleDeleteTier(tier.id)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 font-semibold"
-                          disabled={config.tiers.length === 1}
+                          className="text-red-600 hover:text-red-800 dark:text-red-400"
                         >
-                          🗑️
+                          <Trash2 size={16} />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </Card>
-
-      {/* Default Settings */}
-      <Card title="🔧 Default Settings" icon="⚙️">
-        <div>
-          <label className="label-text">
-            Default P1 Split: {splitEqual}% / P2: {100 - splitEqual}%
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={splitEqual}
-            onChange={(e) => setSplitEqual(parseInt(e.target.value))}
-            className="w-full h-2 bg-slate-200 dark:bg-gray-700 rounded-lg"
-          />
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            Updated default split for new calculations.
-          </p>
-          <Button
-            onClick={() => {
-              configManager.updateConfig({
-                ...config,
-                defaultSplit: { equal: splitEqual, personal: 100 - splitEqual },
-              });
-              setMessage('Default split updated!');
-            }}
-            variant="primary"
-            size="sm"
-            className="mt-3"
-          >
-            Save Split
-          </Button>
-        </div>
-      </Card>
-
-      {/* Import/Export */}
-      <Card title="📦 Import/Export Configuration" icon="🔄">
-        <div className="space-y-4">
-          <div>
-            <label className="label-text">Export Configuration</label>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-              Download your tier configuration as JSON for backup or sharing.
-            </p>
-            <Button onClick={handleExport} variant="secondary" icon="📥" className="w-full">
-              Download as JSON
-            </Button>
-          </div>
-
-          <div className="border-t border-slate-200 dark:border-gray-700 pt-4">
-            <label className="label-text">Import Configuration</label>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-              Paste a previously exported JSON configuration to restore settings.
-            </p>
-            <textarea
-              value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
-              placeholder="Paste JSON configuration here..."
-              className="input-field mb-2 font-mono text-xs"
-              rows={5}
-            />
-            {importError && (
-              <Alert type="error" title="Import Error" onClose={() => setImportError('')}>
-                {importError}
-              </Alert>
-            )}
-            <Button onClick={handleImport} variant="primary" icon="📤" className="w-full">
-              Import Configuration
-            </Button>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </Card>
 
       {/* Tier Editor Modal */}
       <Modal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setEditingTier(null);
-        }}
-        title={editingTier?.id.startsWith('tier_') && !config.tiers.find((t) => t.id === editingTier.id) ? 'Add New Tier' : 'Edit Tier'}
-        size="md"
+        isOpen={isEditing}
+        onClose={() => setIsEditing(false)}
+        title={editingId ? 'Edit Tier' : 'Add New Tier'}
       >
-        {editingTier && (
-          <div className="space-y-4">
-            <Input
-              label="Tier Name"
-              value={editingTier.name}
-              onChange={(e) => setEditingTier({ ...editingTier, name: e.target.value })}
-              placeholder="e.g., Tier 1"
-            />
-            <Input
-              label="Minimum Achievement %"
-              type="number"
-              value={editingTier.min}
-              onChange={(e) => setEditingTier({ ...editingTier, min: parseInt(e.target.value) })}
-              min="0"
-              max="100"
-            />
-            <Input
-              label="Maximum Achievement % (leave empty for no limit)"
-              type="number"
-              value={editingTier.max ?? ''}
-              onChange={(e) => setEditingTier({ ...editingTier, max: e.target.value ? parseInt(e.target.value) : null })}
-              min="0"
-              max="100"
-            />
-            <Input
-              label="Incentive Rate %"
-              type="number"
-              value={editingTier.rate}
-              onChange={(e) => setEditingTier({ ...editingTier, rate: parseFloat(e.target.value) })}
-              min="0"
-              max="100"
-              step="0.1"
-            />
-          </div>
-        )}
-        footer={
-          <>
+        <div className="space-y-4">
+          <Input
+            label="Tier Name"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+            placeholder="e.g., Tier 1, Bronze"
+          />
+
+          <Input
+            label="Minimum Achievement %"
+            type="number"
+            value={formData.min}
+            onChange={(e) =>
+              setFormData({ ...formData, min: e.target.value })
+            }
+            placeholder="e.g., 75"
+          />
+
+          <Input
+            label="Maximum Achievement % (leave blank for no limit)"
+            type="number"
+            value={formData.max}
+            onChange={(e) =>
+              setFormData({ ...formData, max: e.target.value })
+            }
+            placeholder="e.g., 100"
+          />
+
+          <Input
+            label="Incentive Rate %"
+            type="number"
+            value={formData.rate}
+            onChange={(e) =>
+              setFormData({ ...formData, rate: e.target.value })
+            }
+            placeholder="e.g., 2.5"
+            step="0.1"
+          />
+
+          <div className="flex gap-2 pt-4">
             <Button
-              onClick={() => {
-                setShowModal(false);
-                setEditingTier(null);
-              }}
+              onClick={handleSaveTier}
+              variant="primary"
+              className="flex-1"
+            >
+              Save Tier
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
               variant="secondary"
+              className="flex-1"
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveTier} variant="primary">
-              Save Tier
-            </Button>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Import/Export & Reset */}
+      <Card title="💾 Backup & Recovery" icon="🔄">
+        <div className="space-y-3">
+          <Button
+            onClick={handleExport}
+            variant="primary"
+            icon="⬇️"
+            className="w-full"
+          >
+            Export Configuration as JSON
+          </Button>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Import Configuration
+            </label>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              className="block w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-200"
+            />
+          </div>
+
+          <Button
+            onClick={handleReset}
+            variant="secondary"
+            icon="🔄"
+            className="w-full"
+          >
+            Reset to Default Configuration
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }

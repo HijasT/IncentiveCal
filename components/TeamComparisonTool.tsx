@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Button, Modal, Alert } from '@/components/common';
-import { teamComparison, formatCurrency, formatPercentage } from '@/lib';
-import { IncentiveCalculation } from '@/lib/tierManager';
+import { Card, Button, Alert } from '@/components/common';
+import { teamComparison } from '@/lib';
 import {
   BarChart,
   Bar,
@@ -13,20 +12,31 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
 } from 'recharts';
 
-interface TeamComparisonProps {
+interface IncentiveCalculation {
+  staffName: string;
+  sales: number;
+  target: number;
+  achievementPercent: number;
+  tierName: string | null;
+  baseIncentive: number;
+  p1Share: number;
+  p2Share: number;
+  totalIncentive: number;
+}
+
+interface TeamComparisonToolProps {
   calculationsA?: IncentiveCalculation[];
-  calculationsB?: InCalculiveCalculation[];
+  calculationsB?: IncentiveCalculation[];
   onClose?: () => void;
 }
 
-export default function TeamComparisonTool({ calculationsA, calculationsB, onClose }: TeamComparisonProps) {
+export default function TeamComparisonTool({
+  calculationsA,
+  calculationsB,
+  onClose,
+}: TeamComparisonToolProps) {
   const [teamAName, setTeamAName] = useState('Team A');
   const [teamBName, setTeamBName] = useState('Team B');
   const [results, setResults] = useState<any>(null);
@@ -34,7 +44,12 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
   const [error, setError] = useState('');
 
   const handleCompare = () => {
-    if (!calculationsA || !calculationsB || calculationsA.length === 0 || calculationsB.length === 0) {
+    if (
+      !calculationsA ||
+      !calculationsB ||
+      calculationsA.length === 0 ||
+      calculationsB.length === 0
+    ) {
       setError('Both teams must have at least one calculation');
       return;
     }
@@ -64,7 +79,6 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
     );
   }
 
-  // Comparison data for charts
   const comparisonChartData = results
     ? [
         {
@@ -149,13 +163,13 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
               </p>
               <div className="space-y-1">
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {formatCurrency(results.metricA.totalSales)}
+                  AED {(results.metricA.totalSales || 0).toLocaleString()}
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   {results.metricA.staffCount} staff
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {formatPercentage(results.metricA.averageAchievement)} avg
+                  {(results.metricA.averageAchievement || 0).toFixed(2)}% avg
                 </p>
               </div>
             </Card>
@@ -166,11 +180,18 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
                   Difference
                 </p>
                 <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {results.differences.totalSalesDiff > 0 ? '+' : ''}
-                  {formatCurrency(results.differences.totalSalesDiff)}
+                  {(results.differences.totalSalesDiff || 0) > 0 ? '+' : ''}
+                  AED{(results.differences.totalSalesDiff || 0).toLocaleString()}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
-                  {((results.differences.totalSalesDiff / results.metricA.totalSales) * 100).toFixed(1)}%
+                  {results.metricA.totalSales > 0
+                    ? (
+                        ((results.differences.totalSalesDiff || 0) /
+                          results.metricA.totalSales) *
+                        100
+                      ).toFixed(1)
+                    : 0}
+                  %
                 </p>
               </div>
             </Card>
@@ -181,13 +202,13 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
               </p>
               <div className="space-y-1">
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(results.metricB.totalSales)}
+                  AED {(results.metricB.totalSales || 0).toLocaleString()}
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   {results.metricB.staffCount} staff
                 </p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {formatPercentage(results.metricB.averageAchievement)} avg
+                  {(results.metricB.averageAchievement || 0).toFixed(2)}% avg
                 </p>
               </div>
             </Card>
@@ -195,67 +216,19 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
 
           {/* Charts */}
           {comparisonChartData.length > 0 && (
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Bar Chart Comparison */}
-              <Card title="📊 Metrics Comparison" icon="📈">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={comparisonChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="metric" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey={teamAName} fill="#3B82F6" />
-                    <Bar dataKey={teamBName} fill="#10B981" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-
-              {/* Detailed Metrics */}
-              <Card title="📋 Detailed Metrics" icon="📊">
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Total Incentive</p>
-                      <p className="font-bold text-blue-600">{formatCurrency(results.metricA.totalIncentive)}</p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Difference</p>
-                      <p className="font-bold text-purple-600">
-                        {results.differences.totalIncentiveDiff > 0 ? '+' : ''}
-                        {formatCurrency(results.differences.totalIncentiveDiff)}
-                      </p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Total Incentive</p>
-                      <p className="font-bold text-green-600">{formatCurrency(results.metricB.totalIncentive)}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Avg Achievement</p>
-                      <p className="font-bold text-blue-600">
-                        {formatPercentage(results.metricA.averageAchievement)}
-                      </p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Difference</p>
-                      <p className="font-bold text-purple-600">
-                        {results.differences.avgAchievementDiff > 0 ? '+' : ''}
-                        {results.differences.avgAchievementDiff.toFixed(2)}%
-                      </p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-gray-900 p-3 rounded">
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Avg Achievement</p>
-                      <p className="font-bold text-green-600">
-                        {formatPercentage(results.metricB.averageAchievement)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
+            <Card title="📊 Metrics Comparison" icon="📈">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={comparisonChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="metric" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey={teamAName} fill="#3B82F6" />
+                  <Bar dataKey={teamBName} fill="#10B981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
           )}
 
           {/* Insights */}
@@ -263,57 +236,25 @@ export default function TeamComparisonTool({ calculationsA, calculationsB, onClo
             <Card title="💡 Key Insights" icon="🎯">
               <div className="space-y-2">
                 {[
-                  `${results.metricA.teamName}: ${results.metricA.staffCount} staff, ${formatCurrency(results.metricA.totalSales)} sales, ${formatPercentage(results.metricA.averageAchievement)} avg achievement`,
-                  `${results.metricB.teamName}: ${results.metricB.staffCount} staff, ${formatCurrency(results.metricB.totalSales)} sales, ${formatPercentage(results.metricB.averageAchievement)} avg achievement`,
-                  `Sales Difference: ${formatCurrency(Math.abs(results.differences.totalSalesDiff))} (${Math.abs(((results.differences.totalSalesDiff / results.metricA.totalSales) * 100).toFixed(1))}%)`,
-                  `Incentive Difference: ${formatCurrency(Math.abs(results.differences.totalIncentiveDiff))}`,
-                  `Achievement Gap: ${results.differences.avgAchievementDiff.toFixed(2)}%`,
+                  `${results.metricA.teamName}: ${results.metricA.staffCount} staff, AED ${(results.metricA.totalSales || 0).toLocaleString()} sales, ${(results.metricA.averageAchievement || 0).toFixed(2)}% avg achievement`,
+                  `${results.metricB.teamName}: ${results.metricB.staffCount} staff, AED ${(results.metricB.totalSales || 0).toLocaleString()} sales, ${(results.metricB.averageAchievement || 0).toFixed(2)}% avg achievement`,
+                  `Sales Difference: AED ${Math.abs(results.differences.totalSalesDiff || 0).toLocaleString()}`,
+                  `Incentive Difference: AED ${Math.abs(results.differences.totalIncentiveDiff || 0).toLocaleString()}`,
+                  `Achievement Gap: ${(results.differences.avgAchievementDiff || 0).toFixed(2)}%`,
                 ].map((insight, idx) => (
-                  <div key={idx} className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+                  <div
+                    key={idx}
+                    className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800"
+                  >
                     <span className="text-lg">💬</span>
-                    <span className="text-sm text-amber-900 dark:text-amber-100">{insight}</span>
+                    <span className="text-sm text-amber-900 dark:text-amber-100">
+                      {insight}
+                    </span>
                   </div>
                 ))}
               </div>
             </Card>
           )}
-
-          {/* Top Performers Comparison */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {results.metricA.topPerformer && (
-              <Card title="🏆 Top Performer" icon="⭐">
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded border border-blue-200 dark:border-blue-800">
-                  <p className="font-semibold text-blue-900 dark:text-blue-100">{results.metricA.teamName}</p>
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-2">
-                    {results.metricA.topPerformer.name}
-                  </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    {formatPercentage(results.metricA.topPerformer.achievement)} achievement
-                  </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {formatCurrency(results.metricA.topPerformer.incentive)} incentive
-                  </p>
-                </div>
-              </Card>
-            )}
-
-            {results.metricB.topPerformer && (
-              <Card title="🏆 Top Performer" icon="⭐">
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded border border-green-200 dark:border-green-800">
-                  <p className="font-semibold text-green-900 dark:text-green-100">{results.metricB.teamName}</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400 mt-2">
-                    {results.metricB.topPerformer.name}
-                  </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    {formatPercentage(results.metricB.topPerformer.achievement)} achievement
-                  </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {formatCurrency(results.metricB.topPerformer.incentive)} incentive
-                  </p>
-                </div>
-              </Card>
-            )}
-          </div>
         </>
       )}
     </div>
