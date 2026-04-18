@@ -33,6 +33,31 @@ export function escapeHtml(text: string): string {
 }
 
 /**
+ * Sanitize numeric input
+ */
+export function sanitizeNumber(value: unknown): number {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+
+  const num = Number(value);
+  
+  if (isNaN(num) || !isFinite(num)) {
+    return 0;
+  }
+
+  return num < 0 ? 0 : num;
+}
+
+/**
+ * Round number to specified decimal places
+ */
+export function roundTo(value: number, decimals: number = 2): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}
+
+/**
  * Validate staff name
  */
 export function validateStaffName(name: string): { valid: boolean; error?: string } {
@@ -136,7 +161,7 @@ export function formatCurrency(value: number): string {
  * Format percentage value
  */
 export function formatPercentage(value: number): string {
-  return `${value.toFixed(2)}%`;
+  return `${roundTo(value, 2)}%`;
 }
 
 /**
