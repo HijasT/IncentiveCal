@@ -101,8 +101,13 @@ class AnalyticsTracker {
 
   getMetrics() {
     const stats = this.getStats();
+    const individualCount = this.records.filter(r => r.type === 'individual').length;
+    const bulkCount = this.records.filter(r => r.type === 'bulk').length;
+    
     return {
       totalCalculations: stats.totalCalculations,
+      individualCalculations: individualCount,
+      bulkCalculations: bulkCount,
       averageAchievement: Math.round(stats.averageAchievement * 100) / 100,
       averageIncentive: Math.round(stats.averageIncentive * 100) / 100,
       totalIncentiveDistributed: Math.round(stats.totalIncentiveDistributed * 100) / 100,
