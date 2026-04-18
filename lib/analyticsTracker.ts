@@ -131,8 +131,8 @@ class AnalyticsTracker {
     }, {});
 
     return Object.entries(distribution).map(([tier, count]) => ({
-      name: tier,
-      value: count,
+      tierName: tier,
+      count: count,
       percentage: (count / Math.max(this.records.length, 1)) * 100,
     }));
   }
