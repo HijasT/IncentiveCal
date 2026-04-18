@@ -107,6 +107,9 @@ export default function BulkMode() {
           target: calc.target,
           achievementPercent: calc.achievementPercent,
           tierName: calc.tier?.name || 'No Incentive',
+          splitEqual: splitEqual,
+          type: 'bulk',
+          incentiveAmount: calc.totalIncentive,
         });
       });
 
