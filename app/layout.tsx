@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import './globals.css';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 export const metadata: Metadata = {
   title: 'Smart Incentive Calculator v5.0',
@@ -35,17 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      const html = document.documentElement;
-                      html.classList.toggle('dark');
-                      localStorage.setItem('sic_dark_mode', html.classList.contains('dark') ? 'true' : 'false');
-                    }}
-                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    aria-label="Toggle dark mode"
-                  >
-                    <span className="text-xl">🌙</span>
-                  </button>
+                  <DarkModeToggle />
                 </div>
               </div>
             </div>

@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import TabNavigation from '@/components/TabNavigation';
 import IndividualMode from '@/components/modes/IndividualMode';
