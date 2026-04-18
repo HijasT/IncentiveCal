@@ -75,7 +75,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Tab Navigation */}
-        <TabNavigation activeTab={activeTab} tabs={tabs} setActiveTab={setActiveTab} />
+        <TabNavigation activeTab={activeTab} tabs={tabs} setActiveTab={(tabId) => setActiveTab(tabId as TabId)} />
 
         {/* Tab Content */}
         <div className="mt-8 animate-fade-in">
