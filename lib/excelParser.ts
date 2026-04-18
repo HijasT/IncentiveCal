@@ -99,3 +99,4 @@ class ExcelParser {
 }
 
 export default new ExcelParser();
+export type { StaffRecord, SheetData, ExcelParseResult };
