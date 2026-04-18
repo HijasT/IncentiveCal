@@ -1,0 +1,11 @@
+{
+  "name": "smart-incentive-calculator-v5",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "envDescription": {
+    "NODE_ENV": "Set to production for optimized builds"
+  }
+}
