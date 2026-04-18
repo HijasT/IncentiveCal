@@ -25,7 +25,10 @@ class AnalyticsTracker {
       const stored = localStorage.getItem('sic_analytics_v5');
       if (stored) {
         const data = JSON.parse(stored);
-        this.records = Array.isArray(data) ? data : [];
+        this.records = Array.isArray(data) ? data.map((r: any) => ({
+          ...r,
+          timestamp: new Date(r.timestamp),
+        })) : [];
       }
     } catch (e) {
       console.error('Failed to load analytics from storage:', e);
@@ -96,29 +99,106 @@ class AnalyticsTracker {
     };
   }
 
+  getMetrics() {
+    const stats = this.getStats();
+    return {
+      totalCalculations: stats.totalCalculations,
+      averageAchievement: Math.round(stats.averageAchievement * 100) / 100,
+      averageIncentive: Math.round(stats.averageIncentive * 100) / 100,
+      totalIncentiveDistributed: Math.round(stats.totalIncentiveDistributed * 100) / 100,
+    };
+  }
+
+  getTierDistribution() {
+    const distribution = this.records.reduce((acc: Record<string, number>, r) => {
+      acc[r.tierName] = (acc[r.tierName] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(distribution).map(([tier, count]) => ({
+      name: tier,
+      value: count,
+      percentage: (count / Math.max(this.records.length, 1)) * 100,
+    }));
+  }
+
+  getPerformanceInsights() {
+    if (this.records.length === 0) {
+      return {
+        topPerformers: [],
+        improvementAreas: [],
+        averageAchievementTrend: [],
+      };
+    }
+
+    const sortedByIncentive = [...this.records].sort((a, b) => b.incentiveAmount - a.incentiveAmount);
+    const topPerformers = sortedByIncentive.slice(0, 5).map(r => ({
+      name: r.staffName,
+      incentive: r.incentiveAmount,
+      achievement: r.achievementPercent,
+    }));
+
+    const sortedByAchievement = [...this.records].sort((a, b) => a.achievementPercent - b.achievementPercent);
+    const improvementAreas = sortedByAchievement.slice(0, 5).map(r => ({
+      name: r.staffName,
+      achievement: r.achievementPercent,
+      gap: 75 - r.achievementPercent,
+    }));
+
+    return {
+      topPerformers,
+      improvementAreas,
+      averageAchievementTrend: this.getTrendData(30),
+    };
+  }
+
+  getAchievementHistogram() {
+    const ranges = [
+      { range: '0-50%', min: 0, max: 50, count: 0 },
+      { range: '50-75%', min: 50, max: 75, count: 0 },
+      { range: '75-100%', min: 75, max: 100, count: 0 },
+      { range: '100-110%', min: 100, max: 110, count: 0 },
+      { range: '110%+', min: 110, max: Infinity, count: 0 },
+    ];
+
+    this.records.forEach(r => {
+      const range = ranges.find(rng => r.achievementPercent >= rng.min && r.achievementPercent < rng.max);
+      if (range) range.count += 1;
+    });
+
+    return ranges.map(r => ({
+      range: r.range,
+      count: r.count,
+      percentage: (r.count / Math.max(this.records.length, 1)) * 100,
+    }));
+  }
+
   getTrendData(days: number = 30) {
     const now = Date.now();
     const msPerDay = 24 * 60 * 60 * 1000;
     const cutoffTime = now - days * msPerDay;
 
-    const dailyData: Record<string, { count: number; totalIncentive: number }> = {};
+    const dailyData: Record<string, { count: number; totalIncentive: number; avgAchievement: number }> = {};
 
     this.records
       .filter(r => new Date(r.timestamp).getTime() > cutoffTime)
       .forEach(r => {
         const date = new Date(r.timestamp).toISOString().split('T')[0];
         if (!dailyData[date]) {
-          dailyData[date] = { count: 0, totalIncentive: 0 };
+          dailyData[date] = { count: 0, totalIncentive: 0, avgAchievement: 0 };
         }
         dailyData[date].count += 1;
         dailyData[date].totalIncentive += r.incentiveAmount;
+        dailyData[date].avgAchievement += r.achievementPercent;
       });
 
     return Object.entries(dailyData)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, data]) => ({
         date,
-        ...data,
+        count: data.count,
+        totalIncentive: Math.round(data.totalIncentive * 100) / 100,
+        avgAchievement: Math.round((data.avgAchievement / data.count) * 100) / 100,
       }));
   }
 
@@ -137,7 +217,10 @@ class AnalyticsTracker {
       if (!Array.isArray(data)) {
         return { success: false, error: 'Invalid format: expected array' };
       }
-      this.records = data;
+      this.records = data.map((r: any) => ({
+        ...r,
+        timestamp: new Date(r.timestamp),
+      }));
       this.saveToStorage();
       return { success: true };
     } catch (e) {
@@ -146,4 +229,6 @@ class AnalyticsTracker {
   }
 }
 
-export default new AnalyticsTracker();
+const analyticsTrackerInstance = new AnalyticsTracker();
+
+export default analyticsTrackerInstance;
