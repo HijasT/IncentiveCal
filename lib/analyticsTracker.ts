@@ -142,6 +142,7 @@ class AnalyticsTracker {
       return {
         topPerformers: [],
         improvementAreas: [],
+        underPerformers: [],
         averageAchievementTrend: [],
         recommendations: [],
       };
@@ -161,6 +162,16 @@ class AnalyticsTracker {
       gap: 75 - r.achievementPercent,
     }));
 
+    // Under performers: those below 50% achievement
+    const underPerformers = sortedByAchievement
+      .filter(r => r.achievementPercent < 50)
+      .slice(0, 3)
+      .map(r => ({
+        name: r.staffName,
+        achievement: r.achievementPercent,
+        gap: 75 - r.achievementPercent,
+      }));
+
     // Generate recommendations based on data
     const recommendations: string[] = [];
     const avgAchievement = this.records.reduce((sum, r) => sum + r.achievementPercent, 0) / this.records.length;
@@ -172,6 +183,9 @@ class AnalyticsTracker {
     if (improvementAreas.length > 3) {
       recommendations.push(`Consider mentoring programs for ${improvementAreas.length} team members below 75% achievement`);
     }
+    if (underPerformers.length > 0) {
+      recommendations.push(`Urgent: ${underPerformers.length} staff member(s) below 50% achievement - intervention recommended`);
+    }
     if (topPerformers.length > 0 && topPerformers[0].achievement > 110) {
       recommendations.push('Recognize top performers - they are exceeding targets significantly');
     }
@@ -182,6 +196,7 @@ class AnalyticsTracker {
     return {
       topPerformers,
       improvementAreas,
+      underPerformers,
       averageAchievementTrend: this.getTrendData(30),
       recommendations,
     };
