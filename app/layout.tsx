@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import './globals.css';
-import TabNavigation from '@/components/TabNavigation';
 
 export const metadata: Metadata = {
   title: 'Smart Incentive Calculator v5.0',
@@ -53,7 +52,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <TabNavigation />
             {children}
           </main>
 
