@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import './globals.css';
-import { TabNavigation } from '@/components';
+import TabNavigation from '@/components/TabNavigation';
 
 export const metadata: Metadata = {
   title: 'Smart Incentive Calculator v5.0',
@@ -11,7 +11,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  charset: 'utf-8',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
