@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Button, Alert, Spinner } from '@/components/common';
-import { excelParser, tierManager, analyticsTracker, formatCurrency, formatPercentage } from '@/lib';
+import { excelParser, tierManager, formatCurrency, formatPercentage } from '@/lib';
 import { Upload, Download } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -33,13 +33,17 @@ export default function BulkMode() {
   const [summary, setSummary] = useState<SummaryStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedSheet, setSelectedSheet] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    if (!['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'].includes(selectedFile.type)) {
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+
+    if (!validTypes.includes(selectedFile.type)) {
       setError('Please upload a valid Excel file (.xlsx or .xls)');
       return;
     }
@@ -68,16 +72,15 @@ export default function BulkMode() {
 
       if (!parseResult.success || !parseResult.sheets || parseResult.sheets.length === 0) {
         setError('No valid data found in Excel file');
+        setIsLoading(false);
         return;
       }
 
-      // Use first sheet or selected sheet
-      const sheet = selectedSheet 
-        ? parseResult.sheets.find(s => `${s.month}/${s.year}` === selectedSheet)
-        : parseResult.sheets[0];
+      const sheet = parseResult.sheets[0];
 
       if (!sheet || !sheet.staffRecords || sheet.staffRecords.length === 0) {
         setError('No staff records found in the selected sheet');
+        setIsLoading(false);
         return;
       }
 
@@ -85,11 +88,12 @@ export default function BulkMode() {
       const staffData = sheet.staffRecords.map(record => ({
         name: record.name,
         sales: record.sales,
-        target: sheet.target || 10000, // Default target
+        target: sheet.target || 10000,
       }));
 
       // Get current config
-      const config = require('@/lib').configManager.getConfig();
+      const { configManager } = await import('@/lib');
+      const config = configManager.getConfig();
       const splitEqual = config.defaultSplit.equal;
 
       // Calculate incentives
@@ -99,32 +103,30 @@ export default function BulkMode() {
         config.tiers
       );
 
-      // Track in analytics
-      calculations.forEach(calc => {
-        analyticsTracker.trackCalculation({
-          staffName: calc.staffName,
-          sales: calc.sales,
-          target: calc.target,
-          achievementPercent: calc.achievementPercent,
-          tierName: calc.tier?.name || 'No Incentive',
-          splitEqual: splitEqual,
-          type: 'bulk',
-          incentiveAmount: calc.totalIncentive,
-        });
-      });
+      // Convert to StaffResult format
+      const formattedResults: StaffResult[] = calculations.map(calc => ({
+        staffName: calc.staffName,
+        sales: calc.sales,
+        target: calc.target,
+        achievementPercent: calc.achievementPercent,
+        tier: calc.tier || null,
+        baseIncentive: calc.baseIncentive || 0,
+        p1Share: calc.p1Share || 0,
+        p2Share: calc.p2Share || 0,
+        totalIncentive: calc.totalIncentive,
+      }));
 
-      // Set results
-      setResults(calculations);
+      setResults(formattedResults);
 
       // Calculate summary
-      const totalSales = calculations.reduce((sum, c) => sum + c.sales, 0);
-      const totalTarget = calculations.reduce((sum, c) => sum + c.target, 0);
-      const totalIncentive = calculations.reduce((sum, c) => sum + c.totalIncentive, 0);
-      const avgAchievement = calculations.reduce((sum, c) => sum + c.achievementPercent, 0) / calculations.length;
-      const avgIncentive = totalIncentive / calculations.length;
+      const totalSales = formattedResults.reduce((sum, c) => sum + c.sales, 0);
+      const totalTarget = formattedResults.reduce((sum, c) => sum + c.target, 0);
+      const totalIncentive = formattedResults.reduce((sum, c) => sum + c.totalIncentive, 0);
+      const avgAchievement = formattedResults.reduce((sum, c) => sum + c.achievementPercent, 0) / formattedResults.length;
+      const avgIncentive = totalIncentive / formattedResults.length;
 
       setSummary({
-        totalStaff: calculations.length,
+        totalStaff: formattedResults.length,
         totalSales,
         totalTarget,
         totalIncentive,
@@ -132,7 +134,7 @@ export default function BulkMode() {
         avgIncentive,
       });
     } catch (err) {
-      setError(`Error processing file: ${err}`);
+      setError(`Error processing file: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
@@ -145,30 +147,33 @@ export default function BulkMode() {
     }
 
     try {
-      const csv = [
-        ['Staff Name', 'Sales', 'Target', 'Achievement %', 'Tier', 'Base Incentive', 'P1 Share', 'P2 Share', 'Total Incentive'],
-        ...results.map(r => [
-          r.staffName,
-          r.sales,
-          r.target,
-          r.achievementPercent,
-          r.tier?.name || 'N/A',
-          r.baseIncentive,
-          r.p1Share,
-          r.p2Share,
-          r.totalIncentive,
-        ]),
-      ]
-        .map(row => row.join(','))
+      const csvHeader = ['Staff Name', 'Sales', 'Target', 'Achievement %', 'Tier', 'Base Incentive', 'P1 Share', 'P2 Share', 'Total Incentive'];
+      
+      const csvRows = results.map(r => [
+        r.staffName,
+        r.sales.toString(),
+        r.target.toString(),
+        r.achievementPercent.toFixed(2),
+        r.tier?.name || 'N/A',
+        r.baseIncentive.toFixed(2),
+        r.p1Share.toFixed(2),
+        r.p2Share.toFixed(2),
+        r.totalIncentive.toFixed(2),
+      ]);
+
+      const csvContent = [csvHeader, ...csvRows]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
         .join('\n');
 
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sic-results-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `sic-results-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
       setError('Failed to export results');
     }
@@ -201,7 +206,7 @@ export default function BulkMode() {
       {/* File Upload */}
       <Card title="📤 Upload Excel File" icon="📊">
         <div className="space-y-4">
-          <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-teal-500 transition-colors">
+          <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center hover:border-teal-500 transition-colors cursor-pointer">
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -282,7 +287,7 @@ export default function BulkMode() {
             </Card>
           )}
 
-          {/* Achievement Histogram */}
+          {/* Achievement Distribution */}
           {achievementRanges.some(r => r.count > 0) && (
             <Card title="📈 Achievement Distribution" icon="📊">
               <ResponsiveContainer width="100%" height={300}>
@@ -348,7 +353,7 @@ export default function BulkMode() {
       )}
 
       {/* Loading State */}
-      {isLoading && <Spinner fullscreen message="Calculating incentives..." />}
+      {isLoading && <Spinner fullScreen message="Calculating incentives..." />}
     </div>
   );
 }
