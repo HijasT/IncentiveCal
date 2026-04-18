@@ -1,19 +1,19 @@
+interface CalculationRecord {
+  id: string;
+  staffName: string;
+  sales: number;
+  target: number;
+  achievementPercent: number;
+  tierName: string;
+  splitEqual: number;
+  type: string;
+  incentiveAmount: number;
+  timestamp: Date;
+}
+
 class AnalyticsTracker {
   private records: CalculationRecord[] = [];
   private readonly MAX_RECORDS = 500;
-
-  interface CalculationRecord {
-    id: string;
-    staffName: string;
-    sales: number;
-    target: number;
-    achievementPercent: number;
-    tierName: string;
-    splitEqual: number;
-    type: string;
-    incentiveAmount: number;
-    timestamp: Date;
-  }
 
   constructor() {
     this.loadFromStorage();
