@@ -11,6 +11,16 @@ interface CalculationRecord {
   timestamp: Date;
 }
 
+interface AnalyticsMetrics {
+  totalCalculations: number;
+  individualCalculations: number;
+  bulkCalculations: number;
+  averageAchievement: number;
+  averageIncentive: number;
+  totalIncentiveDistributed: number;
+  mostCommonTier: { name: string; count: number } | null;
+}
+
 class AnalyticsTracker {
   private records: CalculationRecord[] = [];
   private readonly MAX_RECORDS = 500;
@@ -287,3 +297,4 @@ class AnalyticsTracker {
 const analyticsTrackerInstance = new AnalyticsTracker();
 
 export default analyticsTrackerInstance;
+export type { CalculationRecord, AnalyticsMetrics };
