@@ -61,7 +61,7 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
       sales: sanitizeNumber(sales) || 0,
       target: sanitizeNumber(target) || 0,
       achievementPercent: result.achievementPercent,
-      tierName: result.tier?.name || null,
+      tierName: result.tier?.name || 'No Incentive',
       incentiveAmount: result.totalIncentive,
       splitEqual,
     });
