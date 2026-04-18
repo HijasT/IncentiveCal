@@ -1,311 +1,107 @@
-/**
- * Team Comparison Tool
- * Compare teams, time periods, and configurations
- */
-
-import { IncentiveCalculation } from './tierManager';
 import { roundTo } from './validation';
 
-export interface TeamComparison {
+interface TeamMetrics {
+  totalSales: number;
+  totalTarget: number;
+  totalIncentive: number;
+  averageAchievement: number;
+  staffCount: number;
+}
+
+interface ComparisonResult {
   teamNameA: string;
   teamNameB: string;
   metricA: TeamMetrics;
   metricB: TeamMetrics;
-  differences: {
-    totalSalesDiff: number;
-    totalIncentiveDiff: number;
-    avgAchievementDiff: number;
-    avgIncentiveDiff: number;
-    staffCountDiff: number;
+  comparison: {
+    salesDiff: number;
+    salesDiffPercent: number;
+    incentiveDiff: number;
+    incentiveDiffPercent: number;
+    winner: string;
   };
 }
 
-export interface TeamMetrics {
-  teamName: string;
-  staffCount: number;
-  totalSales: number;
-  totalTarget: number;
-  teamAchievement: number;
-  totalIncentive: number;
-  averageIncentive: number;
-  averageAchievement: number;
-  medianAchievement: number;
-  topPerformer: {
-    name: string;
-    achievement: number;
-    incentive: number;
-  } | null;
-  bottomPerformer: {
-    name: string;
-    achievement: number;
-    incentive: number;
-  } | null;
+interface PeriodComparison {
+  period: string;
+  value: number;
 }
 
-export interface PeriodComparison {
-  period1: {
-    label: string;
-    metrics: TeamMetrics;
-  };
-  period2: {
-    label: string;
-    metrics: TeamMetrics;
-  };
-  trends: {
-    salesTrend: 'up' | 'down' | 'stable';
-    achievementTrend: 'up' | 'down' | 'stable';
-    incentiveTrend: 'up' | 'down' | 'stable';
-    growthRate: number;
-  };
-}
-
-class TeamComparison {
-  /**
-   * Calculate team metrics
-   */
-  calculateTeamMetrics(
-    teamName: string,
-    calculations: IncentiveCalculation[]
-  ): TeamMetrics {
-    if (calculations.length === 0) {
-      return {
-        teamName,
-        staffCount: 0,
-        totalSales: 0,
-        totalTarget: 0,
-        teamAchievement: 0,
-        totalIncentive: 0,
-        averageIncentive: 0,
-        averageAchievement: 0,
-        medianAchievement: 0,
-        topPerformer: null,
-        bottomPerformer: null,
-      };
-    }
-
-    const totalSales = roundTo(
-      calculations.reduce((sum, c) => sum + c.sales, 0),
-      2
-    );
-    const totalTarget = roundTo(
-      calculations.reduce((sum, c) => sum + c.target, 0),
-      2
-    );
-    const teamAchievement = roundTo((totalSales / totalTarget) * 100, 2);
-    const totalIncentive = roundTo(
-      calculations.reduce((sum, c) => sum + c.totalIncentive, 0),
-      2
-    );
-    const averageIncentive = roundTo(totalIncentive / calculations.length, 2);
-    const averageAchievement = roundTo(
-      calculations.reduce((sum, c) => sum + c.achievementPercent, 0) / calculations.length,
-      2
-    );
-
-    // Median achievement
-    const sorted = [...calculations].sort(
-      (a, b) => a.achievementPercent - b.achievementPercent
-    );
-    const medianIdx = Math.floor(sorted.length / 2);
-    const medianAchievement =
-      sorted.length % 2 === 0
-        ? roundTo((sorted[medianIdx - 1].achievementPercent + sorted[medianIdx].achievementPercent) / 2, 2)
-        : roundTo(sorted[medianIdx].achievementPercent, 2);
-
-    // Top and bottom performers
-    const sortedByAchievement = [...calculations].sort(
-      (a, b) => b.achievementPercent - a.achievementPercent
-    );
-
-    const topPerformer =
-      sortedByAchievement.length > 0
-        ? {
-            name: sortedByAchievement[0].staffName,
-            achievement: roundTo(sortedByAchievement[0].achievementPercent, 2),
-            incentive: roundTo(sortedByAchievement[0].totalIncentive, 2),
-          }
-        : null;
-
-    const bottomPerformer =
-      sortedByAchievement.length > 0
-        ? {
-            name: sortedByAchievement[sortedByAchievement.length - 1].staffName,
-            achievement: roundTo(
-              sortedByAchievement[sortedByAchievement.length - 1].achievementPercent,
-              2
-            ),
-            incentive: roundTo(
-              sortedByAchievement[sortedByAchievement.length - 1].totalIncentive,
-              2
-            ),
-          }
-        : null;
-
-    return {
-      teamName,
-      staffCount: calculations.length,
-      totalSales,
-      totalTarget,
-      teamAchievement,
-      totalIncentive,
-      averageIncentive,
-      averageAchievement,
-      medianAchievement,
-      topPerformer,
-      bottomPerformer,
-    };
-  }
-
-  /**
-   * Compare two teams
-   */
+class TeamComparisonEngine {
   compareTeams(
-    teamA: { name: string; calculations: IncentiveCalculation[] },
-    teamB: { name: string; calculations: IncentiveCalculation[] }
-  ): TeamComparison {
-    const metricA = this.calculateTeamMetrics(teamA.name, teamA.calculations);
-    const metricB = this.calculateTeamMetrics(teamB.name, teamB.calculations);
+    teamA: { name: string; calculations: any[] },
+    teamB: { name: string; calculations: any[] }
+  ): ComparisonResult {
+    const metricsA = this.calculateMetrics(teamA.calculations);
+    const metricsB = this.calculateMetrics(teamB.calculations);
 
-    const totalSalesDiff = roundTo(metricB.totalSales - metricA.totalSales, 2);
-    const totalIncentiveDiff = roundTo(metricB.totalIncentive - metricA.totalIncentive, 2);
-    const avgAchievementDiff = roundTo(
-      metricB.averageAchievement - metricA.averageAchievement,
-      2
-    );
-    const avgIncentiveDiff = roundTo(metricB.averageIncentive - metricA.averageIncentive, 2);
-    const staffCountDiff = metricB.staffCount - metricA.staffCount;
+    const salesDiff = metricsA.totalSales - metricsB.totalSales;
+    const salesDiffPercent = metricsB.totalSales !== 0 ? (salesDiff / metricsB.totalSales) * 100 : 0;
+    const incentiveDiff = metricsA.totalIncentive - metricsB.totalIncentive;
+    const incentiveDiffPercent = metricsB.totalIncentive !== 0 ? (incentiveDiff / metricsB.totalIncentive) * 100 : 0;
+
+    const winner = metricsA.totalIncentive > metricsB.totalIncentive ? teamA.name : metricsB.totalIncentive > metricsA.totalIncentive ? teamB.name : 'Tie';
 
     return {
       teamNameA: teamA.name,
       teamNameB: teamB.name,
-      metricA,
-      metricB,
-      differences: {
-        totalSalesDiff,
-        totalIncentiveDiff,
-        avgAchievementDiff,
-        avgIncentiveDiff,
-        staffCountDiff,
+      metricA: metricsA,
+      metricB: metricsB,
+      comparison: {
+        salesDiff: roundTo(salesDiff, 2),
+        salesDiffPercent: roundTo(salesDiffPercent, 2),
+        incentiveDiff: roundTo(incentiveDiff, 2),
+        incentiveDiffPercent: roundTo(incentiveDiffPercent, 2),
+        winner,
       },
     };
   }
 
-  /**
-   * Compare two time periods
-   */
-  comparePeriods(
-    period1: { label: string; calculations: IncentiveCalculation[] },
-    period2: { label: string; calculations: IncentiveCalculation[] }
-  ): PeriodComparison {
-    const metrics1 = this.calculateTeamMetrics('Period 1', period1.calculations);
-    const metrics2 = this.calculateTeamMetrics('Period 2', period2.calculations);
-
-    // Determine trends
-    const salesDiff = metrics2.totalSales - metrics1.totalSales;
-    const achievementDiff = metrics2.teamAchievement - metrics1.teamAchievement;
-    const incentiveDiff = metrics2.totalIncentive - metrics1.totalIncentive;
-
-    const salesTrend: 'up' | 'down' | 'stable' =
-      salesDiff > metrics1.totalSales * 0.05
-        ? 'up'
-        : salesDiff < -metrics1.totalSales * 0.05
-        ? 'down'
-        : 'stable';
-
-    const achievementTrend: 'up' | 'down' | 'stable' =
-      achievementDiff > 2 ? 'up' : achievementDiff < -2 ? 'down' : 'stable';
-
-    const incentiveTrend: 'up' | 'down' | 'stable' =
-      incentiveDiff > metrics1.totalIncentive * 0.05
-        ? 'up'
-        : incentiveDiff < -metrics1.totalIncentive * 0.05
-        ? 'down'
-        : 'stable';
-
-    const growthRate =
-      metrics1.totalSales > 0
-        ? roundTo(((metrics2.totalSales - metrics1.totalSales) / metrics1.totalSales) * 100, 2)
-        : 0;
+  private calculateMetrics(calculations: any[]): TeamMetrics {
+    const totalSales = calculations.reduce((sum, c) => sum + c.sales, 0);
+    const totalTarget = calculations.reduce((sum, c) => sum + c.target, 0);
+    const totalIncentive = calculations.reduce((sum, c) => sum + c.totalIncentive, 0);
+    const avgAchievement = calculations.reduce((sum, c) => sum + c.achievementPercent, 0) / Math.max(calculations.length, 1);
 
     return {
-      period1: {
-        label: period1.label,
-        metrics: { ...metrics1, teamName: period1.label },
-      },
-      period2: {
-        label: period2.label,
-        metrics: { ...metrics2, teamName: period2.label },
-      },
-      trends: {
-        salesTrend,
-        achievementTrend,
-        incentiveTrend,
-        growthRate,
-      },
+      totalSales: roundTo(totalSales, 2),
+      totalTarget: roundTo(totalTarget, 2),
+      totalIncentive: roundTo(totalIncentive, 2),
+      averageAchievement: roundTo(avgAchievement, 2),
+      staffCount: calculations.length,
     };
   }
 
-  /**
-   * Get comparative insights
-   */
-  getComparativeInsights(teamComparison: TeamComparison): string[] {
-    const insights: string[] = [];
-    const { metricA, metricB, differences } = teamComparison;
+  getTrendComparison(teamAHistory: any[], teamBHistory: any[], periods: number = 6): PeriodComparison[] {
+    const trendData: PeriodComparison[] = [];
 
-    // Sales comparison
-    if (differences.totalSalesDiff > 0) {
-      const pctDiff = roundTo(
-        (differences.totalSalesDiff / metricA.totalSales) * 100,
-        1
-      );
-      insights.push(
-        `${metricB.teamName} has ${pctDiff}% higher sales than ${metricA.teamName}`
-      );
-    } else if (differences.totalSalesDiff < 0) {
-      const pctDiff = roundTo(
-        (-differences.totalSalesDiff / metricB.totalSales) * 100,
-        1
-      );
-      insights.push(
-        `${metricA.teamName} has ${pctDiff}% higher sales than ${metricB.teamName}`
-      );
+    for (let i = 0; i < periods; i++) {
+      const periodA = teamAHistory[i]?.totalIncentive || 0;
+      const periodB = teamBHistory[i]?.totalIncentive || 0;
+      const diff = periodA - periodB;
+
+      trendData.push({
+        period: `Period ${i + 1}`,
+        value: roundTo(diff, 2),
+      });
     }
 
-    // Achievement comparison
-    if (differences.avgAchievementDiff > 5) {
-      insights.push(
-        `${metricB.teamName} significantly outperforms on achievement (avg: ${metricB.averageAchievement}% vs ${metricA.averageAchievement}%)`
-      );
-    } else if (differences.avgAchievementDiff < -5) {
-      insights.push(
-        `${metricA.teamName} significantly outperforms on achievement (avg: ${metricA.averageAchievement}% vs ${metricB.averageAchievement}%)`
-      );
-    }
+    return trendData;
+  }
 
-    // Incentive efficiency
-    const efficiencyA = metricA.totalSales > 0 ? metricA.totalIncentive / metricA.totalSales : 0;
-    const efficiencyB = metricB.totalSales > 0 ? metricB.totalIncentive / metricB.totalSales : 0;
-    const efficiencyDiff = roundTo(efficiencyB - efficiencyA, 4);
+  getPerformanceMatrix(teamA: any[], teamB: any[]) {
+    const metricsA = this.calculateMetrics(teamA);
+    const metricsB = this.calculateMetrics(teamB);
 
-    if (Math.abs(efficiencyDiff) > 0.001) {
-      insights.push(
-        `${
-          efficiencyB > efficiencyA
-            ? metricB.teamName
-            : metricA.teamName
-        } has higher incentive efficiency per AED of sales`
-      );
-    }
-
-    // Staff count
-    if (differences.staffCountDiff > 0) {
-      insights.push(`${metricB.teamName} has ${differences.staffCountDiff} more staff`);
-    } else if (differences.staffCountDiff < 0) {
-      insights.push(`${metricA.teamName} has ${-differences.staffCountDiff} more staff`);
-    }
-
-    return insights;
+    return [
+      { metric: 'Sales', A: metricsA.totalSales, B: metricsB.totalSales },
+      { metric: 'Target', A: metricsA.totalTarget, B: metricsB.totalTarget },
+      { metric: 'Incentive', A: metricsA.totalIncentive, B: metricsB.totalIncentive },
+      { metric: 'Avg Achievement', A: metricsA.averageAchievement, B: metricsB.averageAchievement },
+      { metric: 'Staff Count', A: metricsA.staffCount, B: metricsB.staffCount },
+    ];
   }
 }
 
-export default new TeamComparison();
+export default new TeamComparisonEngine();
+export type { TeamMetrics, ComparisonResult, PeriodComparison };
