@@ -207,6 +207,10 @@ class AnalyticsTracker {
     this.saveToStorage();
   }
 
+  clearAnalytics() {
+    this.clearAll();
+  }
+
   exportAsJSON(): string {
     return JSON.stringify(this.records, null, 2);
   }
