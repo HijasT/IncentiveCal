@@ -1,1485 +1,222 @@
 <!DOCTYPE html>
-<!--
-SMART INCENTIVE CALCULATOR v5.0
-
-Copyright (c) 2026 HT
-
-License: You may use, copy, modify, and share this software for personal and
-general business use EXCEPT Smart Salem (and its affiliates/subsidiaries and
-employees/contractors acting on its behalf) are explicitly prohibited from
-using, copying, deploying, distributing, or creating derivative works from it.
-
-This restriction applies to both source and compiled/minified versions.
-
-Proof-of-origin marker: SIC-HT-SS-RESTRICT-2026
--->
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="author" content="HT">
-<meta name="copyright" content="Copyright (c) 2026 HT">
-<meta name="license" content="Restricted: Smart Salem prohibited">
-<meta name="sic-marker" content="SIC-HT-SS-RESTRICT-2026">
-<title>Smart Incentive Calculator v5.0</title>
-
-<link rel="icon" type="image/png" sizes="16x16" href="./assets/brand/favicon-16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="./assets/brand/favicon-32.png">
-<link rel="icon" type="image/png" sizes="64x64" href="./assets/brand/favicon-64.png">
-<link rel="apple-touch-icon" sizes="180x180" href="./assets/brand/apple-touch-icon-180.png">
-<link rel="manifest" href="./assets/brand/site.webmanifest">
-<meta name="theme-color" content="#0A7E8C">
-
-<!-- SheetJS library for Excel parsing and export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<title>Smart Incentive Calculator</title>
 
 <style>
-/* ── FONTS ─────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-
-/* ── LIGHT MODE CSS VARIABLES ──────────────────────────────────────────────── */
-:root {
-  --bg:#f0f4f8;
-  --card:#ffffff;
-  --accent:#0A7E8C;
-  --accent-light:#e8f7f8;
-  --muted:#6b7a8a;
-  --darkblue:#0047AB;
-  --darkbrown:#5C4033;
-  --border:#e1e8ed;
-  --text:#1a2332;
-  --row-even:#f8fbfc;
-  --row-hover:#eef8f9;
-  --hl-bg:#e0f7f4;
-  --hl-color:#035059;
-  --hl-border:#0A7E8C;
-  --proj-bg:#fffbeb;
-  --proj-border:#fde68a;
-  --proj-color:#78350f;
-  --err-bg:#fdf2f0;
-  --err-border:#f5c6c0;
-  --err-color:#c0392b;
-  --success-bg:#dcfce7;
-  --success-border:#86efac;
-  --success-color:#166534;
-  --tier-bg:rgba(10,126,140,0.1);
-  --tier-color:#0A7E8C;
-  --warning-bg:#fef3c7;
-  --warning-border:#fcd34d;
-  --warning-color:#78350f;
+body{
+  font-family: Inter, Arial;
+  background:#0f172a;
+  color:#e5e7eb;
+  margin:0;
+  padding:20px;
 }
 
-/* ── DARK MODE CSS VARIABLES ───────────────────────────────────────────────── */
-html.dark {
-  --bg:#0d1117;
-  --card:#161b22;
-  --accent-light:rgba(10,126,140,0.12);
-  --muted:#8899aa;
-  --darkblue:#60a5fa;
-  --darkbrown:#f59e0b;
-  --border:#2d3748;
-  --text:#e2e8f0;
-  --row-even:#0f1820;
-  --row-hover:#0d2025;
-  --hl-bg:#062a27;
-  --hl-color:#7df3e1;
-  --hl-border:#00bfa6;
-  --proj-bg:#1a1200;
-  --proj-border:#92400e;
-  --proj-color:#fbbf24;
-  --err-bg:#1a0a0a;
-  --err-border:#6b2020;
-  --err-color:#f87171;
-  --success-bg:#064e3b;
-  --success-border:#86efac;
-  --success-color:#86efac;
-  --tier-bg:rgba(10,126,140,0.25);
-  --tier-color:#2dd4bf;
-  --warning-bg:#713f12;
-  --warning-border:#fcd34d;
-  --warning-color:#fcd34d;
+.container{
+  max-width:900px;
+  margin:auto;
 }
 
-html.dark body { background-color:#0d1117; color:#e2e8f0; }
-
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-
-body {
-  font-family:'DM Sans','Segoe UI',sans-serif;
-  background-color:var(--bg);
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  padding:32px 16px;
-  min-height:100vh;
-}
-.app { width:100%; max-width:1000px; }
-
-.app-header { margin-bottom:22px; }
-.title-row  { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-h1          { font-size:26px; color:var(--accent); letter-spacing:-0.5px; }
-h2          { font-size:18px; color:var(--accent); margin-bottom:16px; margin-top:20px; }
-.version    { font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; }
-.dark-toggle{ cursor:pointer; font-size:22px; user-select:none; line-height:1; }
-
-.tabs { display:flex; gap:8px; margin:14px 0; flex-wrap:wrap; }
-.pill {
-  padding:9px 18px; border-radius:999px;
-  background-color:var(--card); color:var(--muted);
-  cursor:pointer; font-weight:600; font-size:14px;
-  border:1px solid var(--border); font-family:inherit;
-}
-.pill.active {
-  background-color:var(--accent); color:#fff;
-  border-color:var(--accent);
-  box-shadow:0 4px 14px rgba(10,126,140,0.3);
+h1{
+  font-size:22px;
+  margin-bottom:20px;
 }
 
-.card {
-  background-color:var(--card);
-  border-radius:16px;
-  box-shadow:0 2px 16px rgba(16,24,40,0.07), 0 0 0 1px var(--border);
-  padding:24px;
-  margin-top:16px;
+.card{
+  background:#1e293b;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
 }
 
-.note {
-  font-size:12px; margin-bottom:14px; padding:8px 12px;
-  background-color:var(--bg); color:var(--muted);
-  border-radius:8px; border:1px solid var(--border);
+input{
+  width:100%;
+  padding:8px;
+  margin-top:5px;
+  border-radius:6px;
+  border:none;
+  background:#0f172a;
+  color:#fff;
 }
 
-.alert {
-  padding:12px 16px; border-radius:10px; margin-bottom:16px; border-left:4px solid;
-}
-.alert.error {
-  background-color:var(--err-bg); border-color:var(--err-color); color:var(--err-color);
-}
-.alert.success {
-  background-color:var(--success-bg); border-color:var(--success-color); color:var(--success-color);
-}
-.alert.warning {
-  background-color:var(--warning-bg); border-color:var(--warning-color); color:var(--warning-color);
-}
-
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
-
-label {
-  display:block; font-weight:600; font-size:13px; margin-bottom:6px;
-  color:var(--muted); text-transform:uppercase; letter-spacing:0.4px;
-}
-
-input[type=number],
-input[type=file],
-input[type=text],
-input[type=email],
-select,
-textarea {
-  width:100%; padding:11px 13px;
-  border-radius:10px; border:1.5px solid var(--border);
-  font-size:15px; font-family:inherit;
-  background-color:var(--bg); color:var(--text);
-  outline:none; -webkit-appearance:none; appearance:none;
-}
-input[type=number]:focus,
-input[type=file]:focus,
-input[type=text]:focus,
-input[type=email]:focus,
-select:focus,
-textarea:focus {
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(10,126,140,0.12);
-}
-input[type=file] { padding:9px; cursor:pointer; }
-textarea { resize:vertical; min-height:100px; }
-
-.split-section {
-  margin-top:18px; padding:16px 18px;
-  background-color:var(--accent-light);
-  border-radius:12px; border:1px solid rgba(10,126,140,0.15);
-}
-.split-header {
-  display:flex; justify-content:space-between; align-items:center;
-  flex-wrap:wrap; gap:8px; margin-bottom:12px;
-}
-.split-label  { font-weight:700; font-size:14px; color:var(--accent); }
-.split-badges { display:flex; gap:8px; align-items:center; }
-
-.badge {
-  padding:4px 10px; border-radius:999px;
-  font-size:13px; font-weight:700; font-family:'DM Mono',monospace;
-}
-.badge-equal    { background-color:rgba(0,71,171,0.1);  color:var(--darkblue);  }
-.badge-personal { background-color:rgba(92,64,51,0.12); color:var(--darkbrown); }
-html.dark .badge-equal    { background-color:rgba(96,165,250,0.15);  }
-html.dark .badge-personal { background-color:rgba(245,158,11,0.15); }
-.badge-sep { color:var(--muted); font-size:13px; }
-
-.slider-wrap { display:block; width:100%; }
-input[type=range] {
-  -webkit-appearance:none; appearance:none;
-  display:block; width:100%; min-width:0;
-  height:6px; border-radius:4px;
-  border:none; outline:none; padding:0; margin:0; cursor:pointer;
-  background:linear-gradient(to right, var(--darkblue) 60%, rgba(150,150,150,0.3) 60%);
-}
-input[type=range]::-webkit-slider-runnable-track { height:6px; border-radius:4px; }
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; appearance:none;
-  width:22px; height:22px; border-radius:50%;
-  background-color:var(--card);
-  border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(10,126,140,0.35);
-  cursor:grab; margin-top:-8px;
-}
-input[type=range]::-webkit-slider-thumb:active { cursor:grabbing; }
-input[type=range]::-moz-range-thumb {
-  width:22px; height:22px; border-radius:50%;
-  background-color:var(--card); border:3px solid var(--accent); cursor:grab;
-}
-.slider-ticks {
-  display:flex; justify-content:space-between;
-  margin-top:6px; font-size:11px;
-  color:var(--muted); font-family:'DM Mono',monospace;
-}
-
-.btn {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:11px 20px; border-radius:10px;
-  background-color:var(--accent); color:#fff;
-  font-weight:700; font-size:14px; font-family:inherit;
-  border:none; cursor:pointer; margin-top:14px;
-  box-shadow:0 4px 14px rgba(10,126,140,0.2);
-  -webkit-appearance:none; appearance:none;
-}
-.btn.secondary {
-  background-color:var(--card); color:var(--accent);
-  border:1.5px solid var(--border); box-shadow:none;
-}
-.btn.small {
-  padding:8px 14px; font-size:13px; margin-top:0;
-}
-.btn.danger {
-  background-color:var(--err-color);
-  box-shadow:0 4px 14px rgba(239,68,68,0.2);
-}
-html.dark .btn.secondary { background-color:var(--card); }
-
-.btn-mini {
-  padding:4px 10px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background-color:var(--card);
-  font-size:11px;
-  cursor:pointer;
-  font-family:'DM Sans','Segoe UI',sans-serif;
-}
-.btn-mini:hover {
-  background-color:var(--err-bg);
-  border-color:var(--err-border);
-  color:var(--err-color);
-}
-html.dark .btn-mini { background-color:var(--card); }
-
-.results { margin-top:20px; line-height:1.7; }
-
-.result-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px; margin:12px 0;
-}
-.result-box {
-  background-color:var(--bg); border-radius:10px;
-  padding:12px 14px; border:1px solid var(--border);
-}
-.result-box .rb-label {
-  font-size:11px; font-weight:600; text-transform:uppercase;
-  letter-spacing:0.5px; color:var(--muted); margin-bottom:4px;
-}
-.result-box .rb-val {
-  font-size:17px; font-weight:700;
-  font-family:'DM Mono',monospace; color:var(--text);
-}
-
-.highlight-total {
-  margin-top:12px; padding:14px 16px; border-radius:10px;
-  background-color:var(--hl-bg); border-left:5px solid var(--hl-border);
-  font-size:19px; font-weight:800; color:var(--hl-color);
-}
-
-.chart-wrap {
-  margin-top:14px; padding:16px; border-radius:12px;
-  background-color:var(--bg); border:1px solid var(--border);
-}
-.chart-title {
-  font-size:11px; font-weight:700; text-transform:uppercase;
-  letter-spacing:0.5px; color:var(--muted); margin-bottom:12px;
-}
-.bar-row   { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.bar-label { font-size:12px; font-weight:600; color:var(--muted); width:100px; flex-shrink:0; text-align:right; }
-.bar-track { flex:1; height:24px; background-color:var(--border); border-radius:6px; overflow:hidden; }
-.bar-fill {
-  height:100%; border-radius:6px;
-  display:flex; align-items:center; padding-left:8px;
-  font-size:11px; font-weight:700; color:#fff;
-  white-space:nowrap; overflow:hidden;
-  transition:width 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-.bar-fill.blue  { background-color:var(--darkblue);  }
-.bar-fill.brown { background-color:var(--darkbrown); }
-.bar-amount { font-size:12px; font-weight:700; font-family:'DM Mono',monospace; color:var(--text); width:100px; flex-shrink:0; }
-
-.table-wrap { margin-top:10px; overflow:auto; border-radius:10px; border:1px solid var(--border); }
-table { width:100%; border-collapse:collapse; min-width:700px; }
-th, td { padding:10px 14px; border-bottom:1px solid var(--border); text-align:left; font-size:14px; }
-th {
-  background-color:var(--accent); color:#fff;
-  font-weight:700; font-size:12px;
-  text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0;
-}
-html.dark th          { background-color:#063a3c; }
-tr:last-child td      { border-bottom:none; }
-tr:nth-child(even) td { background-color:var(--row-even); }
-tr:hover td           { background-color:var(--row-hover); }
-
-.tier-diagram {
-  margin-top:20px; padding:20px; background-color:var(--bg); border-radius:12px; border:1px solid var(--border);
-}
-.tier-bar {
-  margin-bottom:12px;
-  padding:12px;
-  background-color:var(--card);
+button{
+  padding:10px;
+  border:none;
   border-radius:8px;
-  border-left:5px solid var(--accent);
-}
-.tier-bar-header {
-  display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
-}
-.tier-bar-name {
-  font-weight:700; font-size:14px;
-}
-.tier-bar-rate {
-  background-color:var(--accent); color:#fff;
-  padding:4px 12px; border-radius:999px;
-  font-size:12px; font-weight:700;
-}
-.tier-bar-range {
-  font-size:12px; color:var(--muted);
-}
-.tier-bar-visual {
-  width:100%; height:20px; background-color:var(--border); border-radius:4px;
-  overflow:hidden; position:relative; margin-top:8px;
-}
-.tier-bar-fill {
-  height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-light));
-  position:absolute; display:flex; align-items:center; padding-left:6px;
-  color:#fff; font-size:10px; font-weight:700;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+  margin-top:10px;
 }
 
-.settings-form {
-  display:grid; gap:20px;
+button:hover{
+  background:#1d4ed8;
 }
 
-.form-group {
-  padding:16px; background-color:var(--bg); border-radius:10px;
-  border:1px solid var(--border);
-}
-.form-group.error {
-  border-color:var(--err-color); background-color:var(--err-bg);
-}
-.form-group.success {
-  border-color:var(--success-color); background-color:var(--success-bg);
+.row{
+  display:flex;
+  gap:10px;
 }
 
-.toast {
-  position:fixed; bottom:28px; left:50%;
-  transform:translateX(-50%) translateY(10px);
-  background-color:#1a2332; color:#fff;
-  padding:10px 22px; border-radius:999px;
-  font-size:13px; font-weight:600; letter-spacing:0.2px;
-  opacity:0; pointer-events:none;
-  transition:opacity 0.25s, transform 0.25s;
-  z-index:9999; white-space:nowrap;
+.row input{
+  flex:1;
 }
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-html.dark .toast { background-color:#e2e8f0; color:#0d1117; }
 
-.hidden { display:none !important; }
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
 
-@media(max-width:500px) {
-  h1 { font-size:20px; }
-  .card { padding:16px; }
-  .grid { grid-template-columns:1fr; }
-  .tabs { gap:4px; }
-  .pill { padding:8px 14px; font-size:12px; }
+th, td{
+  padding:8px;
+  border-bottom:1px solid #334155;
+}
+
+th{
+  text-align:left;
+}
+
+.footer{
+  margin-top:30px;
+  text-align:center;
+  font-size:11px;
+  color:#64748b;
 }
 </style>
 </head>
 
 <body>
-<div class="app">
 
-  <div class="app-header">
-    <div class="title-row">
-      <h1>Smart Incentive Calculator</h1>
-      <div class="dark-toggle" id="darkToggle" role="button" tabindex="0" aria-label="Toggle dark mode">☀️</div>
-    </div>
-    <div class="version">v5.0 • Settings • Analytics</div>
-  </div>
+<div class="container">
 
-  <div class="tabs">
-    <button class="pill active" id="tab-ind" onclick="activateTab('individual')">Individual</button>
-    <button class="pill" id="tab-bulk" onclick="activateTab('bulk')">Bulk Upload</button>
-    <button class="pill" id="tab-settings" onclick="activateTab('settings')">⚙️ Settings</button>
-    <button class="pill" id="tab-analytics" onclick="activateTab('analytics')">📊 Analytics</button>
-  </div>
+<h1>Smart Incentive Calculator</h1>
 
-  <!-- INDIVIDUAL MODE TAB -->
-  <section id="individual" class="card">
-    <div class="note">This tool runs entirely in your browser — no data is stored or transmitted.</div>
+<div class="card">
+<label>Monthly Target</label>
+<input id="target" type="number" placeholder="Enter target">
+</div>
 
-    <div class="grid">
-      <div>
-        <label for="ind-target">Sales Target (AED)</label>
-        <input id="ind-target" type="number" placeholder="700000" />
-      </div>
-      <div>
-        <label for="ind-total">Total Sales (AED)</label>
-        <input id="ind-total" type="number" placeholder="735000" />
-      </div>
-      <div>
-        <label for="ind-personal">Personal Sales (AED)</label>
-        <input id="ind-personal" type="number" placeholder="30450" />
-      </div>
-      <div>
-        <label for="ind-count">Number of Salespersons</label>
-        <input id="ind-count" type="number" value="28" />
-      </div>
-    </div>
+<div class="card">
+<h3>Staff</h3>
+<div id="staffContainer"></div>
+<button onclick="addStaff()">+ Add Staff</button>
+</div>
 
-    <div class="split-section">
-      <div class="split-header">
-        <span class="split-label">Incentive Pool Split</span>
-        <div class="split-badges">
-          <span class="badge badge-equal"    id="ind-equal-badge">Equal 60%</span>
-          <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="ind-personal-badge">Personal 40%</span>
-        </div>
-      </div>
-      <div class="slider-wrap">
-        <input type="range" id="ind-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('ind')" />
-      </div>
-      <div class="slider-ticks">
-        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-      </div>
-    </div>
+<div class="card">
+<button onclick="calculate()">Calculate Incentives</button>
+<div id="summary"></div>
+<div id="result"></div>
+</div>
 
-    <button class="btn" onclick="calculateIndividual()">Calculate Incentive</button>
-    <div id="ind-message"></div>
-    <div id="ind-results" class="results"></div>
-  </section>
-
-  <!-- BULK MODE TAB -->
-  <section id="bulk" class="card" style="display:none;">
-    <div class="note">
-      Upload the Staff Sales Tracker workbook. Choose a ranking mode. The tool will auto-detect the right sheet(s), extract targets, sales and packages, and build a ranking across the selected period. All processing stays in your browser.
-    </div>
-
-    <div class="grid">
-      <div>
-        <label for="bulk-mode">Ranking Mode</label>
-        <select id="bulk-mode" onchange="onBulkModeChange()">
-          <option value="monthly" selected>Monthly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="annual">Annual</option>
-          <option value="overall">Overall (From–To)</option>
-        </select>
-      </div>
-
-      <div id="bulk-month-wrap">
-        <label for="bulk-month">Month</label>
-        <select id="bulk-month">
-          <option value="Jan">Jan</option>
-          <option value="Feb">Feb</option>
-          <option value="Mar">Mar</option>
-          <option value="Apr">Apr</option>
-          <option value="May">May</option>
-          <option value="Jun">Jun</option>
-          <option value="Jul">Jul</option>
-          <option value="Aug">Aug</option>
-          <option value="Sep">Sep</option>
-          <option value="Oct">Oct</option>
-          <option value="Nov">Nov</option>
-          <option value="Dec">Dec</option>
-        </select>
-      </div>
-
-      <div id="bulk-quarter-wrap" style="display:none">
-        <label for="bulk-quarter">Quarter</label>
-        <select id="bulk-quarter">
-          <option value="1">Q1 (Jan–Mar)</option>
-          <option value="2">Q2 (Apr–Jun)</option>
-          <option value="3">Q3 (Jul–Sep)</option>
-          <option value="4">Q4 (Oct–Dec)</option>
-        </select>
-      </div>
-
-      <div id="bulk-year-wrap">
-        <label for="bulk-year">Year</label>
-        <select id="bulk-year">
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026" selected>2026</option>
-          <option value="2027">2027</option>
-        </select>
-      </div>
-
-      <div id="bulk-from-wrap" style="display:none">
-        <label for="bulk-from-year">From Year</label>
-        <select id="bulk-from-year">
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026" selected>2026</option>
-          <option value="2027">2027</option>
-        </select>
-      </div>
-
-      <div id="bulk-to-wrap" style="display:none">
-        <label for="bulk-to-year">To Year</label>
-        <select id="bulk-to-year">
-          <option value="2024">2024</option>
-          <option value="2025">2025</option>
-          <option value="2026" selected>2026</option>
-          <option value="2027">2027</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="bulk-target-override">Target Override (Optional)</label>
-        <input id="bulk-target-override" type="number" placeholder="Leave empty to sum monthly targets" />
-      </div>
-
-      <div>
-        <label for="bulk-file">Excel File (.xlsx, .xls)</label>
-        <input id="bulk-file" type="file" accept=".xlsx,.xls" />
-      </div>
-    </div>
-
-    <div class="split-section">
-      <div class="split-header">
-        <span class="split-label">Incentive Pool Split</span>
-        <div class="split-badges">
-          <span class="badge badge-equal"    id="bulk-equal-badge">Equal 60%</span>
-          <span class="badge-sep">/</span>
-          <span class="badge badge-personal" id="bulk-personal-badge">Personal 40%</span>
-        </div>
-      </div>
-      <div class="slider-wrap">
-        <input type="range" id="bulk-split" min="10" max="90" value="60" step="5"
-          oninput="updateSlider('bulk')" />
-      </div>
-      <div class="slider-ticks">
-        <span>10/90</span><span>25/75</span><span>50/50</span><span>75/25</span><span>90/10</span>
-      </div>
-    </div>
-
-    <button class="btn" onclick="calculateBulk()">Process Upload</button>
-    <button class="btn secondary" id="downloadBtn" onclick="downloadBulk()" style="display:none;margin-left:10px">📥 Download Excel</button>
-
-    <div id="bulk-message"></div>
-    <div id="bulk-results" style="margin-top:14px"></div>
-  </section>
-
-  <!-- SETTINGS TAB -->
-  <section id="settings" class="card" style="display:none;">
-    <h2>Settings & Configuration</h2>
-    <div class="note">Configure tier structures, default settings, and manage your preferences. Settings are stored locally in your browser.</div>
-
-    <div id="settings-message"></div>
-
-    <!-- Tier Configuration -->
-    <div class="form-group">
-      <h3 style="font-size:16px; margin-bottom:12px; color:var(--accent);">📈 Tier Configuration</h3>
-      <div id="tier-list"></div>
-      <button class="btn small" onclick="addNewTier()" style="margin-top:12px;">+ Add Tier</button>
-    </div>
-
-    <!-- Tier Diagram -->
-    <div class="tier-diagram" id="tier-diagram"></div>
-
-    <!-- Default Settings -->
-    <div class="form-group">
-      <h3 style="font-size:16px; margin-bottom:12px; color:var(--accent);">⚙️ Default Settings</h3>
-      
-      <div style="margin-bottom:16px;">
-        <label>Default P1 (Equal) Split: <span id="default-p1-display">60</span>%</label>
-        <div class="slider-wrap">
-          <input type="range" id="default-split" min="10" max="90" value="60" step="5" oninput="updateDefaultSplit()">
-        </div>
-        <div class="slider-ticks">
-          <span>10%</span><span>30%</span><span>50%</span><span>70%</span><span>90%</span>
-        </div>
-      </div>
-
-      <div>
-        <label>Default P2 (Personal) Split: <span id="default-p2-display">40</span>%</label>
-        <div style="background-color:var(--bg); padding:8px 12px; border-radius:6px; margin-top:8px;">
-          <span style="font-weight:600; color:var(--accent);" id="default-p2-computed">40</span>%
-        </div>
-      </div>
-    </div>
-
-    <!-- Tier Simulator -->
-    <div class="form-group">
-      <h3 style="font-size:16px; margin-bottom:12px; color:var(--accent);">🎯 Tier Simulator</h3>
-      <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">Test how different achievements map to tiers with your current configuration.</p>
-      
-      <div class="grid">
-        <div>
-          <label for="sim-achievement">Achievement %</label>
-          <input type="number" id="sim-achievement" placeholder="110" min="0" max="200" value="110" oninput="runSimulation()">
-        </div>
-        <div>
-          <label for="sim-sales">Sales Amount (AED)</label>
-          <input type="number" id="sim-sales" placeholder="100000" min="0" value="100000" oninput="runSimulation()">
-        </div>
-      </div>
-      
-      <div id="sim-results" style="margin-top:12px; padding:12px; background-color:var(--bg); border-radius:8px; display:none;"></div>
-    </div>
-
-    <!-- Actions -->
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
-      <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
-      <button class="btn secondary" onclick="resetToDefaults()">🔄 Reset to Defaults</button>
-      <button class="btn secondary" onclick="exportSettings()">📤 Export as JSON</button>
-      <button class="btn secondary" onclick="importSettingsUI()">📥 Import from JSON</button>
-      <button class="btn secondary danger" onclick="clearAllData()">🗑️ Clear All Data</button>
-    </div>
-
-    <div id="import-input" style="margin-top:16px; display:none;">
-      <label for="import-textarea">Paste JSON here:</label>
-      <textarea id="import-textarea" placeholder='{"tiers": [...], "defaultSplit": {...}}'></textarea>
-      <div style="margin-top:10px; display:flex; gap:10px;">
-        <button class="btn small" onclick="confirmImport()">✓ Import</button>
-        <button class="btn secondary small" onclick="cancelImport()">✕ Cancel</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ANALYTICS TAB -->
-  <section id="analytics" class="card" style="display:none;">
-    <h2>Analytics & Insights</h2>
-    <div class="note">Track calculations and view performance metrics from your Individual and Bulk mode activities.</div>
-
-    <div id="analytics-message"></div>
-
-    <div id="analytics-summary" style="margin-top:20px;"></div>
-    <div id="analytics-charts" style="margin-top:20px;"></div>
-    <div id="analytics-tables" style="margin-top:20px;"></div>
-
-    <div style="margin-top:20px;">
-      <button class="btn secondary" onclick="clearAnalytics()">🗑️ Clear All Analytics</button>
-    </div>
-  </section>
+<div class="footer">
+© 2026 HT • Smart Incentive Calculator • Proprietary Software
+</div>
 
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-/* ════════════════════════════════════════════════════════════════════════════
-   WATERMARK & RESTRICTION
-   ════════════════════════════════════════════════════════════════════════════ */
-(function () {
-  window.__SIC_WATERMARK__ = {
-    marker: "SIC-HT-SS-RESTRICT-2026",
-    author: "HT",
-    year: 2026,
-    restriction: "Smart Salem prohibited from use/copy/deploy/derivatives",
-    version: "5.0"
-  };
-  try { console.info("SIC marker:", window.__SIC_WATERMARK__.marker); } catch (e) {}
-})();
+let staffList = [];
 
-/* ════════════════════════════════════════════════════════════════════════════
-   VALIDATION & UTILITIES MODULE
-   ════════════════════════════════════════════════════════════════════════════ */
-const ValidationUtils = {
-  // Input sanitization
-  sanitize(str) {
-    if (typeof str !== 'string') return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  },
-
-  // Validate number input
-  validateNumber(val, min = null, max = null) {
-    const n = parseFloat(val);
-    if (isNaN(n)) return { valid: false, error: 'Invalid number' };
-    if (min !== null && n < min) return { valid: false, error: `Must be >= ${min}` };
-    if (max !== null && n > max) return { valid: false, error: `Must be <= ${max}` };
-    return { valid: true, value: n };
-  },
-
-  // Validate tier
-  validateTier(tier) {
-    if (!tier.name || !tier.name.trim()) return 'Tier name required';
-    if (tier.min === null || tier.min === undefined) return 'Minimum % required';
-    const minCheck = this.validateNumber(tier.min, 0, 100);
-    if (!minCheck.valid) return `Min %: ${minCheck.error}`;
-    if (tier.rate === null || tier.rate === undefined) return 'Rate required';
-    const rateCheck = this.validateNumber(tier.rate, 0, 100);
-    if (!rateCheck.valid) return `Rate: ${rateCheck.error}`;
-    return null;
-  },
-
-  // Format currency
-  formatCurrency(n) {
-    return Number(n).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-};
-
-/* ════════════════════════════════════════════════════════════════════════════
-   CONFIGURATION MANAGER MODULE
-   ════════════════════════════════════════════════════════════════════════════ */
-const ConfigManager = {
-  storageKey: 'sic_config_v5',
-  
-  defaultConfig: {
-    tiers: [
-      { id: 't1', name: 'Tier 1', min: 75, max: 84, rate: 1.5 },
-      { id: 't2', name: 'Tier 2', min: 85, max: 100, rate: 2.5 },
-      { id: 't3', name: 'Tier 3', min: 101, max: 110, rate: 3.0 },
-      { id: 't4', name: 'Tier 4', min: 111, max: null, rate: 3.5 }
-    ],
-    defaultSplit: { equal: 60, personal: 40 },
-    lastUpdated: null
-  },
-
-  load() {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      return stored ? JSON.parse(stored) : { ...this.defaultConfig };
-    } catch (e) {
-      console.error('Error loading config:', e);
-      return { ...this.defaultConfig };
-    }
-  },
-
-  save(config) {
-    try {
-      config.lastUpdated = new Date().toISOString();
-      localStorage.setItem(this.storageKey, JSON.stringify(config));
-      return { success: true, message: 'Settings saved' };
-    } catch (e) {
-      return { success: false, error: 'Failed to save: ' + e.message };
-    }
-  },
-
-  export(config) {
-    const json = JSON.stringify(config, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sic_settings_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    return { success: true, message: 'Settings exported' };
-  },
-
-  import(jsonStr) {
-    try {
-      const imported = JSON.parse(jsonStr);
-      
-      // Validate structure
-      if (!imported.tiers || !Array.isArray(imported.tiers)) {
-        return { success: false, error: 'Invalid tiers array' };
-      }
-      
-      if (!imported.defaultSplit || typeof imported.defaultSplit !== 'object') {
-        return { success: false, error: 'Invalid defaultSplit object' };
-      }
-
-      // Validate each tier
-      for (const tier of imported.tiers) {
-        const tierError = ValidationUtils.validateTier(tier);
-        if (tierError) return { success: false, error: tierError };
-      }
-
-      return { success: true, config: imported };
-    } catch (e) {
-      return { success: false, error: 'Invalid JSON: ' + e.message };
-    }
-  },
-
-  reset() {
-    return this.save({ ...this.defaultConfig });
-  }
-};
-
-/* ════════════════════════════════════════════════════════════════════════════
-   TIER MANAGER MODULE
-   ════════════════════════════════════════════════════════════════════════════ */
-const TierManager = {
-  currentConfig: null,
-
-  init(config) {
-    this.currentConfig = config;
-  },
-
-  getTier(achievementPercent) {
-    if (achievementPercent < 75) {
-      return { name: 'Below Target', rate: 0, min: 0, max: 75 };
-    }
-
-    const tiers = this.currentConfig.tiers.sort((a, b) => a.min - b.min);
-    
-    for (let i = 0; i < tiers.length; i++) {
-      const tier = tiers[i];
-      const max = tier.max !== null ? tier.max : (i < tiers.length - 1 ? tiers[i + 1].min - 0.01 : 999);
-      
-      if (achievementPercent >= tier.min && achievementPercent <= max) {
-        return {
-          name: tier.name,
-          rate: tier.rate,
-          min: tier.min,
-          max: max,
-          id: tier.id
-        };
-      }
-    }
-
-    return { name: 'Below Target', rate: 0, min: 0, max: 75 };
-  },
-
-  calculateIncentive(sales, target, equal_pct, personal_pct, teamSales) {
-    const achievementPct = (sales / target) * 100;
-    const tier = this.getTier(achievementPct);
-    
-    if (tier.rate === 0) {
-      return {
-        achievement: achievementPct,
-        tier: tier,
-        baseIncentive: 0,
-        equalShare: 0,
-        personalShare: 0,
-        total: 0
-      };
-    }
-
-    const baseIncentive = (tier.rate / 100) * sales;
-    const equalShare = (equal_pct / 100) * baseIncentive;
-    const personalShare = teamSales > 0 
-      ? (personal_pct / 100) * baseIncentive * (sales / teamSales)
-      : 0;
-
-    return {
-      achievement: achievementPct,
-      tier: tier,
-      baseIncentive: baseIncentive,
-      equalShare: equalShare,
-      personalShare: personalShare,
-      total: equalShare + personalShare
-    };
-  },
-
-  validate() {
-    if (!this.currentConfig.tiers || this.currentConfig.tiers.length === 0) {
-      return { valid: false, error: 'At least one tier required' };
-    }
-
-    for (const tier of this.currentConfig.tiers) {
-      const err = ValidationUtils.validateTier(tier);
-      if (err) return { valid: false, error: err };
-    }
-
-    // Check for overlaps
-    const sorted = [...this.currentConfig.tiers].sort((a, b) => a.min - b.min);
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const current = sorted[i];
-      const next = sorted[i + 1];
-      if (current.max !== null && current.max >= next.min) {
-        return { valid: false, error: `Tier "${current.name}" overlaps with "${next.name}"` };
-      }
-    }
-
-    return { valid: true };
-  }
-};
-
-/* ════════════════════════════════════════════════════════════════════════════
-   ANALYTICS TRACKER MODULE
-   ════════════════════════════════════════════════════════════════════════════ */
-const AnalyticsTracker = {
-  storageKey: 'sic_analytics_v5',
-
-  load() {
-    try {
-      const data = localStorage.getItem(this.storageKey);
-      return data ? JSON.parse(data) : {
-        individual: [],
-        bulk: [],
-        lastCleared: null
-      };
-    } catch (e) {
-      return { individual: [], bulk: [], lastCleared: null };
-    }
-  },
-
-  save(analytics) {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(analytics));
-    } catch (e) {
-      console.error('Error saving analytics:', e);
-    }
-  },
-
-  trackIndividual(calc) {
-    const analytics = this.load();
-    analytics.individual.push({
-      timestamp: new Date().toISOString(),
-      achievement: calc.achievement,
-      tierId: calc.tier.id,
-      tierName: calc.tier.name,
-      rate: calc.tier.rate,
-      total: calc.total
-    });
-    this.save(analytics);
-  },
-
-  trackBulk(staffResults) {
-    const analytics = this.load();
-    analytics.bulk.push({
-      timestamp: new Date().toISOString(),
-      staffCount: staffResults.length,
-      results: staffResults.map(s => ({
-        tierId: s.tier.id,
-        tierName: s.tier.name,
-        achievement: s.achievement,
-        total: s.total
-      }))
-    });
-    this.save(analytics);
-  },
-
-  clear() {
-    const analytics = { individual: [], bulk: [], lastCleared: new Date().toISOString() };
-    this.save(analytics);
-    return analytics;
-  },
-
-  getStats() {
-    const analytics = this.load();
-    const allCalcs = [
-      ...analytics.individual,
-      ...analytics.bulk.flatMap(b => b.results)
-    ];
-
-    if (allCalcs.length === 0) {
-      return null;
-    }
-
-    // Most common tier
-    const tierCounts = {};
-    for (const calc of allCalcs) {
-      tierCounts[calc.tierName] = (tierCounts[calc.tierName] || 0) + 1;
-    }
-    const mostCommonTier = Object.entries(tierCounts)
-      .sort((a, b) => b[1] - a[1])[0];
-
-    // Average achievement
-    const avgAchievement = (allCalcs.reduce((sum, c) => sum + c.achievement, 0) / allCalcs.length).toFixed(2);
-
-    return {
-      totalCalculations: allCalcs.length,
-      mostCommonTier: mostCommonTier ? { name: mostCommonTier[0], count: mostCommonTier[1] } : null,
-      avgAchievement: parseFloat(avgAchievement),
-      tierDistribution: tierCounts,
-      analytics: analytics
-    };
-  }
-};
-
-/* ════════════════════════════════════════════════════════════════════════════
-   GLOBAL STATE & HELPERS
-   ════════════════════════════════════════════════════════════════════════════ */
-let currentConfig = ConfigManager.load();
-TierManager.init(currentConfig);
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => { t.classList.remove('show'); }, 2500);
+function addStaff(){
+  const id = Date.now();
+  staffList.push({ id, name:"", revenue:0 });
+  renderStaff();
 }
 
-function showMessage(elementId, message, type = 'success') {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  el.innerHTML = `<div class="alert ${type}">${ValidationUtils.sanitize(message)}</div>`;
-  setTimeout(() => { el.innerHTML = ''; }, 5000);
-}
+function renderStaff(){
+  const container = document.getElementById("staffContainer");
+  container.innerHTML = "";
 
-function activateTab(name) {
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('section.card').forEach(c => c.style.display = 'none');
-
-  const tabMap = {
-    'individual': { pill: 'tab-ind', section: 'individual' },
-    'bulk': { pill: 'tab-bulk', section: 'bulk' },
-    'settings': { pill: 'tab-settings', section: 'settings' },
-    'analytics': { pill: 'tab-analytics', section: 'analytics' }
-  };
-
-  if (tabMap[name]) {
-    document.getElementById(tabMap[name].pill).classList.add('active');
-    document.getElementById(tabMap[name].section).style.display = 'block';
-    
-    if (name === 'analytics') {
-      renderAnalytics();
-    }
-  }
-}
-
-function updateSlider(prefix) {
-  const slider = document.getElementById(prefix + '-split');
-  const eq = parseInt(slider.value, 10);
-  const pr = 100 - eq;
-
-  document.getElementById(prefix + '-equal-badge').textContent = 'Equal ' + eq + '%';
-  document.getElementById(prefix + '-personal-badge').textContent = 'Personal ' + pr + '%';
-
-  const isDark = document.documentElement.classList.contains('dark');
-  const fillColor = isDark ? '#60a5fa' : '#0047AB';
-  slider.style.background = `linear-gradient(to right, ${fillColor} ${eq}%, rgba(150,150,150,0.3) ${eq}%)`;
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   INDIVIDUAL MODE FUNCTIONS
-   ════════════════════════════════════════════════════════════════════════════ */
-function calculateIndividual() {
-  const target = parseFloat(document.getElementById('ind-target').value);
-  const total = parseFloat(document.getElementById('ind-total').value);
-  const personal = parseFloat(document.getElementById('ind-personal').value);
-  const count = parseInt(document.getElementById('ind-count').value, 10);
-  const splitVal = parseInt(document.getElementById('ind-split').value, 10);
-  const out = document.getElementById('ind-results');
-
-  const targetVal = ValidationUtils.validateNumber(target, 0.01);
-  const totalVal = ValidationUtils.validateNumber(total, 0);
-  const personalVal = ValidationUtils.validateNumber(personal, 0);
-  const countVal = ValidationUtils.validateNumber(count, 1);
-
-  if (!targetVal.valid || !totalVal.valid || !personalVal.valid || !countVal.valid) {
-    showMessage('ind-message', 'Please fill in all fields with valid numbers', 'error');
-    out.innerHTML = '';
-    return;
-  }
-
-  const calc = TierManager.calculateIncentive(
-    totalVal.value,
-    targetVal.value,
-    splitVal,
-    100 - splitVal,
-    totalVal.value
-  );
-
-  // For individual mode, distribute equal split across count
-  const eqPerPerson = calc.equalShare / countVal.value;
-  const finalTotal = eqPerPerson + calc.personalShare;
-
-  AnalyticsTracker.trackIndividual({
-    achievement: calc.achievement,
-    tier: calc.tier,
-    total: finalTotal
+  staffList.forEach(p => {
+    container.innerHTML += `
+      <div class="row">
+        <input placeholder="Name" onchange="updateName(${p.id}, this.value)">
+        <input type="number" placeholder="Revenue" onchange="updateRevenue(${p.id}, this.value)">
+      </div>
+    `;
   });
-
-  const tierColor = calc.tier.rate === 0 ? 'tier-none' : '';
-  const tierDisplay = calc.tier.rate === 0 ? 'No Incentive' : `${calc.tier.name} (${calc.tier.rate}%)`;
-
-  out.innerHTML = `
-    <div class="result-grid">
-      <div class="result-box">
-        <div class="rb-label">Achievement</div>
-        <div class="rb-val">${calc.achievement.toFixed(2)}%</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Tier</div>
-        <div class="rb-val" style="font-size:14px;">${tierDisplay}</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Base Pool</div>
-        <div class="rb-val">AED ${ValidationUtils.formatCurrency(calc.baseIncentive)}</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Equal Share (${splitVal}%)</div>
-        <div class="rb-val" style="color:var(--darkblue);">AED ${ValidationUtils.formatCurrency(eqPerPerson)}</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Personal Share (${100-splitVal}%)</div>
-        <div class="rb-val" style="color:var(--darkbrown);">AED ${ValidationUtils.formatCurrency(calc.personalShare)}</div>
-      </div>
-    </div>
-    <div class="highlight-total">Total Incentive: AED ${ValidationUtils.formatCurrency(finalTotal)}</div>
-  `;
-
-  showMessage('ind-message', '✓ Calculation complete', 'success');
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   BULK MODE FUNCTIONS (Placeholder for now)
-   ════════════════════════════════════════════════════════════════════════════ */
-function onBulkModeChange() {
-  const mode = document.getElementById('bulk-mode').value;
-  const monthWrap = document.getElementById('bulk-month-wrap');
-  const quarterWrap = document.getElementById('bulk-quarter-wrap');
-  const yearWrap = document.getElementById('bulk-year-wrap');
-  const fromWrap = document.getElementById('bulk-from-wrap');
-  const toWrap = document.getElementById('bulk-to-wrap');
-
-  monthWrap.style.display = (mode === 'monthly') ? '' : 'none';
-  quarterWrap.style.display = (mode === 'quarterly') ? '' : 'none';
-  yearWrap.style.display = (mode !== 'overall') ? '' : 'none';
-  fromWrap.style.display = (mode === 'overall') ? '' : 'none';
-  toWrap.style.display = (mode === 'overall') ? '' : 'none';
+function updateName(id, val){
+  const p = staffList.find(x=>x.id===id);
+  if(p) p.name = val;
 }
 
-function calculateBulk() {
-  showMessage('bulk-message', 'Bulk mode with analytics coming in next update', 'warning');
+function updateRevenue(id, val){
+  const p = staffList.find(x=>x.id===id);
+  if(p) p.revenue = Number(val)||0;
 }
 
-function downloadBulk() {
-  showToast('Download feature coming soon');
+function getRate(a){
+  if (a >= 111) return 0.035;
+  if (a >= 101) return 0.03;
+  if (a >= 85) return 0.025;
+  if (a >= 75) return 0.015;
+  return 0;
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   SETTINGS PAGE FUNCTIONS
-   ════════════════════════════════════════════════════════════════════════════ */
-function renderTierList() {
-  const container = document.getElementById('tier-list');
-  const config = ConfigManager.load();
-  
-  let html = '<div style="display:grid; gap:10px;">';
-  
-  for (const tier of config.tiers) {
-    html += `
-      <div class="form-group" style="padding:12px;">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end;">
-          <div>
-            <label style="font-size:11px;">Tier Name</label>
-            <input type="text" class="tier-name-${tier.id}" value="${ValidationUtils.sanitize(tier.name)}" placeholder="Tier Name">
-          </div>
-          <div>
-            <label style="font-size:11px;">Min Achievement %</label>
-            <input type="number" class="tier-min-${tier.id}" value="${tier.min}" min="0" max="100">
-          </div>
-          <div>
-            <label style="font-size:11px;">Rate %</label>
-            <input type="number" class="tier-rate-${tier.id}" value="${tier.rate}" min="0" max="100" step="0.1">
-          </div>
-          <button class="btn-mini" onclick="deleteTier('${tier.id}')">✕</button>
-        </div>
-      </div>
-    `;
-  }
+function calculate(){
 
-  html += '</div>';
-  container.innerHTML = html;
-  renderTierDiagram();
-}
+  const target = Number(document.getElementById("target").value);
 
-function renderTierDiagram() {
-  const config = ConfigManager.load();
-  const container = document.getElementById('tier-diagram');
-  
-  let html = '<div style="margin-bottom:8px; font-weight:700; color:var(--muted);">Tier Ranges:</div>';
-  
-  for (const tier of config.tiers) {
-    const rangeText = tier.max !== null ? `${tier.min}% – ${tier.max}%` : `${tier.min}% and above`;
-    html += `
-      <div class="tier-bar">
-        <div class="tier-bar-header">
-          <span class="tier-bar-name">${ValidationUtils.sanitize(tier.name)}</span>
-          <span class="tier-bar-rate">${tier.rate}%</span>
-        </div>
-        <div class="tier-bar-range">${rangeText}</div>
-      </div>
-    `;
-  }
-
-  container.innerHTML = html;
-}
-
-function addNewTier() {
-  const config = ConfigManager.load();
-  const lastMin = Math.max(...config.tiers.map(t => t.min), 0);
-  
-  config.tiers.push({
-    id: `custom_${Date.now()}`,
-    name: `Custom Tier`,
-    min: lastMin + 1,
-    max: lastMin + 10,
-    rate: 5.0
-  });
-
-  renderTierList();
-}
-
-function deleteTier(tierId) {
-  const config = ConfigManager.load();
-  config.tiers = config.tiers.filter(t => t.id !== tierId);
-  renderTierList();
-}
-
-function updateDefaultSplit() {
-  const slider = document.getElementById('default-split');
-  const val = parseInt(slider.value, 10);
-  document.getElementById('default-p1-display').textContent = val;
-  document.getElementById('default-p2-display').textContent = 100 - val;
-  document.getElementById('default-p2-computed').textContent = 100 - val;
-}
-
-function runSimulation() {
-  const achievementVal = ValidationUtils.validateNumber(document.getElementById('sim-achievement').value, 0, 300);
-  const salesVal = ValidationUtils.validateNumber(document.getElementById('sim-sales').value, 0);
-
-  if (!achievementVal.valid || !salesVal.valid) {
+  if(!target || target<=0){
+    alert("Enter valid target");
     return;
   }
 
-  const result = TierManager.getTier(achievementVal.value);
-  const container = document.getElementById('sim-results');
+  const totalRevenue = staffList.reduce((s,p)=>s+p.revenue,0);
+  const achievement = totalRevenue ? (totalRevenue/target)*100 : 0;
+  const rate = getRate(achievement);
 
-  if (result.rate === 0) {
-    container.innerHTML = `<div style="color:var(--warning-color);">⚠️ Below target - no incentive (< 75%)</div>`;
-  } else {
-    const incentive = (result.rate / 100) * salesVal.value;
-    container.innerHTML = `
-      <strong>${result.name}</strong><br>
-      Rate: ${result.rate}%<br>
-      Incentive: AED ${ValidationUtils.formatCurrency(incentive)}
-    `;
-  }
+  const totalIncentive = totalRevenue * rate;
 
-  container.style.display = 'block';
-}
+  const P1 = totalIncentive * 0.6;
+  const P2 = totalIncentive * 0.4;
 
-function saveSettings() {
-  const config = ConfigManager.load();
-  
-  // Update tiers from form
-  for (const tier of config.tiers) {
-    const nameEl = document.querySelector(`.tier-name-${tier.id}`);
-    const minEl = document.querySelector(`.tier-min-${tier.id}`);
-    const rateEl = document.querySelector(`.tier-rate-${tier.id}`);
-
-    if (nameEl) tier.name = nameEl.value;
-    if (minEl) tier.min = parseFloat(minEl.value);
-    if (rateEl) tier.rate = parseFloat(rateEl.value);
-  }
-
-  // Update default split
-  const splitVal = parseInt(document.getElementById('default-split').value, 10);
-  config.defaultSplit = { equal: splitVal, personal: 100 - splitVal };
-
-  // Validate
-  const validation = TierManager.validate();
-  if (!validation.valid) {
-    showMessage('settings-message', validation.error, 'error');
-    return;
-  }
-
-  // Save
-  const result = ConfigManager.save(config);
-  currentConfig = config;
-  TierManager.init(config);
-  
-  showMessage('settings-message', result.message || 'Settings saved successfully', 'success');
-  showToast('✓ Settings saved');
-}
-
-function resetToDefaults() {
-  if (confirm('Reset all settings to defaults? This cannot be undone.')) {
-    const result = ConfigManager.reset();
-    currentConfig = ConfigManager.load();
-    TierManager.init(currentConfig);
-    renderTierList();
-    updateDefaultSplit();
-    showMessage('settings-message', 'Settings reset to defaults', 'success');
-    showToast('Reset to defaults');
-  }
-}
-
-function exportSettings() {
-  const config = ConfigManager.load();
-  ConfigManager.export(config);
-  showToast('✓ Settings exported');
-}
-
-function importSettingsUI() {
-  document.getElementById('import-input').style.display = 'block';
-  document.getElementById('import-textarea').focus();
-}
-
-function confirmImport() {
-  const jsonStr = document.getElementById('import-textarea').value.trim();
-  if (!jsonStr) {
-    showMessage('settings-message', 'Please paste JSON', 'error');
-    return;
-  }
-
-  const result = ConfigManager.import(jsonStr);
-  if (!result.success) {
-    showMessage('settings-message', result.error, 'error');
-    return;
-  }
-
-  ConfigManager.save(result.config);
-  currentConfig = result.config;
-  TierManager.init(currentConfig);
-  renderTierList();
-  updateDefaultSplit();
-
-  document.getElementById('import-input').style.display = 'none';
-  document.getElementById('import-textarea').value = '';
-
-  showMessage('settings-message', 'Settings imported successfully', 'success');
-  showToast('✓ Settings imported');
-}
-
-function cancelImport() {
-  document.getElementById('import-input').style.display = 'none';
-  document.getElementById('import-textarea').value = '';
-}
-
-function clearAllData() {
-  if (confirm('Delete ALL settings and analytics data? This cannot be undone.')) {
-    ConfigManager.reset();
-    AnalyticsTracker.clear();
-    currentConfig = ConfigManager.load();
-    TierManager.init(currentConfig);
-    renderTierList();
-    updateDefaultSplit();
-    showMessage('settings-message', 'All data cleared', 'success');
-    showToast('All data cleared');
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   ANALYTICS PAGE FUNCTIONS
-   ════════════════════════════════════════════════════════════════════════════ */
-function renderAnalytics() {
-  const stats = AnalyticsTracker.getStats();
-  const summaryEl = document.getElementById('analytics-summary');
-  const chartsEl = document.getElementById('analytics-charts');
-  const tablesEl = document.getElementById('analytics-tables');
-
-  if (!stats) {
-    summaryEl.innerHTML = '<div class="alert warning">No calculations tracked yet. Start calculating to see analytics.</div>';
-    chartsEl.innerHTML = '';
-    tablesEl.innerHTML = '';
-    return;
-  }
+  const staffCount = staffList.length;
+  const P1_each = staffCount ? P1 / staffCount : 0;
 
   // Summary
-  summaryEl.innerHTML = `
-    <div class="grid">
-      <div class="result-box">
-        <div class="rb-label">Total Calculations</div>
-        <div class="rb-val">${stats.totalCalculations}</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Avg Achievement</div>
-        <div class="rb-val">${stats.avgAchievement.toFixed(2)}%</div>
-      </div>
-      <div class="result-box">
-        <div class="rb-label">Most Common Tier</div>
-        <div class="rb-val">${stats.mostCommonTier ? stats.mostCommonTier.name + ' (' + stats.mostCommonTier.count + ')' : 'N/A'}</div>
-      </div>
-    </div>
+  document.getElementById("summary").innerHTML = `
+    <p>Achievement: ${achievement.toFixed(2)}%</p>
+    <p>Rate: ${(rate*100).toFixed(2)}%</p>
+    <p>Total Incentive: ${totalIncentive.toFixed(2)}</p>
   `;
 
-  // Tier distribution chart
-  let chartHtml = '<div class="chart-wrap"><div class="chart-title">Tier Distribution</div>';
-  const total = stats.totalCalculations;
-  for (const [tierName, count] of Object.entries(stats.tierDistribution).sort((a, b) => b[1] - a[1])) {
-    const pct = ((count / total) * 100).toFixed(1);
-    const width = ((count / total) * 100);
-    chartHtml += `
-      <div class="bar-row">
-        <div class="bar-label">${tierName}</div>
-        <div class="bar-track">
-          <div class="bar-fill blue" style="width:${width}%; text-align:center;">${count}</div>
-        </div>
-        <div class="bar-amount">${pct}%</div>
-      </div>
+  let html = `
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Revenue</th>
+      <th>P1</th>
+      <th>P2</th>
+      <th>Total</th>
+    </tr>
+  `;
+
+  staffList.forEach(p=>{
+    const contribution = totalRevenue ? p.revenue/totalRevenue : 0;
+    const p2 = P2 * contribution;
+    const total = P1_each + p2;
+
+    html += `
+      <tr>
+        <td>${p.name || "-"}</td>
+        <td>${p.revenue.toFixed(2)}</td>
+        <td>${P1_each.toFixed(2)}</td>
+        <td>${p2.toFixed(2)}</td>
+        <td>${total.toFixed(2)}</td>
+      </tr>
     `;
-  }
-  chartHtml += '</div>';
-  chartsEl.innerHTML = chartHtml;
+  });
 
-  tablesEl.innerHTML = '';
+  html += `</table>`;
+
+  document.getElementById("result").innerHTML = html;
 }
-
-function clearAnalytics() {
-  if (confirm('Clear all analytics data? This cannot be undone.')) {
-    AnalyticsTracker.clear();
-    renderAnalytics();
-    showToast('Analytics cleared');
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   THEME MANAGEMENT
-   ════════════════════════════════════════════════════════════════════════════ */
-const darkToggle = document.getElementById('darkToggle');
-
-function applyTheme(isDark) {
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-    darkToggle.textContent = '🌙';
-  } else {
-    document.documentElement.classList.remove('dark');
-    darkToggle.textContent = '☀️';
-  }
-  try { localStorage.setItem('sic_dark_v5', isDark ? '1' : '0'); } catch(e) {}
-  updateSlider('ind');
-  updateSlider('bulk');
-}
-
-(function initTheme() {
-  const saved = localStorage.getItem('sic_dark_v5');
-  applyTheme(saved === '1');
-})();
-
-darkToggle.addEventListener('click', function() {
-  const isDark = !document.documentElement.classList.contains('dark');
-  applyTheme(isDark);
-});
-
-darkToggle.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    darkToggle.click();
-  }
-});
-
-/* ════════════════════════════════════════════════════════════════════════════
-   INITIALIZATION
-   ════════════════════════════════════════════════════════════════════════════ */
-window.addEventListener('load', function() {
-  renderTierList();
-  updateDefaultSplit();
-  updateSlider('ind');
-  updateSlider('bulk');
-  onBulkModeChange();
-});
 </script>
+
 </body>
 </html>
