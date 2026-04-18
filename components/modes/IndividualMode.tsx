@@ -7,8 +7,10 @@ import { TierResult } from '@/lib/tierManager';
 
 export default function IndividualMode() {
   const [staffName, setStaffName] = useState('');
-  const [sales, setSales] = useState('0');
+  const [staffSales, setStaffSales] = useState('0');
+  const [totalSales, setTotalSales] = useState('0');
   const [target, setTarget] = useState('0');
+  const [numStaff, setNumStaff] = useState(29);
   const [splitEqual, setSplitEqual] = useState(60);
   const [result, setResult] = useState<TierResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -17,37 +19,49 @@ export default function IndividualMode() {
 
   // Calculate on input change
   useEffect(() => {
-    const salesNum = sanitizeNumber(sales) || 0;
+    const staffSalesNum = sanitizeNumber(staffSales) || 0;
+    const totalSalesNum = sanitizeNumber(totalSales) || 0;
     const targetNum = sanitizeNumber(target) || 1;
+    const staffCount = numStaff || 1;
 
-    if (salesNum >= 0 && targetNum > 0) {
+    if (staffSalesNum >= 0 && totalSalesNum >= 0 && targetNum > 0) {
+      // Calculate pool incentive based on total sales vs target
       const calcResult = tierManager.calculateIncentive(
-        salesNum,
+        totalSalesNum,
         targetNum,
-        salesNum, // Team total = individual sales for single calc
+        totalSalesNum,
         splitEqual,
         config.tiers
       );
       setResult(calcResult);
     }
-  }, [sales, target, splitEqual, config.tiers]);
+  }, [staffSales, totalSales, target, numStaff, splitEqual, config.tiers]);
 
   const handleCopy = () => {
     if (!result || !staffName) {
-      alert('Fill in staff name and sales data first');
+      alert('Fill in staff name and all sales data first');
       return;
     }
 
+    const staffSalesNum = sanitizeNumber(staffSales) || 0;
+    const totalSalesNum = sanitizeNumber(totalSales) || 0;
+    const staffCount = numStaff || 1;
+    const p1Equal = result.p1Share / staffCount;
+    const p2Personal = (staffSalesNum / Math.max(totalSalesNum, 1)) * result.p2Share;
+
     const text = `
 Staff: ${staffName}
-Sales: ${formatCurrency(sanitizeNumber(sales) || 0)}
+Staff Sales: ${formatCurrency(staffSalesNum)}
+Total Pool Sales: ${formatCurrency(totalSalesNum)}
 Target: ${formatCurrency(sanitizeNumber(target) || 0)}
-Achievement: ${formatPercentage(result.achievementPercent)}
+Pool Achievement: ${formatPercentage(result.achievementPercent)}
 Tier: ${result.message}
-Base Incentive: ${formatCurrency(result.baseIncentive)}
-P1 Share (Equal): ${formatCurrency(result.p1Share)}
-P2 Share (Personal): ${formatCurrency(result.p2Share)}
-Total Incentive: ${formatCurrency(result.totalIncentive)}
+
+Pool Incentive Distribution:
+P1 Share (Equal): ${formatCurrency(result.p1Share)} ÷ ${staffCount} staff = ${formatCurrency(p1Equal)}
+P2 Share (Personal): ${formatCurrency(result.p2Share)} × ${formatPercentage(staffSalesNum / Math.max(totalSalesNum, 1))} = ${formatCurrency(p2Personal)}
+
+Individual Total: ${formatCurrency(p1Equal + p2Personal)}
     `.trim();
 
     navigator.clipboard.writeText(text);
@@ -58,11 +72,11 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
     analyticsTracker.trackCalculation({
       type: 'individual',
       staffName: staffName || 'Unknown',
-      sales: sanitizeNumber(sales) || 0,
+      sales: staffSalesNum,
       target: sanitizeNumber(target) || 0,
       achievementPercent: result.achievementPercent,
       tierName: result.tier?.name || 'No Incentive',
-      incentiveAmount: result.totalIncentive,
+      incentiveAmount: p1Equal + p2Personal,
       splitEqual,
     });
   };
@@ -73,7 +87,7 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
       <Card title="💼 Calculation Input" icon="📝">
         <div className="space-y-4">
           <Input
-            label="Staff Name"
+            label="Staff Name *"
             type="text"
             value={staffName}
             onChange={(e) => setStaffName(e.target.value)}
@@ -81,16 +95,25 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
           />
 
           <Input
-            label="Sales (AED)"
+            label="Staff's Sales (AED) *"
             type="number"
-            value={sales}
-            onChange={(e) => setSales(e.target.value)}
+            value={staffSales}
+            onChange={(e) => setStaffSales(e.target.value)}
             placeholder="0"
             min="0"
           />
 
           <Input
-            label="Target (AED)"
+            label="Total Pool Sales (AED) *"
+            type="number"
+            value={totalSales}
+            onChange={(e) => setTotalSales(e.target.value)}
+            placeholder="0"
+            min="0"
+          />
+
+          <Input
+            label="Pool Target (AED) *"
             type="number"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
@@ -98,9 +121,18 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
             min="1"
           />
 
+          <Input
+            label="Number of Staff *"
+            type="number"
+            value={numStaff}
+            onChange={(e) => setNumStaff(parseInt(e.target.value) || 29)}
+            placeholder="29"
+            min="1"
+          />
+
           <div>
             <label className="label-text">
-              P1 Split (Equal): {splitEqual}% / P2: {100 - splitEqual}%
+              Pool Split: P1 (Equal): {splitEqual}% / P2 (Personal): {100 - splitEqual}%
             </label>
             <input
               type="range"
@@ -111,7 +143,7 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
               className="w-full h-2 bg-slate-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
             />
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-              P1 distributed equally. P2 by sales contribution.
+              P1 distributed equally among all staff. P2 based on individual sales contribution.
             </p>
           </div>
         </div>
@@ -119,10 +151,10 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
 
       {/* Results Section */}
       {result && (
-        <Card title="📊 Results" icon="✅">
+        <Card title="📊 Individual Share" icon="✅">
           <div className="space-y-3">
             <div className="bg-slate-50 dark:bg-gray-900 p-4 rounded-lg">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Achievement %</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Pool Achievement %</p>
               <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">
                 {formatPercentage(result.achievementPercent)}
               </p>
@@ -133,32 +165,44 @@ Total Incentive: ${formatCurrency(result.totalIncentive)}
               <p className="text-xl font-bold text-slate-900 dark:text-white">{result.message}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-600 dark:text-blue-300">Base Incentive</p>
-                <p className="font-bold text-blue-900 dark:text-blue-100">
-                  {formatCurrency(result.baseIncentive)}
-                </p>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-xs text-green-600 dark:text-green-300">P1 Share</p>
-                <p className="font-bold text-green-900 dark:text-green-100">
-                  {formatCurrency(result.p1Share)}
-                </p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                <p className="text-xs text-purple-600 dark:text-purple-300">P2 Share</p>
-                <p className="font-bold text-purple-900 dark:text-purple-100">
-                  {formatCurrency(result.p2Share)}
-                </p>
-              </div>
-              <div className="bg-teal-50 dark:bg-teal-900/30 p-3 rounded-lg border border-teal-200 dark:border-teal-800">
-                <p className="text-xs text-teal-600 dark:text-teal-300">Total Incentive</p>
-                <p className="font-bold text-teal-900 dark:text-teal-100">
-                  {formatCurrency(result.totalIncentive)}
-                </p>
-              </div>
-            </div>
+            {(() => {
+              const staffSalesNum = sanitizeNumber(staffSales) || 0;
+              const totalSalesNum = sanitizeNumber(totalSales) || 0;
+              const staffCount = numStaff || 1;
+              const p1Equal = result.p1Share / staffCount;
+              const salesRatio = totalSalesNum > 0 ? staffSalesNum / totalSalesNum : 0;
+              const p2Personal = salesRatio * result.p2Share;
+              const totalIndividual = p1Equal + p2Personal;
+
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-600 dark:text-blue-300">P1 (Equal Share)</p>
+                    <p className="font-bold text-blue-900 dark:text-blue-100">
+                      {formatCurrency(p1Equal)}
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                      ÷ {staffCount} staff
+                    </p>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-xs text-green-600 dark:text-green-300">P2 (Sales %)</p>
+                    <p className="font-bold text-green-900 dark:text-green-100">
+                      {formatCurrency(p2Personal)}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                      {formatPercentage(salesRatio)}
+                    </p>
+                  </div>
+                  <div className="bg-teal-50 dark:bg-teal-900/30 p-3 rounded-lg border border-teal-200 dark:border-teal-800 col-span-2">
+                    <p className="text-xs text-teal-600 dark:text-teal-300">Total Individual Incentive</p>
+                    <p className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+                      {formatCurrency(totalIndividual)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {copied && <Alert type="success">Copied to clipboard!</Alert>}
 
