@@ -170,6 +170,7 @@ class AnalyticsTracker {
         name: r.staffName,
         achievement: r.achievementPercent,
         gap: 75 - r.achievementPercent,
+        incentive: r.incentiveAmount,
       }));
 
     // Generate recommendations based on data
