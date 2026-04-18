@@ -107,8 +107,6 @@ export default function BulkMode() {
           target: calc.target,
           achievementPercent: calc.achievementPercent,
           tierName: calc.tier?.name || 'No Incentive',
-          incentive: calc.totalIncentive,
-          timestamp: new Date(),
         });
       });
 
