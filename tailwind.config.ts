@@ -23,17 +23,12 @@ const config: Config = {
         success: '#00E676',
         danger: '#FF5252',
         warning: '#FFA726',
-        background: {
-          primary: '#0F1625',
-          secondary: '#1A2332',
-          tertiary: '#232E42',
-        },
-        text: {
-          primary: '#E4E8EF',
-          secondary: '#B0B8C5',
-          muted: '#6B7280',
-        },
-        border: 'rgba(255, 255, 255, 0.1)',
+        'background-primary': '#0F1625',
+        'background-secondary': '#1A2332',
+        'background-tertiary': '#232E42',
+        'text-primary': '#E4E8EF',
+        'text-secondary': '#B0B8C5',
+        'text-muted': '#6B7280',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
