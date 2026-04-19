@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background-primary: #0F1625;
+    --background-secondary: #1A2332;
+    --background-tertiary: #232E42;
+    --text-primary: #E4E8EF;
+    --text-secondary: #B0B8C5;
+    --text-muted: #6B7280;
+    --accent-primary: #00CED1;
+    --accent-secondary: #FFA726;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --success: #00E676;
+    --danger: #FF5252;
+  }
+
+  .light {
+    --background-primary: #FFFFFF;
+    --background-secondary: #F5F7FA;
+    --background-tertiary: #E4E8EF;
+    --text-primary: #1A202C;
+    --text-secondary: #4A5568;
+    --text-muted: #718096;
+    --border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background-primary text-text-primary;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-200;
+    @apply hover:scale-105 active:scale-95;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-background-primary;
+    @apply hover:bg-primary-light;
+  }
+
+  .btn-secondary {
+    @apply bg-background-secondary text-text-primary border border-border-color;
+    @apply hover:bg-background-tertiary;
+  }
+
+  .card {
+    @apply bg-background-secondary rounded-xl p-6 border border-border-color;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-background-tertiary rounded-lg;
+    @apply border border-border-color text-text-primary;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  .nav-tab {
+    @apply px-6 py-3 font-semibold text-text-secondary;
+    @apply border-b-2 border-transparent transition-colors;
+  }
+
+  .nav-tab.active {
+    @apply text-primary border-primary;
+  }
+
+  .stat-card {
+    @apply bg-background-tertiary rounded-lg p-4 border border-border-color;
+  }
+
+  .toast {
+    @apply fixed top-4 right-4 bg-background-secondary;
+    @apply px-6 py-4 rounded-lg shadow-lg border border-border-color;
+    @apply transform transition-transform duration-300;
+  }
+}
+
+/* Chart.js overrides */
+canvas {
+  @apply max-w-full h-auto;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-background-tertiary rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  @apply animate-spin;
+}
