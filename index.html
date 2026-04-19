@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<<<<<<< HEAD
-
-=======
->>>>>>> 37d6050 (analatycs introduced.)
 <!--
 SMART INCENTIVE CALCULATOR v5.1
 
@@ -10,28 +6,10 @@ Copyright (c) 2026 HT
 License: Restricted - Smart Salem prohibited
 Proof-of-origin marker: SIC-HT-SS-RESTRICT-2026
 -->
-<<<<<<< HEAD
-
-=======
->>>>>>> 37d6050 (analatycs introduced.)
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<<<<<<< HEAD
-<title>Smart Incentive Calculator</title>
-
-<!-- SheetJS library for Excel parsing and export -->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- jsPDF library for PDF export -->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Chart.js for interactive charts -->
-
-=======
 <meta name="description" content="Smart Incentive Calculator - Track sales performance, incentives, and achievements" />
 <meta name="theme-color" content="#00CED1" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -44,7 +22,6 @@ Proof-of-origin marker: SIC-HT-SS-RESTRICT-2026
 <!-- jsPDF library for PDF export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <!-- Chart.js for interactive charts -->
->>>>>>> 37d6050 (analatycs introduced.)
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <style>
@@ -1142,10 +1119,6 @@ input[type="range"]::-moz-range-thumb {
   margin-top: 4px;
 }
 </style>
-<<<<<<< HEAD
-
-=======
->>>>>>> 37d6050 (analatycs introduced.)
 </head>
 <body>
 
@@ -1165,91 +1138,12 @@ input[type="range"]::-moz-range-thumb {
   </nav>
 
   <!-- INDIVIDUAL TAB -->
-<<<<<<< HEAD
-
-=======
->>>>>>> 37d6050 (analatycs introduced.)
   <section id="individual-tab" class="card">
     <div class="privacy-notice">
       <span class="privacy-icon">🔒</span>
       <span>100% local calculation • No data shared • Browser-only processing • Your data stays private</span>
     </div>
 
-<<<<<<< HEAD
-```
-<div class="card-header">
-  <h2 class="card-title">Calculate Your Incentive</h2>
-</div>
-
-<div class="form-grid">
-  <div class="form-group">
-    <label>Team Target (AED)</label>
-    <input type="number" id="team-target" placeholder="700000" min="0" />
-  </div>
-  <div class="form-group">
-    <label>Team Sales (AED)</label>
-    <input type="number" id="team-sales" placeholder="735000" min="0" />
-  </div>
-  <div class="form-group">
-    <label>My Sales (AED)</label>
-    <input type="number" id="my-sales" placeholder="73500" min="0" />
-  </div>
-  <div class="form-group">
-    <label>Staff Count</label>
-    <input type="number" id="staff-count" placeholder="29" min="1" value="29" />
-  </div>
-</div>
-
-<div class="slider-section">
-  <div class="slider-header">
-    <span class="slider-label">Pool Split Distribution</span>
-    <div class="slider-values">
-      <span class="slider-badge slider-badge-p1" id="p1-badge">P1: 60%</span>
-      <span class="slider-badge slider-badge-p2" id="p2-badge">P2: 40%</span>
-    </div>
-  </div>
-  <input type="range" id="split-slider" min="10" max="90" value="60" step="5" oninput="updateSlider()" />
-  <div class="slider-ticks">
-    <span>10/90</span>
-    <span>30/70</span>
-    <span>50/50</span>
-    <span>70/30</span>
-    <span>90/10</span>
-  </div>
-</div>
-
-<button class="btn btn-primary btn-block" onclick="calculate()">
-  <span>Calculate Incentive</span>
-  <span>→</span>
-</button>
-
-<div id="results-container"></div>
-```
-
-  </section>
-
-  <!-- BULK TAB -->
-
-  <section id="bulk-tab" class="card hidden">
-    <div class="privacy-notice">
-      <span class="privacy-icon">🔒</span>
-      <span>100% local calculation • No data shared • Browser-only processing • Your data stays private</span>
-    </div>
-
-```
-<div class="card-header">
-  <h2 class="card-title">Team Incentive Analysis</h2>
-  <div class="card-description">
-    Upload your sales tracking Excel file to automatically calculate team incentives with rankings and downloadable reports.
-  </div>
-</div>
-
-<!-- File Upload Section -->
-<div class="form-group">
-  <label>Upload Sales Tracker Excel (.xlsx)</label>
-  <input id="bulk-file" type="file" accept=".xlsx,.xls" onchange="handleExcelUpload()" />
-</div>
-=======
     <div class="card-header">
       <h2 class="card-title">Calculate Your Incentive</h2>
     </div>
@@ -1622,325 +1516,6 @@ input[type="range"]::-moz-range-thumb {
 </div>
 
 <div class="toast" id="toast"></div>
->>>>>>> 37d6050 (analatycs introduced.)
-
-<!-- Controls Section (shown after upload) -->
-<div id="bulk-controls" style="display: none;">
-  <div class="form-grid">
-    <div class="form-group">
-      <label>View Mode</label>
-      <select id="view-mode" onchange="updateViewMode()">
-        <option value="monthly">Monthly</option>
-        <option value="q1">Q1 (Jan-Mar)</option>
-        <option value="q2">Q2 (Apr-Jun)</option>
-        <option value="q3">Q3 (Jul-Sep)</option>
-        <option value="q4">Q4 (Oct-Dec)</option>
-        <option value="yearly">Yearly</option>
-        <option value="alltime">All-Time</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="month-selector-group">
-      <label>Month</label>
-      <select id="month-selector">
-        <option value="Jan">January</option>
-        <option value="Feb">February</option>
-        <option value="Mar">March</option>
-        <option value="Apr">April</option>
-        <option value="May">May</option>
-        <option value="Jun">June</option>
-        <option value="Jul">July</option>
-        <option value="Aug">August</option>
-        <option value="Sep">September</option>
-        <option value="Oct">October</option>
-        <option value="Nov">November</option>
-        <option value="Dec">December</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="year-selector-group">
-      <label>Year</label>
-      <select id="year-selector"></select>
-    </div>
-
-    <div class="form-group">
-      <label>Team Target (AED) <span style="font-size: 12px; color: var(--text-muted);">Auto or Manual</span></label>
-      <input type="number" id="bulk-target" placeholder="Auto-detected" min="0" />
-    </div>
-
-    <div class="form-group">
-      <label>Staff Count <span style="font-size: 12px; color: var(--text-muted);">Auto-detected</span></label>
-      <input type="number" id="bulk-staff-count" disabled style="background: var(--bg-tertiary);" />
-    </div>
-  </div>
-
-  <div class="slider-section">
-    <div class="slider-header">
-      <span class="slider-label">Pool Split Distribution</span>
-      <div class="slider-values">
-        <span class="slider-badge slider-badge-p1" id="bulk-p1-badge">P1: 60%</span>
-        <span class="slider-badge slider-badge-p2" id="bulk-p2-badge">P2: 40%</span>
-      </div>
-    </div>
-    <input type="range" id="bulk-split-slider" min="10" max="90" value="60" step="5" oninput="updateBulkSlider()" />
-    <div class="slider-ticks">
-      <span>10/90</span>
-      <span>30/70</span>
-      <span>50/50</span>
-      <span>70/30</span>
-      <span>90/10</span>
-    </div>
-  </div>
-
-  <button class="btn btn-primary btn-block" onclick="calculateBulk()">
-    <span>Calculate Team Incentives</span>
-    <span>→</span>
-  </button>
-</div>
-
-<!-- Results Section -->
-<div id="bulk-results" style="margin-top: 24px;"></div>
-```
-
-  </section>
-
-  <!-- ANALYTICS TAB -->
-
-  <section id="analytics-tab" class="card hidden">
-    <div class="card-header">
-      <h2 class="card-title">Performance Analytics</h2>
-      <div class="card-description">
-        Track your progress, spot trends, and unlock achievements based on your performance history.
-      </div>
-    </div>
-
-```
-<!-- Real-Time Progress -->
-<div id="realtime-progress" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    ⏱️ Current Month Progress
-  </h3>
-  <div id="realtime-content">
-    <div class="alert alert-warning">
-      Upload your Excel file in Bulk mode and calculate to see real-time progress tracking.
-    </div>
-  </div>
-</div>
-
-<!-- Streaks & Milestones -->
-<div id="streaks-section" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    🔥 Streaks & Achievements
-  </h3>
-  <div id="streaks-content">
-    <div class="summary-stats">
-      <div class="stat-card">
-        <div class="stat-label">Current Streak</div>
-        <div class="stat-value" id="current-streak">0</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">months above 75%</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Personal Best</div>
-        <div class="stat-value" id="personal-best">-</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">highest achievement</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Earned</div>
-        <div class="stat-value" style="font-size: 20px;" id="total-earned">AED 0</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">lifetime incentives</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Achievements</div>
-        <div class="stat-value" id="achievement-count">0</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">badges unlocked</div>
-      </div>
-    </div>
-    
-    <div id="badges-display" style="margin-top: 20px;"></div>
-  </div>
-</div>
-
-<!-- Performance Trends -->
-<div id="trends-section" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    📈 Performance Trends
-  </h3>
-  <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-    <canvas id="trends-chart" height="80"></canvas>
-  </div>
-</div>
-
-<!-- Performance Heatmap -->
-<div id="heatmap-section" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    📅 Performance Heatmap
-  </h3>
-  <div id="heatmap-container" style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-    <div class="alert alert-warning">
-      Heatmap will appear after you've calculated at least one month's data.
-    </div>
-  </div>
-</div>
-
-<!-- Peer Comparison -->
-<div id="peer-comparison-section" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    👥 Peer Comparison
-  </h3>
-  <div id="peer-content">
-    <div class="summary-stats">
-      <div class="stat-card">
-        <div class="stat-label">Your Rank</div>
-        <div class="stat-value" id="your-rank">-</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">out of team</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">vs Team Avg</div>
-        <div class="stat-value" id="vs-average">-</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">performance delta</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Percentile</div>
-        <div class="stat-value" id="percentile">-</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">top % of team</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Gap to #1</div>
-        <div class="stat-value" style="font-size: 18px;" id="gap-to-top">-</div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">distance to leader</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Interactive Charts -->
-<div id="charts-section" style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    📊 Distribution Analysis
-  </h3>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-    <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-      <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Sales vs Packages</h4>
-      <canvas id="scatter-chart" height="200"></canvas>
-    </div>
-    <div style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-      <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Tier Distribution</h4>
-      <canvas id="tier-chart" height="200"></canvas>
-    </div>
-  </div>
-</div>
-
-<button class="btn btn-secondary" onclick="exportAnalytics()">
-  <span>📄 Export Analytics Report</span>
-</button>
-```
-
-  </section>
-
-  <!-- SETTINGS TAB -->
-
-  <section id="settings-tab" class="card hidden">
-    <div class="card-header">
-      <h2 class="card-title">Tier Configuration</h2>
-      <div class="card-description">
-        Manage incentive tiers and customize calculation parameters. Changes are saved automatically to your browser's local storage.
-      </div>
-    </div>
-
-```
-<div id="settings-message"></div>
-
-<div class="tier-visual">
-  <div class="tier-visual-title">Current Tier Structure</div>
-  <div class="tier-bar" id="tier-bar"></div>
-</div>
-
-<div class="tier-list" id="tier-list"></div>
-
-<div style="display: flex; gap: 12px; margin-bottom: 32px;">
-  <button class="btn btn-secondary btn-sm" onclick="addTier()">+ Add Tier</button>
-  <button class="btn btn-secondary btn-sm" onclick="resetTiers()">Reset to Defaults</button>
-</div>
-
-<button class="btn btn-primary" onclick="saveTiers()">Save Changes</button>
-```
-
-  </section>
-
-  <!-- ABOUT TAB -->
-
-  <section id="about-tab" class="card hidden">
-    <div class="card-header">
-      <h2 class="card-title">How It Works</h2>
-    </div>
-
-```
-<div style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    📊 Default Incentive Tiers
-  </h3>
-  <div style="background: var(--bg-tertiary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 2;">
-    <div>• <strong style="color: var(--tier-1);">Tier 1</strong> (75–&lt;85%): 1.5% of net revenue</div>
-    <div>• <strong style="color: var(--tier-2);">Tier 2</strong> (85–&lt;101%): 2.5% of net revenue</div>
-    <div>• <strong style="color: var(--tier-3);">Tier 3</strong> (101–&lt;111%): 3.0% of net revenue</div>
-    <div>• <strong style="color: var(--tier-4);">Tier 4</strong> (111%+): 3.5% of net revenue</div>
-    <div>• <strong style="color: var(--error);">Below 75%</strong>: No incentive</div>
-  </div>
-</div>
-
-<div style="margin-bottom: 32px;">
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    💰 Payout Structure
-  </h3>
-  <div style="background: var(--bg-tertiary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); line-height: 1.8;">
-    <div style="margin-bottom: 12px;">
-      <strong style="color: #42a5f5;">P1 - Equal Pool (Default 60%)</strong><br>
-      <span style="color: var(--text-secondary); font-size: 14px;">Divided equally among all staff members</span>
-    </div>
-    <div>
-      <strong style="color: #ffa726;">P2 - Personal Pool (Default 40%)</strong><br>
-      <span style="color: var(--text-secondary); font-size: 14px;">Weighted by individual contribution to team sales</span>
-    </div>
-  </div>
-</div>
-
-<div>
-  <h3 style="font-size: 18px; font-weight: 700; color: var(--accent-primary); margin-bottom: 16px;">
-    🔢 Example Calculation
-  </h3>
-  <div style="background: var(--bg-tertiary); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); font-size: 14px; line-height: 1.8;">
-    <div><strong>Scenario:</strong></div>
-    <div style="color: var(--text-secondary); margin-left: 20px;">
-      • Team Target: AED 700,000<br>
-      • Team Performance: AED 735,000 (105%)<br>
-      • Tier: 3.0% rate<br>
-      • Staff: 25 people<br>
-      • Your contribution: 10%
-    </div>
-    <div style="margin-top: 16px;"><strong>Results:</strong></div>
-    <div style="color: var(--text-secondary); margin-left: 20px;">
-      1. Total Pool = 735,000 × 3% = <strong style="color: var(--accent-primary);">AED 22,050</strong><br>
-      2. P1 Pool = 22,050 × 60% = <strong style="color: #42a5f5;">AED 13,230</strong><br>
-      3. P2 Pool = 22,050 × 40% = <strong style="color: #ffa726;">AED 8,820</strong><br>
-      4. Your P1 = 13,230 ÷ 25 = <strong style="color: #42a5f5;">AED 529.20</strong><br>
-      5. Your P2 = 8,820 × 10% = <strong style="color: #ffa726;">AED 882.00</strong><br>
-      6. <strong>Total = AED 1,411.20</strong>
-    </div>
-  </div>
-</div>
-```
-
-  </section>
-
-  <footer class="footer">
-    <p>&copy; 2026 HT. All rights reserved.</p>
-    <p style="margin-top: 8px; font-size: 12px;">
-      Licensed for general use • Smart Salem prohibited from use/deployment
-    </p>
-  </footer>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2105,10 +1680,7 @@ function switchTab(tab) {
   
   document.getElementById('individual-tab').classList.toggle('hidden', tab !== 'individual');
   document.getElementById('bulk-tab').classList.toggle('hidden', tab !== 'bulk');
-<<<<<<< HEAD
-=======
   document.getElementById('analytics-tab').classList.toggle('hidden', tab !== 'analytics');
->>>>>>> 37d6050 (analatycs introduced.)
   document.getElementById('settings-tab').classList.toggle('hidden', tab !== 'settings');
   document.getElementById('about-tab').classList.toggle('hidden', tab !== 'about');
   
@@ -2116,13 +1688,10 @@ function switchTab(tab) {
     renderTierList();
     renderTierVisual();
   }
-<<<<<<< HEAD
-=======
   
   if (tab === 'analytics') {
     updateAnalyticsDisplay();
   }
->>>>>>> 37d6050 (analatycs introduced.)
 }
 
 function updateSlider() {
@@ -2308,11 +1877,7 @@ let bulkResultsData = null;
 let bulkWorkbook = null;
 let bulkCurrentData = null;
 let bulkCurrentView = 'monthly';
-<<<<<<< HEAD
-let bulkSortColumn = 'totalIncentive';
-=======
 let bulkSortColumn = 'sales';
->>>>>>> 37d6050 (analatycs introduced.)
 let bulkSortDirection = 'desc';
 let bulkCalculatedResults = null;
 
@@ -2681,12 +2246,8 @@ function calculateBulk() {
       };
     });
     
-<<<<<<< HEAD
-    results.sort((a, b) => b.totalIncentive - a.totalIncentive);
-=======
     // Sort by SALES (highest to lowest) for rankings and medals
     results.sort((a, b) => b.sales - a.sales);
->>>>>>> 37d6050 (analatycs introduced.)
     
     bulkCalculatedResults = {
       results,
@@ -2703,9 +2264,6 @@ function calculateBulk() {
       sheets
     };
     
-<<<<<<< HEAD
-    displayBulkResults(bulkCalculatedResults);
-=======
     // Record this calculation for analytics (monthly view only)
     if (bulkCurrentView === 'monthly') {
       const month = document.getElementById('month-selector').value;
@@ -2719,7 +2277,6 @@ function calculateBulk() {
     // Update real-time progress if on analytics tab
     updateRealtimeProgress(bulkCalculatedResults);
     
->>>>>>> 37d6050 (analatycs introduced.)
     showToast('✓ Calculation complete');
     
   } catch (error) {
@@ -2826,14 +2383,6 @@ function displayBulkResults(data) {
         <table class="bulk-table" id="results-table">
           <thead>
             <tr>
-<<<<<<< HEAD
-              <th style="width: 40px;"></th>
-              <th class="sortable" onclick="sortTable('name')">Name</th>
-              <th class="sortable" onclick="sortTable('totalIncentive')">Total Incentives</th>
-              <th class="sortable" onclick="sortTable('packages')">No. of Packages</th>
-              <th class="sortable" onclick="sortTable('sales')">Sales</th>
-              <th class="sortable" onclick="sortTable('individualPercent')">Individual Sales %</th>
-=======
               <th style="width: 40px;">Rank</th>
               <th style="width: 40px;"></th>
               <th class="sortable" onclick="sortTable('name')">Name</th>
@@ -2841,7 +2390,6 @@ function displayBulkResults(data) {
               <th class="sortable" onclick="sortTable('packages')">📦 Packages</th>
               <th class="sortable" onclick="sortTable('sales')">💵 Sales</th>
               <th class="sortable" onclick="sortTable('individualPercent')">% Share</th>
->>>>>>> 37d6050 (analatycs introduced.)
               <th class="sortable" onclick="sortTable('p1')">P1</th>
               <th class="sortable" onclick="sortTable('p2')">P2</th>
             </tr>
@@ -2853,13 +2401,6 @@ function displayBulkResults(data) {
               else if (index === 1) badge = '🥈';
               else if (index === 2) badge = '🥉';
               
-<<<<<<< HEAD
-              return `
-                <tr>
-                  <td class="badge-cell">${badge}</td>
-                  <td class="name-cell">${person.name}</td>
-                  <td class="number-cell incentive-cell">AED ${formatCurrency(person.totalIncentive)}</td>
-=======
               const rankStyle = index < 3 ? 'font-weight: 700; color: var(--accent-primary);' : '';
               
               return `
@@ -2868,7 +2409,6 @@ function displayBulkResults(data) {
                   <td class="badge-cell">${badge}</td>
                   <td class="name-cell" style="${rankStyle}">${person.name}</td>
                   <td class="number-cell incentive-cell" style="${rankStyle}">AED ${formatCurrency(person.totalIncentive)}</td>
->>>>>>> 37d6050 (analatycs introduced.)
                   <td class="number-cell">${person.packages}</td>
                   <td class="number-cell">AED ${formatCurrency(person.sales)}</td>
                   <td class="number-cell">${person.individualPercent.toFixed(2)}%</td>
@@ -2893,8 +2433,6 @@ function displayBulkResults(data) {
       </div>
     </div>
   `;
-<<<<<<< HEAD
-=======
   
   // Set initial sort indicator on Sales column (index 5: rank, badge, name, incentive, packages, SALES)
   setTimeout(() => {
@@ -2903,7 +2441,6 @@ function displayBulkResults(data) {
       headers[5].classList.add('sort-desc');
     }
   }, 0);
->>>>>>> 37d6050 (analatycs introduced.)
 }
 
 // Calculate next tier info
@@ -2984,11 +2521,7 @@ function sortTable(column) {
   });
   
   const headers = document.querySelectorAll('.bulk-table th');
-<<<<<<< HEAD
-  const columnIndex = ['', 'name', 'totalIncentive', 'packages', 'sales', 'individualPercent', 'p1', 'p2'].indexOf(column);
-=======
   const columnIndex = ['rank', 'badge', 'name', 'totalIncentive', 'packages', 'sales', 'individualPercent', 'p1', 'p2'].indexOf(column);
->>>>>>> 37d6050 (analatycs introduced.)
   if (columnIndex > 0) {
     headers[columnIndex].classList.add(bulkSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
   }
@@ -3519,21 +3052,13 @@ function updatePeerComparison(results, userName) {
   const userResult = results.find(r => r.name.toLowerCase().includes(userName.toLowerCase()));
   if (!userResult) return;
   
-<<<<<<< HEAD
-  const sorted = [...results].sort((a, b) => b.totalIncentive - a.totalIncentive);
-=======
   // Sort by SALES for ranking
   const sorted = [...results].sort((a, b) => b.sales - a.sales);
->>>>>>> 37d6050 (analatycs introduced.)
   const rank = sorted.findIndex(r => r.name === userResult.name) + 1;
   const teamAvg = results.reduce((sum, r) => sum + r.sales, 0) / results.length;
   const delta = ((userResult.sales / teamAvg - 1) * 100).toFixed(1);
   const percentile = (((results.length - rank + 1) / results.length) * 100).toFixed(0);
-<<<<<<< HEAD
-  const gapToTop = sorted[0].totalIncentive - userResult.totalIncentive;
-=======
   const gapToTop = sorted[0].sales - userResult.sales;
->>>>>>> 37d6050 (analatycs introduced.)
   
   document.getElementById('your-rank').textContent = `#${rank}`;
   document.getElementById('vs-average').textContent = `${delta > 0 ? '+' : ''}${delta}%`;
@@ -3732,8 +3257,6 @@ function toggleTheme() {
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
 // ═══════════════════════════════════════════════════════════════════════════
-<<<<<<< HEAD
-=======
 // PWA SETUP
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -3789,7 +3312,6 @@ if ('serviceWorker' in navigator) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
->>>>>>> 37d6050 (analatycs introduced.)
 // INITIALIZATION
 // ═══════════════════════════════════════════════════════════════════════════
 
