@@ -146,7 +146,6 @@ export function BulkTab() {
     const tier = getTier(teamAchievement)
     const totalPool = (tier.rate / 100) * teamSales
 
-    // Calculate for each staff member - SORT BY SALES for rankings
     const bulkResults: BulkResult[] = aggregated.staff.map(person => {
       const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
       
@@ -164,7 +163,6 @@ export function BulkTab() {
       }
     })
 
-    // Sort by SALES (highest first) for rankings
     bulkResults.sort((a, b) => b.sales - a.sales)
 
     setResults(bulkResults)
@@ -286,6 +284,8 @@ export function BulkTab() {
       }
     }
   }
+
+  const nextTierInfo = calculateNextTier()
 
   return (
     <section className="card">
@@ -430,7 +430,6 @@ export function BulkTab() {
 
       {results.length > 0 && calculatedData && (
         <div style={{marginTop: '24px'}}>
-          {/* Header */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -446,7 +445,6 @@ export function BulkTab() {
             </span>
           </div>
 
-          {/* Sheet Names Debug Info */}
           <div style={{
             padding: '12px 16px',
             background: 'rgba(0, 206, 209, 0.08)',
@@ -459,7 +457,6 @@ export function BulkTab() {
             <strong style={{color: 'var(--accent-primary)'}}>Sheets used:</strong> {calculatedData.sheets.join(', ')}
           </div>
 
-          {/* Summary Stats */}
           <div className="summary-stats" style={{marginBottom: '32px'}}>
             <div className="stat-card">
               <div className="stat-label">Team Achievement</div>
@@ -494,7 +491,6 @@ export function BulkTab() {
             </div>
           </div>
 
-          {/* Results Table */}
           <div style={{overflowX: 'auto', marginBottom: '24px'}}>
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
@@ -505,7 +501,7 @@ export function BulkTab() {
                     Name {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('totalIncentive')}>
-                    💰 Total Incentive {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    💰 Total {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('packages')}>
                     📦 Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -525,8 +521,7 @@ export function BulkTab() {
                 </tr>
               </thead>
               <tbody>
-                {sortedResults.map((person, idx) => {
-                  // Find original rank based on sales
+                {sortedResults.map((person) => {
                   const originalRank = results.findIndex(r => r.name === person.name) + 1
                   let badge = ''
                   let rankStyle = ''
@@ -542,14 +537,14 @@ export function BulkTab() {
                   
                   return (
                     <tr key={person.name} style={{borderBottom: '1px solid var(--border-color)', background: rowBg}}>
-                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
+                      <td style={{...tableCellStyle, fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
                         #{originalRank}
                       </td>
                       <td style={tableCellStyle}>{badge}</td>
-                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
+                      <td style={{...tableCellStyle, fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
                         {person.name}
                       </td>
-                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : '600', color: rankStyle ? 'var(--accent-primary)' : 'var(--success)'}}>
+                      <td style={{...tableCellStyle, fontWeight: rankStyle ? '700' : '600', color: rankStyle ? 'var(--accent-primary)' : 'var(--success)'}}>
                         AED {formatCurrency(person.totalIncentive)}
                       </td>
                       <td style={tableCellStyle}>{person.packages}</td>
@@ -564,62 +559,53 @@ export function BulkTab() {
             </table>
           </div>
 
-          {/* Tier Ladder */}
-          {(() => {
-            const nextTierInfo = calculateNextTier()
-            if (!nextTierInfo) return null
-            
-            if (nextTierInfo.isMaxTier) {
-              return (
-                <div style={{
-                  padding: '20px',
-                  background: 'rgba(0, 230, 118, 0.08)',
-                  border: '2px solid rgba(0, 230, 118, 0.3)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                    <span style={{fontSize: '20px'}}>🎉</span>
-                    <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>Tier Ladder</span>
-                  </div>
-                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
-                    + AED {formatCurrency(nextTierInfo.extraIncentive)}
-                  </div>
-                  <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}}>
-                    Maximum tier achieved! Your team is at <strong>{calculatedData.teamAchievement.toFixed(2)}%</strong> achievement, 
-                    earning an additional <strong>AED {formatCurrency(nextTierInfo.extraIncentive)}</strong> compared to 
-                    the {nextTierInfo.thresholdPercentage}% threshold. Every extra sale continues to increase the incentive pool 
-                    at the maximum {nextTierInfo.currentRate}% rate.
-                  </div>
+          {nextTierInfo && (
+            nextTierInfo.isMaxTier ? (
+              <div style={{
+                padding: '20px',
+                background: 'rgba(0, 230, 118, 0.08)',
+                border: '2px solid rgba(0, 230, 118, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '24px'
+              }}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+                  <span style={{fontSize: '20px'}}>🎉</span>
+                  <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>Tier Ladder</span>
                 </div>
-              )
-            } else {
-              const message = calculatedData.tier.rate === 0
-                ? `Team needs an additional <strong>AED ${formatCurrency(nextTierInfo.deficit)}</strong> in sales to reach <strong>AED ${formatCurrency(nextTierInfo.requiredSales)}</strong> (${nextTierInfo.requiredPercentage}% of target) and qualify for ${nextTierInfo.nextTierName} incentive (${nextTierInfo.nextTierRate}% rate).`
-                : `Team needs an additional <strong>AED ${formatCurrency(nextTierInfo.deficit)}</strong> in sales to reach <strong>AED ${formatCurrency(nextTierInfo.requiredSales)}</strong> (${nextTierInfo.requiredPercentage}% of target) and qualify for ${nextTierInfo.nextTierName} incentive (${nextTierInfo.nextTierRate}% rate).`
-              
-              return (
-                <div style={{
-                  padding: '20px',
-                  background: 'var(--bg-tertiary)',
-                  border: '2px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                    <span style={{fontSize: '20px'}}>🎯</span>
-                    <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Tier Ladder</span>
-                  </div>
-                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
-                    AED {formatCurrency(nextTierInfo.deficit)}
-                  </div>
-                  <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}} dangerouslySetInnerHTML={{__html: message}} />
+                <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
+                  + AED {formatCurrency(nextTierInfo.extraIncentive)}
                 </div>
-              )
-            }
-          })()}
+                <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}}>
+                  Maximum tier achieved! Your team is at <strong>{calculatedData.teamAchievement.toFixed(2)}%</strong> achievement, 
+                  earning an additional <strong>AED {formatCurrency(nextTierInfo.extraIncentive)}</strong> compared to 
+                  the {nextTierInfo.thresholdPercentage}% threshold. Every extra sale continues to increase the incentive pool 
+                  at the maximum {nextTierInfo.currentRate}% rate.
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                padding: '20px',
+                background: 'var(--bg-tertiary)',
+                border: '2px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '24px'
+              }}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+                  <span style={{fontSize: '20px'}}>🎯</span>
+                  <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Tier Ladder</span>
+                </div>
+                <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
+                  AED {formatCurrency(nextTierInfo.deficit)}
+                </div>
+                <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}}>
+                  Team needs an additional <strong>AED {formatCurrency(nextTierInfo.deficit)}</strong> in sales to reach{' '}
+                  <strong>AED {formatCurrency(nextTierInfo.requiredSales)}</strong> ({nextTierInfo.requiredPercentage}% of target) and qualify for{' '}
+                  {nextTierInfo.nextTierName} incentive ({nextTierInfo.nextTierRate}% rate).
+                </div>
+              </div>
+            )
+          )}
 
-          {/* Export Buttons */}
           <div style={{display: 'flex', gap: '12px'}}>
             <button className="btn btn-secondary" onClick={handleExportCSV}>
               <span>📄 Download CSV</span>
