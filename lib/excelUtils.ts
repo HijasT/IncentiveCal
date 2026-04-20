@@ -9,6 +9,7 @@ export interface StaffData {
 export interface ExcelData {
   sheetName: string
   staff: StaffData[]
+  target: number
   teamTotal: {
     packages: number
     sales: number
@@ -50,6 +51,7 @@ export async function parseExcelFile(file: File): Promise<ExcelData[]> {
           results.push({
             sheetName,
             staff: extracted.staff,
+            target: extracted.target,
             teamTotal: {
               packages: extracted.staff.reduce((sum, s) => sum + s.packages, 0),
               sales: extracted.staff.reduce((sum, s) => sum + s.sales, 0)
@@ -93,10 +95,29 @@ function getAvailableMonthsFromWorkbook(workbook: any): string[] {
 }
 
 // Extract staff from sheet - matches original HTML extractStaffFromSheet
-function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { staff: StaffData[] } {
-  if (!worksheet) return { staff: [] }
+function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { staff: StaffData[], target: number } {
+  if (!worksheet) return { staff: [], target: 0 }
   
   const staff: StaffData[] = []
+  let target = 0
+  
+  // Find target - search for "TARGET" label (same as HTML)
+  for (let row = 1; row <= 100; row++) {
+    for (let col = 1; col <= 20; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row - 1, c: col - 1 })
+      const cell = worksheet[cellAddress]
+      
+      if (cell && cell.v && String(cell.v).trim().toUpperCase() === 'TARGET') {
+        const targetAddress = XLSX.utils.encode_cell({ r: row - 1, c: col })
+        const targetCell = worksheet[targetAddress]
+        if (targetCell && targetCell.v) {
+          target = parseFloat(targetCell.v)
+          break
+        }
+      }
+    }
+    if (target > 0) break
+  }
   
   // Find the column for this month's total
   const range = XLSX.utils.decode_range(worksheet['!ref'])
@@ -184,7 +205,7 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
     }
   }
   
-  return { staff }
+  return { staff, target }
 }
 
 export function getAvailableMonths(data: ExcelData[]): string[] {
@@ -195,6 +216,7 @@ export function aggregateSheets(sheets: ExcelData[]): ExcelData {
   const aggregated: Record<string, StaffData> = {}
   let totalPackages = 0
   let totalSales = 0
+  let totalTarget = 0
 
   sheets.forEach(sheet => {
     sheet.staff.forEach(person => {
@@ -206,11 +228,13 @@ export function aggregateSheets(sheets: ExcelData[]): ExcelData {
     })
     totalPackages += sheet.teamTotal.packages
     totalSales += sheet.teamTotal.sales
+    totalTarget += sheet.target
   })
 
   return {
     sheetName: 'Aggregated',
     staff: Object.values(aggregated),
+    target: totalTarget,
     teamTotal: {
       packages: totalPackages,
       sales: totalSales

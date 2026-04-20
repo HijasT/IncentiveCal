@@ -13,15 +13,21 @@ interface BulkResult extends StaffData {
   contribution: number
 }
 
+type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'yearly' | 'alltime'
+
 export function BulkTab() {
   const [file, setFile] = useState<File | null>(null)
   const [excelData, setExcelData] = useState<ExcelData[]>([])
-  const [selectedSheets, setSelectedSheets] = useState<string[]>([])
-  const [availableSheets, setAvailableSheets] = useState<string[]>([])
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly')
+  const [selectedMonth, setSelectedMonth] = useState('Jun')
+  const [selectedYear, setSelectedYear] = useState('')
+  const [availableYears, setAvailableYears] = useState<string[]>([])
   const [target, setTarget] = useState('')
+  const [autoTarget, setAutoTarget] = useState(0)
+  const [staffCount, setStaffCount] = useState(0)
   const [p1Split, setP1Split] = useState(60)
   const [results, setResults] = useState<BulkResult[]>([])
-  const [sortColumn, setSortColumn] = useState<keyof BulkResult>('totalIncentive')
+  const [sortColumn, setSortColumn] = useState<keyof BulkResult>('sales')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isProcessing, setIsProcessing] = useState(false)
   const [xlsxLoaded, setXlsxLoaded] = useState(false)
@@ -42,7 +48,6 @@ export function BulkTab() {
     const uploadedFile = e.target.files?.[0]
     if (!uploadedFile) return
 
-    // Check if XLSX is loaded
     if (!(window as any).XLSX) {
       alert('Excel library is still loading. Please wait a moment and try again.')
       return
@@ -54,11 +59,22 @@ export function BulkTab() {
     try {
       const data = await parseExcelFile(uploadedFile)
       setExcelData(data)
-      const sheets = getAvailableMonths(data)
-      setAvailableSheets(sheets)
-      // Auto-select first sheet
-      if (sheets.length > 0) {
-        setSelectedSheets([sheets[0]])
+      
+      // Extract years from sheet names
+      const years = [...new Set(data.map(d => d.sheetName.split(' ')[1] || d.sheetName.slice(-2)))].sort()
+      setAvailableYears(years)
+      
+      // Auto-select current month and year
+      const now = new Date()
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const currentMonth = monthNames[now.getMonth()]
+      const currentYear = now.getFullYear().toString().slice(-2)
+      
+      setSelectedMonth(currentMonth)
+      if (years.includes(currentYear)) {
+        setSelectedYear(currentYear)
+      } else {
+        setSelectedYear(years[years.length - 1]) // Most recent year
       }
     } catch (error) {
       console.error('Error parsing Excel:', error)
@@ -69,28 +85,71 @@ export function BulkTab() {
     }
   }
 
+  const getSheetsForView = (): ExcelData[] => {
+    if (viewMode === 'monthly') {
+      const sheetName = `${selectedMonth} ${selectedYear}`.replace('  ', '')
+      return excelData.filter(d => d.sheetName === sheetName || d.sheetName === `${selectedMonth}${selectedYear}`)
+    }
+    
+    if (viewMode === 'alltime') {
+      return excelData
+    }
+    
+    if (viewMode === 'yearly') {
+      return excelData.filter(d => d.sheetName.includes(selectedYear))
+    }
+    
+    const quarters: Record<string, string[]> = {
+      q1: ['Jan', 'Feb', 'Mar'],
+      q2: ['Apr', 'May', 'Jun'],
+      q3: ['Jul', 'Aug', 'Sep'],
+      q4: ['Oct', 'Nov', 'Dec']
+    }
+    
+    const quarterMonths = quarters[viewMode]
+    return excelData.filter(d => {
+      const [monthName, year] = d.sheetName.split(' ')
+      return quarterMonths.includes(monthName) && year === selectedYear
+    })
+  }
+
   const handleCalculate = () => {
-    if (!target || parseFloat(target) <= 0) {
-      alert('Please enter a valid team target')
+    const sheets = getSheetsForView()
+    
+    if (sheets.length === 0) {
+      alert('No sheets found for selected view')
       return
     }
 
-    if (selectedSheets.length === 0) {
-      alert('Please select at least one sheet')
+    let aggregated: ExcelData
+    if (sheets.length === 1) {
+      aggregated = sheets[0]
+    } else {
+      aggregated = aggregateSheets(sheets)
+    }
+
+    if (aggregated.staff.length === 0) {
+      alert('No staff data found')
       return
     }
 
-    // Get data for selected sheets
-    const sheetsData = excelData.filter(d => selectedSheets.includes(d.sheetName))
-    const aggregated = selectedSheets.length === 1 ? sheetsData[0] : aggregateSheets(sheetsData)
+    // Set auto-detected target and staff count
+    setAutoTarget(aggregated.target)
+    setStaffCount(aggregated.staff.length)
 
-    const teamTarget = parseFloat(target)
+    const finalTarget = target ? parseFloat(target) : aggregated.target
+    
+    if (!finalTarget || finalTarget <= 0) {
+      alert('Invalid target. Enter manually or check Excel')
+      return
+    }
+
     const teamSales = aggregated.teamTotal.sales
-    const staffCount = aggregated.staff.length
+    const calc = calculateIncentive(finalTarget, teamSales, 0, aggregated.staff.length, p1Split)
 
     // Calculate for each staff member
     const bulkResults: BulkResult[] = aggregated.staff.map(person => {
-      const calc = calculateIncentive(teamTarget, teamSales, person.sales, staffCount, p1Split)
+      const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
       
       return {
         name: person.name,
@@ -99,15 +158,15 @@ export function BulkTab() {
         achievement: calc.teamAchievement,
         tierName: calc.tier.name,
         tierRate: calc.tier.rate,
-        totalIncentive: calc.myTotal,
-        p1: calc.myP1,
-        p2: calc.myP2,
-        contribution: calc.myContribution
+        totalIncentive: personCalc.myTotal,
+        p1: personCalc.myP1,
+        p2: personCalc.myP2,
+        contribution: personCalc.myContribution
       }
     })
 
     setResults(bulkResults)
-    setSortColumn('totalIncentive')
+    setSortColumn('sales')
     setSortDirection('desc')
   }
 
@@ -193,33 +252,67 @@ export function BulkTab() {
         <>
           <div className="form-grid" style={{marginTop: '24px'}}>
             <div className="form-group">
-              <label>Select Month(s)</label>
-              <select 
-                multiple
-                value={selectedSheets}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions, option => option.value)
-                  setSelectedSheets(selected)
-                }}
-                style={{minHeight: '100px'}}
-              >
-                {availableSheets.map(sheet => (
-                  <option key={sheet} value={sheet}>{sheet}</option>
-                ))}
+              <label>View Mode</label>
+              <select value={viewMode} onChange={(e) => setViewMode(e.target.value as ViewMode)}>
+                <option value="monthly">Monthly</option>
+                <option value="q1">Q1 (Jan-Mar)</option>
+                <option value="q2">Q2 (Apr-Jun)</option>
+                <option value="q3">Q3 (Jul-Sep)</option>
+                <option value="q4">Q4 (Oct-Dec)</option>
+                <option value="yearly">Yearly</option>
+                <option value="alltime">All-Time</option>
               </select>
-              <div style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                Hold Ctrl/Cmd to select multiple months
-              </div>
             </div>
 
+            {viewMode === 'monthly' && (
+              <div className="form-group">
+                <label>Month</label>
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+                  <option value="Jan">January</option>
+                  <option value="Feb">February</option>
+                  <option value="Mar">March</option>
+                  <option value="Apr">April</option>
+                  <option value="May">May</option>
+                  <option value="Jun">June</option>
+                  <option value="Jul">July</option>
+                  <option value="Aug">August</option>
+                  <option value="Sep">September</option>
+                  <option value="Oct">October</option>
+                  <option value="Nov">November</option>
+                  <option value="Dec">December</option>
+                </select>
+              </div>
+            )}
+
+            {viewMode !== 'alltime' && (
+              <div className="form-group">
+                <label>Year</label>
+                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>20{year}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="form-group">
-              <label>Team Target (AED)</label>
+              <label>Team Target (AED) <span style={{fontSize: '12px', color: 'var(--text-muted)'}}>Auto or Manual</span></label>
               <input 
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                placeholder="e.g., 700000"
+                placeholder={autoTarget > 0 ? `Auto: ${autoTarget}` : 'Auto-detected'}
                 min="0"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Staff Count <span style={{fontSize: '12px', color: 'var(--text-muted)'}}>Auto-detected</span></label>
+              <input 
+                type="number"
+                value={staffCount || ''}
+                disabled
+                style={{background: 'var(--bg-tertiary)'}}
               />
             </div>
           </div>
