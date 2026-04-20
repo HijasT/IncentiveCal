@@ -24,10 +24,29 @@ export function BulkTab() {
   const [sortColumn, setSortColumn] = useState<keyof BulkResult>('totalIncentive')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [xlsxLoaded, setXlsxLoaded] = useState(false)
+
+  // Check if XLSX library is loaded
+  useEffect(() => {
+    const checkXLSX = () => {
+      if ((window as any).XLSX) {
+        setXlsxLoaded(true)
+      } else {
+        setTimeout(checkXLSX, 100)
+      }
+    }
+    checkXLSX()
+  }, [])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0]
     if (!uploadedFile) return
+
+    // Check if XLSX is loaded
+    if (!(window as any).XLSX) {
+      alert('Excel library is still loading. Please wait a moment and try again.')
+      return
+    }
 
     setFile(uploadedFile)
     setIsProcessing(true)
@@ -43,7 +62,8 @@ export function BulkTab() {
       }
     } catch (error) {
       console.error('Error parsing Excel:', error)
-      alert('Error parsing Excel file. Please make sure it\'s in the correct format.')
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Error parsing Excel file: ${errorMsg}\n\nPlease make sure:\n1. File is a valid .xlsx file\n2. File has month sheets (e.g., "Jun25", "Jul25")\n3. File follows the expected format`)
     } finally {
       setIsProcessing(false)
     }
@@ -149,11 +169,21 @@ export function BulkTab() {
           type="file" 
           accept=".xlsx,.xls" 
           onChange={handleFileUpload}
-          disabled={isProcessing}
+          disabled={isProcessing || !xlsxLoaded}
         />
+        {!xlsxLoaded && (
+          <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--warning)'}}>
+            ⏳ Loading Excel library...
+          </div>
+        )}
         {file && (
           <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--success)'}}>
             ✓ {file.name} loaded ({excelData.length} sheets found)
+          </div>
+        )}
+        {isProcessing && (
+          <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--accent-primary)'}}>
+            📂 Processing Excel file...
           </div>
         )}
       </div>

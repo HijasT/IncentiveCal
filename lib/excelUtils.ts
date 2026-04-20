@@ -30,79 +30,161 @@ export async function parseExcelFile(file: File): Promise<ExcelData[]> {
         // Use xlsx library loaded from CDN
         const XLSX = (window as any).XLSX
         if (!XLSX) {
-          reject(new Error('XLSX library not loaded'))
+          reject(new Error('XLSX library not loaded. Please refresh the page.'))
           return
         }
 
-        const workbook = XLSX.read(data, { type: 'binary' })
+        // Convert to Uint8Array like in original HTML
+        const uint8Data = new Uint8Array(data as ArrayBuffer)
+        const workbook = XLSX.read(uint8Data, { type: 'array' })
         const results: ExcelData[] = []
 
-        // Process each sheet
-        for (const sheetName of workbook.SheetNames) {
+        // Get valid month sheets only
+        const monthSheets = getAvailableMonthsFromWorkbook(workbook)
+
+        // Process each valid month sheet
+        for (const sheetName of monthSheets) {
           const worksheet = workbook.Sheets[sheetName]
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+          const extracted = extractStaffFromSheet(worksheet, sheetName, XLSX)
           
-          const staffList: StaffData[] = []
-          let teamPackages = 0
-          let teamSales = 0
-
-          // Parse rows - every 2 rows represent one staff member
-          for (let i = 2; i < jsonData.length; i += 2) {
-            const packageRow = jsonData[i] as any[]
-            const salesRow = jsonData[i + 1] as any[]
-
-            if (!packageRow || !salesRow) continue
-
-            const staffName = packageRow[0]
-            const reportType = packageRow[1]
-
-            // Check if this is a staff entry
-            if (staffName && reportType === 'Count of Packages') {
-              const packages = parseFloat(packageRow[2]) || 0
-              const sales = parseFloat(salesRow[2]) || 0
-
-              // Skip if name is "Grand totals" or empty
-              if (staffName !== 'Grand totals' && staffName.trim() !== '') {
-                staffList.push({
-                  name: String(staffName).trim(),
-                  packages: Math.round(packages),
-                  sales: Math.round(sales)
-                })
-              }
-
-              // Track team totals (from Grand totals row)
-              if (staffName === 'Grand totals') {
-                teamPackages = Math.round(packages)
-                teamSales = Math.round(sales)
-              }
-            }
-          }
-
-          // If no grand totals found, calculate from sum
-          if (teamPackages === 0) {
-            teamPackages = staffList.reduce((sum, s) => sum + s.packages, 0)
-            teamSales = staffList.reduce((sum, s) => sum + s.sales, 0)
-          }
-
           results.push({
             sheetName,
-            staff: staffList,
+            staff: extracted.staff,
             teamTotal: {
-              packages: teamPackages,
-              sales: teamSales
+              packages: extracted.staff.reduce((sum, s) => sum + s.packages, 0),
+              sales: extracted.staff.reduce((sum, s) => sum + s.sales, 0)
             }
           })
         }
 
+        if (results.length === 0) {
+          reject(new Error('No valid month sheets found in Excel file'))
+          return
+        }
+
         resolve(results)
       } catch (error) {
+        console.error('Excel parsing error:', error)
         reject(error)
       }
     }
 
     reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsBinaryString(file)
+    reader.readAsArrayBuffer(file) // Use ArrayBuffer like original HTML
   })
+}
+
+// Get available month sheets - matches original HTML logic
+function getAvailableMonthsFromWorkbook(workbook: any): string[] {
+  const months: string[] = []
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  
+  workbook.SheetNames.forEach((sheetName: string) => {
+    const hasMonth = monthNames.some(month => sheetName.includes(month))
+    const hasYear = /\d{2}/.test(sheetName)
+    
+    if (hasMonth && hasYear && sheetName.length <= 10) {
+      months.push(sheetName)
+    }
+  })
+  
+  return months.sort()
+}
+
+// Extract staff from sheet - matches original HTML extractStaffFromSheet
+function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { staff: StaffData[] } {
+  if (!worksheet) return { staff: [] }
+  
+  const staff: StaffData[] = []
+  
+  // Find the column for this month's total
+  const range = XLSX.utils.decode_range(worksheet['!ref'])
+  let monthTotalCol = -1
+  
+  // Search header row (row 3, index 2) for month total column
+  for (let col = 0; col <= range.e.c; col++) {
+    const headerAddress = XLSX.utils.encode_cell({ r: 2, c: col })
+    const headerCell = worksheet[headerAddress]
+    
+    if (headerCell && headerCell.v) {
+      const headerValue = String(headerCell.v).toLowerCase()
+      const sheetNameLower = sheetName.toLowerCase()
+      
+      // Check if header contains the month name and "ttl" or "total"
+      if (headerValue.includes(sheetNameLower.split(' ')[0]) && // Month name
+          headerValue.includes(sheetNameLower.split(' ')[1]) && // Year
+          (headerValue.includes('ttl') || headerValue.includes('total'))) {
+        monthTotalCol = col
+        break
+      }
+    }
+  }
+  
+  // Fallback: use column 2 if month total column not found
+  if (monthTotalCol === -1) {
+    console.warn(`Could not find total column for ${sheetName}, using column 2`)
+    monthTotalCol = 2
+  }
+  
+  // Extract staff data starting from row 4
+  let row = 4
+  
+  while (row <= range.e.r) {
+    const nameAddress = XLSX.utils.encode_cell({ r: row - 1, c: 0 })
+    const typeAddress = XLSX.utils.encode_cell({ r: row - 1, c: 1 })
+    
+    const nameCell = worksheet[nameAddress]
+    const typeCell = worksheet[typeAddress]
+    
+    if (nameCell && typeCell && typeCell.v === 'Count of Packages') {
+      const name = String(nameCell.v).trim()
+      
+      if (name && !['STAFF', 'p25', '`', 'Grand totals'].includes(name)) {
+        // Get packages and sales from the month's total column
+        const pkgAddress = XLSX.utils.encode_cell({ r: row - 1, c: monthTotalCol })
+        const salesAddress = XLSX.utils.encode_cell({ r: row, c: monthTotalCol })
+        
+        const pkgCell = worksheet[pkgAddress]
+        const salesCell = worksheet[salesAddress]
+        
+        let packages = 0
+        let sales = 0
+        
+        // Handle packages (could be formula or number)
+        if (pkgCell && pkgCell.v !== 'NA') {
+          if (typeof pkgCell.v === 'number') {
+            packages = pkgCell.v
+          } else if (typeof pkgCell.w === 'string') {
+            packages = parseFloat(pkgCell.w) || 0
+          }
+        }
+        
+        // Handle sales (could be formula or number)
+        if (salesCell && salesCell.v !== 'NA') {
+          if (typeof salesCell.v === 'number') {
+            sales = salesCell.v
+          } else if (typeof salesCell.w === 'string') {
+            sales = parseFloat(salesCell.w) || 0
+          }
+        }
+        
+        staff.push({
+          name,
+          packages: Math.round(packages),
+          sales: Math.round(sales * 100) / 100
+        })
+      }
+      
+      row += 2
+    } else if (nameCell && String(nameCell.v).trim() === 'Grand totals') {
+      break
+    } else {
+      row++
+    }
+  }
+  
+  return { staff }
 }
 
 export function getAvailableMonths(data: ExcelData[]): string[] {
