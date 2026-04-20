@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { parseExcelFile, getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } from '@/lib/excelUtils'
 import { calculateIncentive, formatCurrency, getTier, DEFAULT_TIERS, type Tier } from '@/lib/utils'
-import { saveMonthlyData, checkAndAwardBadges, type MonthlyAnalytics } from '@/lib/analyticsUtils'
+import { saveTeamData, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
 
 interface BulkResult extends StaffData {
@@ -34,9 +34,6 @@ export function BulkTab() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isProcessing, setIsProcessing] = useState(false)
   const [xlsxLoaded, setXlsxLoaded] = useState(false)
-  const [userName, setUserName] = useState('')
-  const [newBadges, setNewBadges] = useState<string[]>([])
-  const [showNamePrompt, setShowNamePrompt] = useState(false)
 
   useEffect(() => {
     const checkXLSX = () => {
@@ -185,10 +182,9 @@ export function BulkTab() {
     setSortColumn('sales')
     setSortDirection('desc')
 
-    // Save analytics data (ask for name if first time)
-    const storedName = localStorage.getItem('user_name')
-    if (storedName || viewMode === 'alltime') {
-      saveAnalytics(storedName || 'User', bulkResults, {
+    // Save team analytics data (only for monthly view)
+    if (viewMode === 'monthly') {
+      saveTeamAnalytics(bulkResults, {
         teamAchievement,
         tier,
         totalPool,
@@ -196,67 +192,40 @@ export function BulkTab() {
         teamSales,
         staffCount: aggregated.staff.length
       })
-    } else {
-      setShowNamePrompt(true)
     }
   }
 
-  const saveAnalytics = (name: string, bulkResults: BulkResult[], teamData: any) => {
-    const userResult = bulkResults.find(r => r.name.toLowerCase().includes(name.toLowerCase()))
-    
-    if (!userResult && viewMode !== 'alltime') {
-      alert(`Could not find "${name}" in the results. Analytics will not be saved for this calculation.`)
-      return
+  const saveTeamAnalytics = (bulkResults: BulkResult[], teamData: any) => {
+    const monthKey = `${selectedYear && selectedYear.length === 2 ? '20' + selectedYear : selectedYear}-${String(
+      ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(selectedMonth) + 1
+    ).padStart(2, '0')}`
+
+    const staff: StaffResult[] = bulkResults.map((person, index) => ({
+      name: person.name,
+      sales: person.sales,
+      packages: person.packages,
+      totalEarnings: person.totalIncentive,
+      rank: index + 1,
+      contribution: person.contribution,
+      p1: person.p1,
+      p2: person.p2
+    }))
+
+    const teamDataToSave: MonthlyTeamData = {
+      monthKey,
+      date: new Date().toISOString(),
+      teamAchievement: teamData.teamAchievement,
+      tier: teamData.tier.name,
+      tierRate: teamData.tier.rate,
+      tierColor: teamData.tier.color,
+      teamSales: teamData.teamSales,
+      teamTarget: teamData.target,
+      totalPool: teamData.totalPool,
+      totalStaff: teamData.staffCount,
+      staff
     }
 
-    if (viewMode === 'monthly' && userResult) {
-      const monthKey = `${selectedYear && selectedYear.length === 2 ? '20' + selectedYear : selectedYear}-${String(
-        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(selectedMonth) + 1
-      ).padStart(2, '0')}`
-
-      const rank = bulkResults.findIndex(r => r.name === userResult.name) + 1
-
-      const monthlyData: MonthlyAnalytics = {
-        monthKey,
-        date: new Date().toISOString(),
-        achievement: teamData.teamAchievement,
-        tier: teamData.tier.name,
-        tierRate: teamData.tier.rate,
-        tierColor: teamData.tier.color,
-        totalEarnings: userResult.totalIncentive,
-        rank,
-        totalStaff: teamData.staffCount,
-        sales: userResult.sales,
-        packages: userResult.packages,
-        contribution: userResult.contribution,
-        teamSales: teamData.teamSales,
-        teamAchievement: teamData.teamAchievement,
-        teamTarget: teamData.target,
-        p1: userResult.p1,
-        p2: userResult.p2
-      }
-
-      saveMonthlyData(monthlyData)
-      const badges = checkAndAwardBadges(monthlyData)
-      
-      if (badges.length > 0) {
-        setNewBadges(badges)
-      }
-    }
-  }
-
-  const handleSaveName = () => {
-    if (!userName.trim()) {
-      alert('Please enter your name')
-      return
-    }
-    
-    localStorage.setItem('user_name', userName.trim())
-    setShowNamePrompt(false)
-    
-    if (results.length > 0 && calculatedData) {
-      saveAnalytics(userName.trim(), results, calculatedData)
-    }
+    saveTeamData(teamDataToSave)
   }
 
   const sortedResults = [...results].sort((a, b) => {
@@ -691,100 +660,6 @@ export function BulkTab() {
             <button className="btn btn-secondary" onClick={() => exportBulkToPDF(calculatedData, results)}>
               <span>📕 Download PDF</span>
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Name Prompt Modal */}
-      {showNamePrompt && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: 'var(--bg-primary)',
-            padding: '32px',
-            borderRadius: 'var(--radius-md)',
-            maxWidth: '400px',
-            width: '90%',
-            border: '2px solid var(--border-color)'
-          }}>
-            <h3 style={{fontSize: '18px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)'}}>
-              📊 Save to Analytics
-            </h3>
-            <p style={{fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px'}}>
-              Enter your name as it appears in the Excel sheet to track your performance over time.
-            </p>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="Your Name"
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '14px',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                marginBottom: '16px'
-              }}
-              onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
-            />
-            <div style={{display: 'flex', gap: '12px', justifyContent: 'flex-end'}}>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowNamePrompt(false)}
-              >
-                Skip
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveName}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* New Badges Notification */}
-      {newBadges.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: 'var(--bg-primary)',
-          padding: '20px',
-          borderRadius: 'var(--radius-md)',
-          border: '2px solid var(--success)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          zIndex: 1000,
-          maxWidth: '300px'
-        }}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px'}}>
-            <h4 style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>
-              🎉 New Achievement{newBadges.length > 1 ? 's' : ''}!
-            </h4>
-            <button
-              onClick={() => setNewBadges([])}
-              style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-muted)'}}
-            >
-              ×
-            </button>
-          </div>
-          <div style={{fontSize: '13px', color: 'var(--text-secondary)'}}>
-            Check the Analytics tab to see your new badges!
           </div>
         </div>
       )}

@@ -1,7 +1,32 @@
 // Analytics data storage and retrieval utilities
 
-export interface MonthlyAnalytics {
+export interface StaffResult {
+  name: string
+  sales: number
+  packages: number
+  totalEarnings: number
+  rank: number
+  contribution: number
+  p1: number
+  p2: number
+}
+
+export interface MonthlyTeamData {
   monthKey: string // "2026-04"
+  date: string
+  teamAchievement: number
+  tier: string
+  tierRate: number
+  tierColor: string
+  teamSales: number
+  teamTarget: number
+  totalPool: number
+  totalStaff: number
+  staff: StaffResult[] // All staff results
+}
+
+export interface PersonalAnalytics {
+  monthKey: string
   date: string
   achievement: number
   tier: string
@@ -13,24 +38,22 @@ export interface MonthlyAnalytics {
   sales: number
   packages: number
   contribution: number
-  teamSales: number
-  teamAchievement: number
-  teamTarget: number
   p1: number
   p2: number
 }
 
 export interface AnalyticsData {
-  history: Record<string, MonthlyAnalytics>
-  badges: string[]
+  teamHistory: Record<string, MonthlyTeamData>
+  selectedName: string | null
+  badges: Record<string, string[]> // badges per person
 }
 
 const STORAGE_KEY = 'smart_incentive_analytics'
 
-export function saveMonthlyData(data: MonthlyAnalytics): void {
+export function saveTeamData(data: MonthlyTeamData): void {
   try {
     const existing = getAnalyticsData()
-    existing.history[data.monthKey] = data
+    existing.teamHistory[data.monthKey] = data
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
   } catch (error) {
     console.error('Failed to save analytics:', error)
@@ -41,22 +64,79 @@ export function getAnalyticsData(): AnalyticsData {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-      return { history: {}, badges: [] }
+      return { teamHistory: {}, selectedName: null, badges: {} }
     }
     return JSON.parse(stored)
   } catch (error) {
     console.error('Failed to load analytics:', error)
-    return { history: {}, badges: [] }
+    return { teamHistory: {}, selectedName: null, badges: {} }
   }
 }
 
-export function getMonthlyHistory(): MonthlyAnalytics[] {
-  const data = getAnalyticsData()
-  return Object.values(data.history).sort((a, b) => a.date.localeCompare(b.date))
+export function setSelectedName(name: string | null): void {
+  try {
+    const data = getAnalyticsData()
+    data.selectedName = name
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch (error) {
+    console.error('Failed to save selected name:', error)
+  }
 }
 
-export function getLifetimeStats() {
-  const history = getMonthlyHistory()
+export function getSelectedName(): string | null {
+  const data = getAnalyticsData()
+  return data.selectedName
+}
+
+export function getAvailableNames(): string[] {
+  const data = getAnalyticsData()
+  const allNames = new Set<string>()
+  
+  Object.values(data.teamHistory).forEach(month => {
+    month.staff.forEach(person => allNames.add(person.name))
+  })
+  
+  return Array.from(allNames).sort()
+}
+
+export function getPersonalHistory(name: string): PersonalAnalytics[] {
+  const data = getAnalyticsData()
+  const history: PersonalAnalytics[] = []
+  
+  Object.values(data.teamHistory).forEach(month => {
+    const person = month.staff.find(s => s.name === name)
+    if (person) {
+      history.push({
+        monthKey: month.monthKey,
+        date: month.date,
+        achievement: month.teamAchievement,
+        tier: month.tier,
+        tierRate: month.tierRate,
+        tierColor: month.tierColor,
+        totalEarnings: person.totalEarnings,
+        rank: person.rank,
+        totalStaff: month.totalStaff,
+        sales: person.sales,
+        packages: person.packages,
+        contribution: person.contribution,
+        p1: person.p1,
+        p2: person.p2
+      })
+    }
+  })
+  
+  return history.sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export function getTeamHistory(): MonthlyTeamData[] {
+  const data = getAnalyticsData()
+  return Object.values(data.teamHistory).sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export function getLifetimeStats(name: string | null) {
+  if (!name) return null
+  
+  const history = getPersonalHistory(name)
   
   if (history.length === 0) {
     return null
@@ -106,8 +186,10 @@ export function getLifetimeStats() {
   }
 }
 
-export function getRankHistory() {
-  const history = getMonthlyHistory()
+export function getRankHistory(name: string | null) {
+  if (!name) return []
+  
+  const history = getPersonalHistory(name)
   return history.map(m => ({
     month: m.monthKey,
     rank: m.rank,
@@ -116,20 +198,27 @@ export function getRankHistory() {
   }))
 }
 
-export function getCurrentMonthData(): MonthlyAnalytics | null {
+export function getCurrentMonthData(name: string | null): PersonalAnalytics | null {
+  if (!name) return null
+  
   const now = new Date()
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const data = getAnalyticsData()
-  return data.history[monthKey] || null
+  const history = getPersonalHistory(name)
+  return history.find(m => m.monthKey === monthKey) || null
 }
 
-export function checkAndAwardBadges(newData: MonthlyAnalytics): string[] {
+export function checkAndAwardBadges(name: string, newData: PersonalAnalytics): string[] {
   const analytics = getAnalyticsData()
+  if (!analytics.badges[name]) {
+    analytics.badges[name] = []
+  }
+  
+  const personBadges = analytics.badges[name]
   const newBadges: string[] = []
   
   // First Sale
-  if (!analytics.badges.includes('first-sale') && newData.sales > 0) {
-    analytics.badges.push('first-sale')
+  if (!personBadges.includes('first-sale') && newData.sales > 0) {
+    personBadges.push('first-sale')
     newBadges.push('first-sale')
   }
 
@@ -138,58 +227,65 @@ export function checkAndAwardBadges(newData: MonthlyAnalytics): string[] {
   const tierNames = ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4']
   tierNames.forEach((tierName, idx) => {
     const badge = tierBadges[idx]
-    if (!analytics.badges.includes(badge) && newData.tier === tierName) {
-      analytics.badges.push(badge)
+    if (!personBadges.includes(badge) && newData.tier === tierName) {
+      personBadges.push(badge)
       newBadges.push(badge)
     }
   })
 
   // 100% Club
-  if (!analytics.badges.includes('100-club') && newData.achievement >= 100) {
-    analytics.badges.push('100-club')
+  if (!personBadges.includes('100-club') && newData.achievement >= 100) {
+    personBadges.push('100-club')
     newBadges.push('100-club')
   }
 
   // Streaks
-  const stats = getLifetimeStats()
+  const stats = getLifetimeStats(name)
   if (stats) {
-    if (!analytics.badges.includes('streak-3') && stats.currentStreak >= 3) {
-      analytics.badges.push('streak-3')
+    if (!personBadges.includes('streak-3') && stats.currentStreak >= 3) {
+      personBadges.push('streak-3')
       newBadges.push('streak-3')
     }
-    if (!analytics.badges.includes('streak-6') && stats.currentStreak >= 6) {
-      analytics.badges.push('streak-6')
+    if (!personBadges.includes('streak-6') && stats.currentStreak >= 6) {
+      personBadges.push('streak-6')
       newBadges.push('streak-6')
     }
-    if (!analytics.badges.includes('streak-12') && stats.currentStreak >= 12) {
-      analytics.badges.push('streak-12')
+    if (!personBadges.includes('streak-12') && stats.currentStreak >= 12) {
+      personBadges.push('streak-12')
       newBadges.push('streak-12')
     }
   }
 
   // Rankings
-  if (!analytics.badges.includes('top-10') && newData.rank <= 10) {
-    analytics.badges.push('top-10')
+  if (!personBadges.includes('top-10') && newData.rank <= 10) {
+    personBadges.push('top-10')
     newBadges.push('top-10')
   }
-  if (!analytics.badges.includes('top-5') && newData.rank <= 5) {
-    analytics.badges.push('top-5')
+  if (!personBadges.includes('top-5') && newData.rank <= 5) {
+    personBadges.push('top-5')
     newBadges.push('top-5')
   }
-  if (!analytics.badges.includes('top-3') && newData.rank <= 3) {
-    analytics.badges.push('top-3')
+  if (!personBadges.includes('top-3') && newData.rank <= 3) {
+    personBadges.push('top-3')
     newBadges.push('top-3')
   }
-  if (!analytics.badges.includes('champion') && newData.rank === 1) {
-    analytics.badges.push('champion')
+  if (!personBadges.includes('champion') && newData.rank === 1) {
+    personBadges.push('champion')
     newBadges.push('champion')
   }
 
   if (newBadges.length > 0) {
+    analytics.badges[name] = personBadges
     localStorage.setItem(STORAGE_KEY, JSON.stringify(analytics))
   }
 
   return newBadges
+}
+
+export function getPersonBadges(name: string | null): string[] {
+  if (!name) return []
+  const data = getAnalyticsData()
+  return data.badges[name] || []
 }
 
 export function getBadgeInfo(badgeId: string) {
