@@ -10,10 +10,10 @@ export interface Tier {
 }
 
 export const DEFAULT_TIERS: Tier[] = [
-  { id: 'tier1', name: 'Tier 1', min: 75, max: 84.99, rate: 4, color: '#ffa726' },
-  { id: 'tier2', name: 'Tier 2', min: 85, max: 100.99, rate: 5, color: '#00CED1' },
-  { id: 'tier3', name: 'Tier 3', min: 101, max: 110.99, rate: 6, color: '#20B2AA' },
-  { id: 'tier4', name: 'Tier 4', min: 111, max: Infinity, rate: 7, color: '#48D1CC' },
+  { id: 'tier1', name: 'Tier 1', min: 75, max: 85, rate: 1.5, color: '#ffa726' },
+  { id: 'tier2', name: 'Tier 2', min: 85, max: 101, rate: 2.5, color: '#00CED1' },
+  { id: 'tier3', name: 'Tier 3', min: 101, max: 111, rate: 3.0, color: '#20B2AA' },
+  { id: 'tier4', name: 'Tier 4', min: 111, max: Infinity, rate: 3.5, color: '#48D1CC' },
 ]
 
 export function loadTiers(): Tier[] {
@@ -31,11 +31,13 @@ export function saveTiers(tiers: Tier[]) {
 
 export function getTier(achievementPercent: number, tiers: Tier[] = DEFAULT_TIERS): Tier {
   for (const tier of tiers) {
-    if (achievementPercent >= tier.min && achievementPercent <= tier.max) {
+    // Lower bound is inclusive (>=), upper bound is exclusive (<)
+    if (achievementPercent >= tier.min && achievementPercent < tier.max) {
       return tier
     }
   }
-  return { id: 'none', name: 'None', min: 0, max: 74.99, rate: 0, color: '#ff5252' }
+  // Below minimum tier
+  return { id: 'none', name: 'None', min: 0, max: 75, rate: 0, color: '#ff5252' }
 }
 
 export function formatCurrency(n: number): string {

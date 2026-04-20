@@ -52,7 +52,7 @@ export default function Home() {
           className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
           onClick={() => setActiveTab('analytics')}
         >
-          Analytics
+          Analytics <span style={{fontSize: '10px', opacity: '0.7'}}>*beta</span>
         </button>
         <button 
           className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}

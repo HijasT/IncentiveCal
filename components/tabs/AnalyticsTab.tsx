@@ -4,7 +4,7 @@ export function AnalyticsTab() {
   return (
     <section className="card">
       <div className="card-header">
-        <h2 className="card-title">Performance Analytics</h2>
+        <h2 className="card-title">Performance Analytics <span style={{fontSize: '14px', color: 'var(--warning)', fontWeight: 'normal'}}>*beta</span></h2>
         <div className="card-description">
           Track your progress, achievements, and performance trends over time
         </div>

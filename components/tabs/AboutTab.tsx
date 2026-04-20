@@ -52,13 +52,13 @@ export function AboutTab() {
           <div style={{color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.8'}}>
             <p style={{marginBottom: '12px'}}>
               <strong style={{color: 'var(--text-primary)'}}>Tier System:</strong><br/>
-              Your team's achievement percentage determines the incentive tier:
+              Your team's achievement percentage determines the incentive tier. The lower value is <strong>inclusive</strong> (≥) and the upper value is <strong>exclusive</strong> (&lt;):
             </p>
             <ul style={{listStyle: 'none', padding: '0', marginLeft: '16px'}}>
-              <li style={{marginBottom: '6px'}}>• Tier 1 (75-84.99%): 4% incentive rate</li>
-              <li style={{marginBottom: '6px'}}>• Tier 2 (85-100.99%): 5% incentive rate</li>
-              <li style={{marginBottom: '6px'}}>• Tier 3 (101-110.99%): 6% incentive rate</li>
-              <li style={{marginBottom: '6px'}}>• Tier 4 (111%+): 7% incentive rate</li>
+              <li style={{marginBottom: '6px'}}>• <strong>Tier 1</strong> (≥75% and &lt;85%): 1.5% incentive rate</li>
+              <li style={{marginBottom: '6px'}}>• <strong>Tier 2</strong> (≥85% and &lt;101%): 2.5% incentive rate</li>
+              <li style={{marginBottom: '6px'}}>• <strong>Tier 3</strong> (≥101% and &lt;111%): 3.0% incentive rate</li>
+              <li style={{marginBottom: '6px'}}>• <strong>Tier 4</strong> (≥111%): 3.5% incentive rate</li>
             </ul>
             
             <p style={{marginTop: '16px', marginBottom: '12px'}}>
@@ -69,6 +69,70 @@ export function AboutTab() {
               <li style={{marginBottom: '6px'}}>• <strong>P1 (Equal Share)</strong>: Divided equally among all staff</li>
               <li style={{marginBottom: '6px'}}>• <strong>P2 (Performance Share)</strong>: Distributed based on individual contribution</li>
             </ul>
+          </div>
+        </div>
+
+        <h4 style={{color: 'var(--text-primary)', marginBottom: '12px', marginTop: '28px', fontSize: '16px'}}>
+          Calculation Example
+        </h4>
+        <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: '24px', border: '1px solid var(--border-color)'}}>
+          <div style={{color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.8', fontFamily: "'JetBrains Mono', monospace"}}>
+            <p style={{marginBottom: '16px', color: 'var(--text-primary)', fontWeight: '600'}}>Given:</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              • Team Target: AED 700,000<br/>
+              • Team Sales: AED 735,000<br/>
+              • Your Sales: AED 73,500<br/>
+              • Staff Count: 29 members<br/>
+              • P1/P2 Split: 60% / 40%
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Step 1: Calculate Team Achievement</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              Achievement = (Team Sales ÷ Team Target) × 100<br/>
+              Achievement = (735,000 ÷ 700,000) × 100<br/>
+              Achievement = <strong style={{color: 'var(--accent-primary)'}}>105%</strong>
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Step 2: Determine Tier</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              105% falls in range: ≥101% and &lt;111%<br/>
+              Tier = <strong style={{color: 'var(--accent-primary)'}}>Tier 3</strong> (3.0% rate)
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Step 3: Calculate Total Incentive Pool</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              Total Pool = Team Sales × Tier Rate<br/>
+              Total Pool = 735,000 × 3.0%<br/>
+              Total Pool = <strong style={{color: 'var(--accent-primary)'}}>AED 22,050</strong>
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Step 4: Split Pool (60/40)</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              P1 Pool = 22,050 × 60% = <strong style={{color: '#42a5f5'}}>AED 13,230</strong><br/>
+              P2 Pool = 22,050 × 40% = <strong style={{color: '#ffa726'}}>AED 8,820</strong>
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Step 5: Calculate Your Share</p>
+            <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+              <strong style={{color: '#42a5f5'}}>P1 (Equal Share):</strong><br/>
+              Your P1 = P1 Pool ÷ Staff Count<br/>
+              Your P1 = 13,230 ÷ 29<br/>
+              Your P1 = <strong style={{color: '#42a5f5'}}>AED 456.21</strong><br/>
+              <br/>
+              <strong style={{color: '#ffa726'}}>P2 (Performance Share):</strong><br/>
+              Your Contribution = (Your Sales ÷ Team Sales) × 100<br/>
+              Your Contribution = (73,500 ÷ 735,000) × 100 = 10%<br/>
+              Your P2 = P2 Pool × Your Contribution<br/>
+              Your P2 = 8,820 × 10%<br/>
+              Your P2 = <strong style={{color: '#ffa726'}}>AED 882.00</strong>
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Final Result:</p>
+            <div style={{marginLeft: '12px', padding: '12px', background: 'rgba(0, 206, 209, 0.1)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(0, 206, 209, 0.3)'}}>
+              <strong style={{color: 'var(--success)', fontSize: '16px'}}>Total Incentive = P1 + P2</strong><br/>
+              <strong style={{color: 'var(--success)', fontSize: '16px'}}>Total Incentive = 456.21 + 882.00</strong><br/>
+              <strong style={{color: 'var(--success)', fontSize: '18px'}}>Total Incentive = AED 1,338.21</strong>
+            </div>
           </div>
         </div>
 
