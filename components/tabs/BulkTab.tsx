@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { parseExcelFile, getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } from '@/lib/excelUtils'
-import { calculateIncentive, formatCurrency, type CalculationResult } from '@/lib/utils'
+import { calculateIncentive, formatCurrency, getTier, DEFAULT_TIERS, type Tier } from '@/lib/utils'
 
 interface BulkResult extends StaffData {
   achievement: number
@@ -27,12 +27,12 @@ export function BulkTab() {
   const [staffCount, setStaffCount] = useState(0)
   const [p1Split, setP1Split] = useState(60)
   const [results, setResults] = useState<BulkResult[]>([])
+  const [calculatedData, setCalculatedData] = useState<any>(null)
   const [sortColumn, setSortColumn] = useState<keyof BulkResult>('sales')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [isProcessing, setIsProcessing] = useState(false)
   const [xlsxLoaded, setXlsxLoaded] = useState(false)
 
-  // Check if XLSX library is loaded
   useEffect(() => {
     const checkXLSX = () => {
       if ((window as any).XLSX) {
@@ -60,11 +60,9 @@ export function BulkTab() {
       const data = await parseExcelFile(uploadedFile)
       setExcelData(data)
       
-      // Extract years from sheet names
       const years = [...new Set(data.map(d => d.sheetName.split(' ')[1] || d.sheetName.slice(-2)))].sort()
       setAvailableYears(years)
       
-      // Auto-select current month and year
       const now = new Date()
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       const currentMonth = monthNames[now.getMonth()]
@@ -74,12 +72,12 @@ export function BulkTab() {
       if (years.includes(currentYear)) {
         setSelectedYear(currentYear)
       } else {
-        setSelectedYear(years[years.length - 1]) // Most recent year
+        setSelectedYear(years[years.length - 1])
       }
     } catch (error) {
       console.error('Error parsing Excel:', error)
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Error parsing Excel file: ${errorMsg}\n\nPlease make sure:\n1. File is a valid .xlsx file\n2. File has month sheets (e.g., "Jun25", "Jul25")\n3. File follows the expected format`)
+      alert(`Error parsing Excel file: ${errorMsg}`)
     } finally {
       setIsProcessing(false)
     }
@@ -133,7 +131,6 @@ export function BulkTab() {
       return
     }
 
-    // Set auto-detected target and staff count
     setAutoTarget(aggregated.target)
     setStaffCount(aggregated.staff.length)
 
@@ -145,9 +142,11 @@ export function BulkTab() {
     }
 
     const teamSales = aggregated.teamTotal.sales
-    const calc = calculateIncentive(finalTarget, teamSales, 0, aggregated.staff.length, p1Split)
+    const teamAchievement = (teamSales / finalTarget) * 100
+    const tier = getTier(teamAchievement)
+    const totalPool = (tier.rate / 100) * teamSales
 
-    // Calculate for each staff member
+    // Calculate for each staff member - SORT BY SALES for rankings
     const bulkResults: BulkResult[] = aggregated.staff.map(person => {
       const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
       
@@ -155,9 +154,9 @@ export function BulkTab() {
         name: person.name,
         packages: person.packages,
         sales: person.sales,
-        achievement: calc.teamAchievement,
-        tierName: calc.tier.name,
-        tierRate: calc.tier.rate,
+        achievement: teamAchievement,
+        tierName: tier.name,
+        tierRate: tier.rate,
         totalIncentive: personCalc.myTotal,
         p1: personCalc.myP1,
         p2: personCalc.myP2,
@@ -165,7 +164,21 @@ export function BulkTab() {
       }
     })
 
+    // Sort by SALES (highest first) for rankings
+    bulkResults.sort((a, b) => b.sales - a.sales)
+
     setResults(bulkResults)
+    setCalculatedData({
+      teamAchievement,
+      tier,
+      totalPool,
+      target: finalTarget,
+      teamSales,
+      teamPackages: aggregated.teamTotal.packages,
+      staffCount: aggregated.staff.length,
+      sheets: sheets.map(s => s.sheetName),
+      viewMode
+    })
     setSortColumn('sales')
     setSortDirection('desc')
   }
@@ -190,7 +203,7 @@ export function BulkTab() {
     if (results.length === 0) return
 
     let csv = 'Rank,Name,Packages,Sales (AED),Contribution %,Tier,P1 (AED),P2 (AED),Total Incentive (AED)\n'
-    sortedResults.forEach((person, idx) => {
+    results.forEach((person, idx) => {
       csv += `${idx + 1},"${person.name}",${person.packages},${person.sales.toFixed(2)},${person.contribution.toFixed(2)},${person.tierName},${person.p1.toFixed(2)},${person.p2.toFixed(2)},${person.totalIncentive.toFixed(2)}\n`
     })
 
@@ -203,8 +216,76 @@ export function BulkTab() {
     URL.revokeObjectURL(url)
   }
 
-  const topPerformers = sortedResults.slice(0, 3)
-  const teamTotal = results.reduce((sum, r) => sum + r.totalIncentive, 0)
+  const getViewTitle = () => {
+    const monthNames: Record<string, string> = {
+      'Jan': 'January', 'Feb': 'February', 'Mar': 'March', 'Apr': 'April',
+      'May': 'May', 'Jun': 'June', 'Jul': 'July', 'Aug': 'August',
+      'Sep': 'September', 'Oct': 'October', 'Nov': 'November', 'Dec': 'December'
+    }
+    
+    if (viewMode === 'monthly') {
+      return `${monthNames[selectedMonth]} 20${selectedYear}`
+    }
+    
+    const titles: Record<string, string> = {
+      q1: 'Q1 (Jan-Mar)',
+      q2: 'Q2 (Apr-Jun)',
+      q3: 'Q3 (Jul-Sep)',
+      q4: 'Q4 (Oct-Dec)',
+      yearly: 'Full Year',
+      alltime: 'All-Time'
+    }
+    
+    return titles[viewMode]
+  }
+
+  const calculateNextTier = () => {
+    if (!calculatedData) return null
+    
+    const sortedTiers = [...DEFAULT_TIERS].sort((a, b) => a.min - b.min)
+    const currentTierIndex = sortedTiers.findIndex(t => t.id === calculatedData.tier.id)
+    
+    if (calculatedData.tier.rate === 0) {
+      const requiredSales = (75 / 100) * calculatedData.target
+      const deficit = requiredSales - calculatedData.teamSales
+      return {
+        nextTierName: 'Tier 1',
+        nextTierRate: sortedTiers[0].rate,
+        requiredPercentage: 75,
+        requiredSales,
+        deficit,
+        isMaxTier: false
+      }
+    } else if (currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1) {
+      const nextTier = sortedTiers[currentTierIndex + 1]
+      const requiredPercentage = nextTier.min
+      const requiredSales = (requiredPercentage / 100) * calculatedData.target
+      const deficit = requiredSales - calculatedData.teamSales
+      return {
+        nextTierName: nextTier.name,
+        nextTierRate: nextTier.rate,
+        requiredPercentage,
+        requiredSales,
+        deficit,
+        isMaxTier: false
+      }
+    } else {
+      const highestTier = sortedTiers[currentTierIndex]
+      const thresholdSales = (highestTier.min / 100) * calculatedData.target
+      const thresholdPool = (highestTier.rate / 100) * thresholdSales
+      const actualPool = (highestTier.rate / 100) * calculatedData.teamSales
+      const extraIncentive = actualPool - thresholdPool
+      
+      return {
+        isMaxTier: true,
+        currentRate: calculatedData.tier.rate,
+        thresholdPercentage: highestTier.min,
+        thresholdSales,
+        thresholdPool,
+        extraIncentive
+      }
+    }
+  }
 
   return (
     <section className="card">
@@ -220,7 +301,6 @@ export function BulkTab() {
         </div>
       </div>
 
-      {/* File Upload */}
       <div className="form-group">
         <label>Upload Sales Tracker Excel (.xlsx)</label>
         <input 
@@ -247,7 +327,6 @@ export function BulkTab() {
         )}
       </div>
 
-      {/* Controls (shown after upload) */}
       {excelData.length > 0 && (
         <>
           <div className="form-grid" style={{marginTop: '24px'}}>
@@ -349,79 +428,93 @@ export function BulkTab() {
         </>
       )}
 
-      {/* Results */}
-      {results.length > 0 && (
+      {results.length > 0 && calculatedData && (
         <div style={{marginTop: '24px'}}>
-          {/* Top Performers */}
-          <div style={{marginBottom: '24px'}}>
-            <h3 style={{color: 'var(--text-primary)', fontSize: '16px', marginBottom: '12px'}}>🏆 Top Performers</h3>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px'}}>
-              {topPerformers.map((person, idx) => (
-                <div key={person.name} style={{
-                  padding: '16px',
-                  background: idx === 0 ? 'rgba(255, 215, 0, 0.1)' : idx === 1 ? 'rgba(192, 192, 192, 0.1)' : 'rgba(205, 127, 50, 0.1)',
-                  border: `2px solid ${idx === 0 ? '#FFD700' : idx === 1 ? '#C0C0C0' : '#CD7F32'}`,
-                  borderRadius: 'var(--radius-md)'
-                }}>
-                  <div style={{fontSize: '32px', marginBottom: '8px'}}>
-                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
-                  </div>
-                  <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px'}}>
-                    {person.name}
-                  </div>
-                  <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--success)', fontFamily: "'JetBrains Mono', monospace"}}>
-                    AED {formatCurrency(person.totalIncentive)}
-                  </div>
-                  <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px'}}>
-                    Sales: AED {formatCurrency(person.sales)}
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '16px',
+            background: 'var(--bg-tertiary)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '24px'
+          }}>
+            <span style={{fontSize: '24px'}}>💰</span>
+            <span style={{fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)'}}>
+              Team Incentives - {getViewTitle()}
+            </span>
+          </div>
+
+          {/* Sheet Names Debug Info */}
+          <div style={{
+            padding: '12px 16px',
+            background: 'rgba(0, 206, 209, 0.08)',
+            border: '1px solid rgba(0, 206, 209, 0.2)',
+            borderRadius: 'var(--radius-sm)',
+            marginBottom: '24px',
+            fontSize: '13px',
+            color: 'var(--text-secondary)'
+          }}>
+            <strong style={{color: 'var(--accent-primary)'}}>Sheets used:</strong> {calculatedData.sheets.join(', ')}
           </div>
 
           {/* Summary Stats */}
-          <div className="results-grid" style={{marginBottom: '24px'}}>
-            <div className="result-card">
-              <div className="result-label">Team Total</div>
-              <div className="result-value" style={{fontSize: '20px'}}>AED {formatCurrency(teamTotal)}</div>
+          <div className="summary-stats" style={{marginBottom: '32px'}}>
+            <div className="stat-card">
+              <div className="stat-label">Team Achievement</div>
+              <div className="stat-value">{calculatedData.teamAchievement.toFixed(2)}<span className="stat-unit">%</span></div>
             </div>
-            <div className="result-card">
-              <div className="result-label">Staff Count</div>
-              <div className="result-value">{results.length}</div>
+            <div className="stat-card">
+              <div className="stat-label">Current Tier</div>
+              <div className="stat-value" style={{fontSize: '18px'}}>{calculatedData.tier.name}</div>
+              <div className="tier-badge" style={{
+                background: `${calculatedData.tier.color}22`,
+                color: calculatedData.tier.color,
+                marginTop: '8px'
+              }}>
+                {calculatedData.tier.rate}% rate
+              </div>
             </div>
-            <div className="result-card">
-              <div className="result-label">Avg per Person</div>
-              <div className="result-value" style={{fontSize: '20px'}}>AED {formatCurrency(teamTotal / results.length)}</div>
+            <div className="stat-card">
+              <div className="stat-label">Total Pool</div>
+              <div className="stat-value" style={{fontSize: '20px'}}>AED {formatCurrency(calculatedData.totalPool)}</div>
             </div>
-          </div>
-
-          {/* Export Button */}
-          <div style={{marginBottom: '16px'}}>
-            <button className="btn btn-secondary" onClick={handleExportCSV}>
-              <span>📥 Export to CSV</span>
-            </button>
+            <div className="stat-card">
+              <div className="stat-label">Staff Count</div>
+              <div className="stat-value">{calculatedData.staffCount}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Team Target</div>
+              <div className="stat-value" style={{fontSize: '18px'}}>AED {formatCurrency(calculatedData.target)}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Team Sales</div>
+              <div className="stat-value" style={{fontSize: '18px'}}>AED {formatCurrency(calculatedData.teamSales)}</div>
+            </div>
           </div>
 
           {/* Results Table */}
-          <div style={{overflowX: 'auto'}}>
+          <div style={{overflowX: 'auto', marginBottom: '24px'}}>
             <table style={{width: '100%', borderCollapse: 'collapse'}}>
               <thead>
                 <tr style={{borderBottom: '2px solid var(--border-color)'}}>
+                  <th style={{...tableHeaderStyle, width: '40px'}}>Rank</th>
+                  <th style={{...tableHeaderStyle, width: '40px'}}></th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('name')}>
                     Name {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
+                  <th style={tableHeaderStyle} onClick={() => handleSort('totalIncentive')}>
+                    💰 Total Incentive {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('packages')}>
-                    Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    📦 Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('sales')}>
-                    Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    💵 Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('contribution')}>
-                    Contribution % {sortColumn === 'contribution' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th style={tableHeaderStyle} onClick={() => handleSort('tierName')}>
-                    Tier {sortColumn === 'tierName' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    % Share {sortColumn === 'contribution' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('p1')}>
                     P1 {sortColumn === 'p1' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -429,34 +522,108 @@ export function BulkTab() {
                   <th style={tableHeaderStyle} onClick={() => handleSort('p2')}>
                     P2 {sortColumn === 'p2' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={tableHeaderStyle} onClick={() => handleSort('totalIncentive')}>
-                    Total {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {sortedResults.map((person, idx) => (
-                  <tr key={person.name} style={{
-                    borderBottom: '1px solid var(--border-color)',
-                    background: idx < 3 ? 'rgba(0, 206, 209, 0.05)' : 'transparent'
-                  }}>
-                    <td style={tableCellStyle}>
-                      {idx < 3 && <span style={{marginRight: '8px'}}>{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>}
-                      {person.name}
-                    </td>
-                    <td style={tableCellStyle}>{person.packages}</td>
-                    <td style={tableCellStyle}>{formatCurrency(person.sales)}</td>
-                    <td style={tableCellStyle}>{person.contribution.toFixed(2)}%</td>
-                    <td style={tableCellStyle}>{person.tierName}</td>
-                    <td style={tableCellStyle}>{formatCurrency(person.p1)}</td>
-                    <td style={tableCellStyle}>{formatCurrency(person.p2)}</td>
-                    <td style={{...tableCellStyle, fontWeight: '600', color: 'var(--success)'}}>
-                      {formatCurrency(person.totalIncentive)}
-                    </td>
-                  </tr>
-                ))}
+                {sortedResults.map((person, idx) => {
+                  // Find original rank based on sales
+                  const originalRank = results.findIndex(r => r.name === person.name) + 1
+                  let badge = ''
+                  let rankStyle = ''
+                  let rowBg = ''
+                  
+                  if (originalRank <= 3) {
+                    if (originalRank === 1) badge = '🥇'
+                    else if (originalRank === 2) badge = '🥈'
+                    else if (originalRank === 3) badge = '🥉'
+                    rankStyle = 'font-weight: 700; color: var(--accent-primary);'
+                    rowBg = 'rgba(0, 206, 209, 0.05)'
+                  }
+                  
+                  return (
+                    <tr key={person.name} style={{borderBottom: '1px solid var(--border-color)', background: rowBg}}>
+                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
+                        #{originalRank}
+                      </td>
+                      <td style={tableCellStyle}>{badge}</td>
+                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : 'normal', color: rankStyle ? 'var(--accent-primary)' : 'var(--text-secondary)'}}>
+                        {person.name}
+                      </td>
+                      <td style={{...tableCellStyle, ...{fontWeight: rankStyle ? '700' : '600', color: rankStyle ? 'var(--accent-primary)' : 'var(--success)'}}>
+                        AED {formatCurrency(person.totalIncentive)}
+                      </td>
+                      <td style={tableCellStyle}>{person.packages}</td>
+                      <td style={tableCellStyle}>AED {formatCurrency(person.sales)}</td>
+                      <td style={tableCellStyle}>{person.contribution.toFixed(2)}%</td>
+                      <td style={tableCellStyle}>AED {formatCurrency(person.p1)}</td>
+                      <td style={tableCellStyle}>AED {formatCurrency(person.p2)}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
+          </div>
+
+          {/* Tier Ladder */}
+          {(() => {
+            const nextTierInfo = calculateNextTier()
+            if (!nextTierInfo) return null
+            
+            if (nextTierInfo.isMaxTier) {
+              return (
+                <div style={{
+                  padding: '20px',
+                  background: 'rgba(0, 230, 118, 0.08)',
+                  border: '2px solid rgba(0, 230, 118, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+                    <span style={{fontSize: '20px'}}>🎉</span>
+                    <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>Tier Ladder</span>
+                  </div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
+                    + AED {formatCurrency(nextTierInfo.extraIncentive)}
+                  </div>
+                  <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}}>
+                    Maximum tier achieved! Your team is at <strong>{calculatedData.teamAchievement.toFixed(2)}%</strong> achievement, 
+                    earning an additional <strong>AED {formatCurrency(nextTierInfo.extraIncentive)}</strong> compared to 
+                    the {nextTierInfo.thresholdPercentage}% threshold. Every extra sale continues to increase the incentive pool 
+                    at the maximum {nextTierInfo.currentRate}% rate.
+                  </div>
+                </div>
+              )
+            } else {
+              const message = calculatedData.tier.rate === 0
+                ? `Team needs an additional <strong>AED ${formatCurrency(nextTierInfo.deficit)}</strong> in sales to reach <strong>AED ${formatCurrency(nextTierInfo.requiredSales)}</strong> (${nextTierInfo.requiredPercentage}% of target) and qualify for ${nextTierInfo.nextTierName} incentive (${nextTierInfo.nextTierRate}% rate).`
+                : `Team needs an additional <strong>AED ${formatCurrency(nextTierInfo.deficit)}</strong> in sales to reach <strong>AED ${formatCurrency(nextTierInfo.requiredSales)}</strong> (${nextTierInfo.requiredPercentage}% of target) and qualify for ${nextTierInfo.nextTierName} incentive (${nextTierInfo.nextTierRate}% rate).`
+              
+              return (
+                <div style={{
+                  padding: '20px',
+                  background: 'var(--bg-tertiary)',
+                  border: '2px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
+                    <span style={{fontSize: '20px'}}>🎯</span>
+                    <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Tier Ladder</span>
+                  </div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
+                    AED {formatCurrency(nextTierInfo.deficit)}
+                  </div>
+                  <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6'}} dangerouslySetInnerHTML={{__html: message}} />
+                </div>
+              )
+            }
+          })()}
+
+          {/* Export Buttons */}
+          <div style={{display: 'flex', gap: '12px'}}>
+            <button className="btn btn-secondary" onClick={handleExportCSV}>
+              <span>📄 Download CSV</span>
+            </button>
           </div>
         </div>
       )}
