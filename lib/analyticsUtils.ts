@@ -133,6 +133,12 @@ export function getTeamHistory(): MonthlyTeamData[] {
   return Object.values(data.teamHistory).sort((a, b) => a.date.localeCompare(b.date))
 }
 
+export function getAvailableYearsFromHistory(): string[] {
+  const history = getTeamHistory()
+  const years = [...new Set(history.map(h => h.monthKey.substring(2, 4)))].sort()
+  return years
+}
+
 export function getLifetimeStats(name: string | null) {
   if (!name) return null
   

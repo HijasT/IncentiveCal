@@ -15,7 +15,7 @@ interface BulkResult extends StaffData {
   contribution: number
 }
 
-type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'yearly' | 'alltime'
+type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
 
 export function BulkTab() {
   const [file, setFile] = useState<File | null>(null)
@@ -103,7 +103,9 @@ export function BulkTab() {
       q1: ['Jan', 'Feb', 'Mar'],
       q2: ['Apr', 'May', 'Jun'],
       q3: ['Jul', 'Aug', 'Sep'],
-      q4: ['Oct', 'Nov', 'Dec']
+      q4: ['Oct', 'Nov', 'Dec'],
+      h1: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      h2: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     }
     
     const quarterMonths = quarters[viewMode]
@@ -277,6 +279,8 @@ export function BulkTab() {
       q2: 'Q2 (Apr-Jun)',
       q3: 'Q3 (Jul-Sep)',
       q4: 'Q4 (Oct-Dec)',
+      h1: 'H1 (Jan-Jun)',
+      h2: 'H2 (Jul-Dec)',
       yearly: 'Full Year',
       alltime: 'All-Time'
     }
@@ -385,6 +389,8 @@ export function BulkTab() {
                 <option value="q2">Q2 (Apr-Jun)</option>
                 <option value="q3">Q3 (Jul-Sep)</option>
                 <option value="q4">Q4 (Oct-Dec)</option>
+                <option value="h1">H1 (Jan-Jun)</option>
+                <option value="h2">H2 (Jul-Dec)</option>
                 <option value="yearly">Yearly</option>
                 <option value="alltime">All-Time</option>
               </select>
