@@ -48,12 +48,14 @@ export default function Home() {
         >
           Bulk
         </button>
-        <button 
-          className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          Analytics <span style={{fontSize: '10px', opacity: '0.7'}}>*beta</span>
-        </button>
+	{/* ANALYTICS TAB - HIDDEN (Uncomment to show)
+		<button 
+		className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+		onClick={() => setActiveTab('analytics')}
+		>
+		Analytics <span style={{fontSize: '10px', opacity: '0.7'}}>*beta</span>
+		</button>
+	*/}
         <button 
           className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
@@ -68,7 +70,8 @@ export default function Home() {
         </button>
       </nav>
 
-      {activeTab === 'individual' && <IndividualTab />}
+    {/* {activeTab === 'analytics' && <AnalyticsTab />} 
+	*/}
       {activeTab === 'bulk' && <BulkTab />}
       {activeTab === 'analytics' && <AnalyticsTab />}
       {activeTab === 'settings' && <SettingsTab />}
