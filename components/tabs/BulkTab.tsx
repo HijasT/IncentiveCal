@@ -13,6 +13,8 @@ interface BulkResult extends StaffData {
   p1: number
   p2: number
   contribution: number
+  avgPackagesPerDay: number
+  avgSalesPerDay: number
 }
 
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
@@ -152,18 +154,22 @@ export function BulkTab() {
 
     const bulkResults: BulkResult[] = aggregated.staff.map(person => {
       const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
+      const workDays = person.workingDays || 1
       
       return {
         name: person.name,
         packages: person.packages,
         sales: person.sales,
+        workingDays: person.workingDays,
         achievement: teamAchievement,
         tierName: tier.name,
         tierRate: tier.rate,
         totalIncentive: personCalc.myTotal,
         p1: personCalc.myP1,
         p2: personCalc.myP2,
-        contribution: personCalc.myContribution
+        contribution: personCalc.myContribution,
+        avgPackagesPerDay: person.packages / workDays,
+        avgSalesPerDay: person.sales / workDays
       }
     })
 
@@ -562,6 +568,15 @@ export function BulkTab() {
                   <th style={tableHeaderStyle} onClick={() => handleSort('sales')}>
                     💵 Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
+                  <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('workingDays')}>
+                    📅 Days {sortColumn === 'workingDays' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('avgPackagesPerDay')}>
+                    📦/Day {sortColumn === 'avgPackagesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('avgSalesPerDay')}>
+                    💵/Day {sortColumn === 'avgSalesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('contribution')}>
                     % Share {sortColumn === 'contribution' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
@@ -602,6 +617,15 @@ export function BulkTab() {
                       </td>
                       <td style={tableCellStyle}>{person.packages}</td>
                       <td style={tableCellStyle}>AED {formatCurrency(person.sales)}</td>
+                      <td style={{...tableCellStyle, fontSize: '13px', color: 'var(--text-muted)'}}>
+                        {person.workingDays || 0}
+                      </td>
+                      <td style={{...tableCellStyle, fontSize: '13px', color: 'var(--text-secondary)'}}>
+                        {person.avgPackagesPerDay.toFixed(2)}
+                      </td>
+                      <td style={{...tableCellStyle, fontSize: '13px', color: 'var(--text-secondary)'}}>
+                        {formatCurrency(person.avgSalesPerDay)}
+                      </td>
                       <td style={tableCellStyle}>{person.contribution.toFixed(2)}%</td>
                       <td style={tableCellStyle}>AED {formatCurrency(person.p1)}</td>
                       <td style={tableCellStyle}>AED {formatCurrency(person.p2)}</td>

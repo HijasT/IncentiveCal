@@ -4,6 +4,7 @@ export interface StaffData {
   name: string
   packages: number
   sales: number
+  workingDays: number
 }
 
 export interface ExcelData {
@@ -171,6 +172,7 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
         
         let packages = 0
         let sales = 0
+        let workingDays = 0
         
         // Handle packages (could be formula or number)
         if (pkgCell && pkgCell.v !== 'NA') {
@@ -190,10 +192,33 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
           }
         }
         
+        // Count working days by checking daily columns (columns 3 onwards, excluding total column)
+        // Look for daily sales values that are not NA and not zero
+        for (let col = 3; col < range.e.c; col++) {
+          if (col === monthTotalCol) continue // Skip the total column
+          
+          const dailySalesAddress = XLSX.utils.encode_cell({ r: row, c: col })
+          const dailyCell = worksheet[dailySalesAddress]
+          
+          // Count if cell exists, is not NA, and has a positive value
+          if (dailyCell && dailyCell.v !== 'NA' && dailyCell.v !== null && dailyCell.v !== undefined && dailyCell.v !== '') {
+            const value = typeof dailyCell.v === 'number' ? dailyCell.v : parseFloat(String(dailyCell.w || dailyCell.v || '0'))
+            if (!isNaN(value) && value > 0) {
+              workingDays++
+            }
+          }
+        }
+        
+        // Fallback: if no working days counted but has sales, estimate as 1 day minimum
+        if (workingDays === 0 && sales > 0) {
+          workingDays = 1
+        }
+        
         staff.push({
           name,
           packages: Math.round(packages),
-          sales: Math.round(sales * 100) / 100
+          sales: Math.round(sales * 100) / 100,
+          workingDays
         })
       }
       
@@ -221,10 +246,11 @@ export function aggregateSheets(sheets: ExcelData[]): ExcelData {
   sheets.forEach(sheet => {
     sheet.staff.forEach(person => {
       if (!aggregated[person.name]) {
-        aggregated[person.name] = { name: person.name, packages: 0, sales: 0 }
+        aggregated[person.name] = { name: person.name, packages: 0, sales: 0, workingDays: 0 }
       }
       aggregated[person.name].packages += person.packages
       aggregated[person.name].sales += person.sales
+      aggregated[person.name].workingDays += person.workingDays
     })
     totalPackages += sheet.teamTotal.packages
     totalSales += sheet.teamTotal.sales
