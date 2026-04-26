@@ -70,10 +70,10 @@ export default function Home() {
         </button>
       </nav>
 
-    {/* {activeTab === 'analytics' && <AnalyticsTab />} 
-	*/}
+	  {activeTab === 'individual' && <IndividualTab />} 
       {activeTab === 'bulk' && <BulkTab />}
-      {activeTab === 'analytics' && <AnalyticsTab />}
+	{/*  {activeTab === 'analytics' && <AnalyticsTab />}
+	*/}
       {activeTab === 'settings' && <SettingsTab />}
       {activeTab === 'about' && <AboutTab />}
     </div>
