@@ -1,41 +1,28 @@
 'use client'
 import { useState, useEffect } from 'react'
-import {
-  getTeamHistory,
-  getPersonalHistory,
-  getLifetimeStats,
-  getRankHistory,
-  getCurrentMonthData,
-  getAvailableNames,
-  getSelectedName,
-  setSelectedName,
-  getPersonBadges,
-  checkAndAwardBadges,
-  getBadgeInfo,
-  saveTeamData,
-  getAvailableYearsFromHistory,
-  type MonthlyTeamData,
-  type StaffResult
-} from '@/lib/analyticsUtils'
 import { parseExcelFile, aggregateSheets, type ExcelData } from '@/lib/excelUtils'
 import { calculateIncentive, formatCurrency, getTier } from '@/lib/utils'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { exportAnalyticsToPDF } from '@/lib/pdfUtils'
+import { BarChart, Bar, LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
+interface CalculatedResult {
+  name: string
+  sales: number
+  packages: number
+  workingDays: number
+  totalIncentive: number
+  rank: number
+  contribution: number
+  p1: number
+  p2: number
+  avgSalesPerDay: number
+  avgPackagesPerDay: number
+}
+
+type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'overall'
+
+const COLORS = ['#ff9800', '#2196f3', '#9c27b0', '#4caf50', '#f44336', '#00bcd4', '#ff5722', '#795548']
 
 export function AnalyticsTab() {
-  const [selectedPersonName, setSelectedPersonName] = useState<string | null>(null)
-  const [availableNames, setAvailableNames] = useState<string[]>([])
-  const [personalHistory, setPersonalHistory] = useState<any[]>([])
-  const [lifetimeStats, setLifetimeStats] = useState<any>(null)
-  const [rankHistory, setRankHistory] = useState<any[]>([])
-  const [currentMonth, setCurrentMonth] = useState<any>(null)
-  const [badges, setBadges] = useState<string[]>([])
-  const [teamHistory, setTeamHistory] = useState<any[]>([])
-  const [newBadges, setNewBadges] = useState<string[]>([])
-  
-  // Excel upload state
   const [file, setFile] = useState<File | null>(null)
   const [excelData, setExcelData] = useState<ExcelData[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('monthly')
@@ -46,6 +33,11 @@ export function AnalyticsTab() {
   const [p1Split, setP1Split] = useState(60)
   const [isProcessing, setIsProcessing] = useState(false)
   const [xlsxLoaded, setXlsxLoaded] = useState(false)
+  
+  const [results, setResults] = useState<CalculatedResult[]>([])
+  const [calculatedData, setCalculatedData] = useState<any>(null)
+  const [selectedName, setSelectedName] = useState<string>('')
+  const [activeChart, setActiveChart] = useState<'sales' | 'packages'>('sales')
 
   useEffect(() => {
     const checkXLSX = () => {
@@ -56,67 +48,11 @@ export function AnalyticsTab() {
       }
     }
     checkXLSX()
-    loadData()
+    
+    const now = new Date()
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    setSelectedMonth(monthNames[now.getMonth()])
   }, [])
-
-  useEffect(() => {
-    if (selectedPersonName) {
-      loadPersonalData(selectedPersonName)
-      setSelectedName(selectedPersonName)
-    }
-  }, [selectedPersonName])
-
-  const loadData = () => {
-    const names = getAvailableNames()
-    setAvailableNames(names)
-    const history = getTeamHistory()
-    setTeamHistory(history)
-    
-    // Get available years from history
-    if (history.length > 0 && availableYears.length === 0) {
-      const years = getAvailableYearsFromHistory()
-      setAvailableYears(years)
-      if (years.length > 0 && !selectedYear) {
-        setSelectedYear(years[years.length - 1])
-      }
-    }
-    
-    const savedName = getSelectedName()
-    if (savedName && names.includes(savedName)) {
-      setSelectedPersonName(savedName)
-    }
-  }
-
-  const loadPersonalData = (name: string) => {
-    const history = getPersonalHistory(name)
-    setPersonalHistory(history)
-    setLifetimeStats(getLifetimeStats(name))
-    setRankHistory(getRankHistory(name))
-    setCurrentMonth(getCurrentMonthData(name))
-    setBadges(getPersonBadges(name))
-    
-    if (history.length > 0) {
-      const latestMonth = history[history.length - 1]
-      const newlyAwarded = checkAndAwardBadges(name, latestMonth)
-      if (newlyAwarded.length > 0) {
-        setNewBadges(newlyAwarded)
-        setBadges(getPersonBadges(name))
-      }
-    }
-  }
-
-  const handleNameChange = (name: string) => {
-    if (name === '') {
-      setSelectedPersonName(null)
-      setPersonalHistory([])
-      setLifetimeStats(null)
-      setRankHistory([])
-      setCurrentMonth(null)
-      setBadges([])
-    } else {
-      setSelectedPersonName(name)
-    }
-  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0]
@@ -129,6 +65,9 @@ export function AnalyticsTab() {
 
     setFile(uploadedFile)
     setIsProcessing(true)
+    setResults([])
+    setCalculatedData(null)
+    setSelectedName('')
 
     try {
       const data = await parseExcelFile(uploadedFile)
@@ -137,12 +76,7 @@ export function AnalyticsTab() {
       const years = [...new Set(data.map(d => d.sheetName.split(' ')[1] || d.sheetName.slice(-2)))].sort()
       setAvailableYears(years)
       
-      const now = new Date()
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      const currentMonth = monthNames[now.getMonth()]
-      const currentYear = now.getFullYear().toString().slice(-2)
-      
-      setSelectedMonth(currentMonth)
+      const currentYear = new Date().getFullYear().toString().slice(-2)
       if (years.includes(currentYear)) {
         setSelectedYear(currentYear)
       } else {
@@ -162,7 +96,7 @@ export function AnalyticsTab() {
       return excelData.filter(d => d.sheetName === sheetName || d.sheetName === `${selectedMonth}${selectedYear}`)
     }
     
-    if (viewMode === 'alltime') {
+    if (viewMode === 'overall') {
       return excelData
     }
     
@@ -186,7 +120,24 @@ export function AnalyticsTab() {
     })
   }
 
-  const handleCalculateFromExcel = () => {
+  const getViewTitle = () => {
+    if (viewMode === 'monthly') return `${selectedMonth} 20${selectedYear}`
+    
+    const titles: Record<string, string> = {
+      q1: 'Q1 (Jan-Mar)',
+      q2: 'Q2 (Apr-Jun)',
+      q3: 'Q3 (Jul-Sep)',
+      q4: 'Q4 (Oct-Dec)',
+      h1: 'H1 (Jan-Jun)',
+      h2: 'H2 (Jul-Dec)',
+      yearly: `Full Year 20${selectedYear}`,
+      overall: 'All-Time'
+    }
+    
+    return titles[viewMode] || viewMode
+  }
+
+  const handleCalculate = () => {
     const sheets = getSheetsForView()
     
     if (sheets.length === 0) {
@@ -218,172 +169,95 @@ export function AnalyticsTab() {
     const tier = getTier(teamAchievement)
     const totalPool = (tier.rate / 100) * teamSales
 
-    const bulkResults = aggregated.staff.map((person, index) => {
+    const calculatedResults = aggregated.staff.map((person, index) => {
       const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
+      const workDays = person.workingDays || 1
+      
       return {
         name: person.name,
         packages: person.packages,
         sales: person.sales,
+        workingDays: person.workingDays || 1,
         totalIncentive: personCalc.myTotal,
         rank: index + 1,
         contribution: personCalc.myContribution,
         p1: personCalc.myP1,
-        p2: personCalc.myP2
+        p2: personCalc.myP2,
+        avgSalesPerDay: person.sales / workDays,
+        avgPackagesPerDay: person.packages / workDays
       }
     })
 
-    bulkResults.sort((a, b) => b.sales - a.sales)
+    calculatedResults.sort((a, b) => b.sales - a.sales)
+    calculatedResults.forEach((r, i) => r.rank = i + 1)
 
-    // Save only for monthly view
-    if (viewMode === 'monthly') {
-      const monthKey = `${selectedYear && selectedYear.length === 2 ? '20' + selectedYear : selectedYear}-${String(
-        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(selectedMonth) + 1
-      ).padStart(2, '0')}`
-
-      const staff: StaffResult[] = bulkResults.map((person, index) => ({
-        name: person.name,
-        sales: person.sales,
-        packages: person.packages,
-        totalEarnings: person.totalIncentive,
-        rank: index + 1,
-        contribution: person.contribution,
-        p1: person.p1,
-        p2: person.p2
-      }))
-
-      const teamDataToSave: MonthlyTeamData = {
-        monthKey,
-        date: new Date().toISOString(),
-        teamAchievement,
-        tier: tier.name,
-        tierRate: tier.rate,
-        tierColor: tier.color,
-        teamSales,
-        teamTarget: finalTarget,
-        totalPool,
-        totalStaff: aggregated.staff.length,
-        staff
-      }
-
-      saveTeamData(teamDataToSave)
-      loadData() // Reload to show new data
-      alert('✓ Data saved to analytics!')
-    } else {
-      alert('✓ Calculated! Note: Only Monthly view saves to analytics history.')
-    }
+    setResults(calculatedResults)
+    setCalculatedData({
+      teamAchievement,
+      tier,
+      totalPool,
+      target: finalTarget,
+      teamSales,
+      staffCount: aggregated.staff.length,
+      viewTitle: getViewTitle(),
+      sheetCount: sheets.length
+    })
   }
 
-  const getAggregatedPersonalData = () => {
-    if (!selectedPersonName || personalHistory.length === 0) return null
-
-    // Filter history based on view mode
-    let filteredHistory = [...personalHistory]
+  const getPersonalData = () => {
+    if (!selectedName || !results.length) return null
     
-    if (viewMode === 'monthly') {
-      const monthKey = `${selectedYear && selectedYear.length === 2 ? '20' + selectedYear : selectedYear}-${String(
-        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(selectedMonth) + 1
-      ).padStart(2, '0')}`
-      filteredHistory = personalHistory.filter(h => h.monthKey === monthKey)
-    } else if (viewMode !== 'alltime') {
-      const year = selectedYear && selectedYear.length === 2 ? '20' + selectedYear : selectedYear
-      const quarters: Record<string, number[]> = {
-        q1: [1, 2, 3],
-        q2: [4, 5, 6],
-        q3: [7, 8, 9],
-        q4: [10, 11, 12],
-        h1: [1, 2, 3, 4, 5, 6],
-        h2: [7, 8, 9, 10, 11, 12],
-        yearly: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-      }
-      
-      const months = quarters[viewMode] || []
-      filteredHistory = personalHistory.filter(h => {
-        const [y, m] = h.monthKey.split('-')
-        return y === year && months.includes(parseInt(m))
-      })
-    }
+    const person = results.find(r => r.name.toLowerCase().includes(selectedName.toLowerCase()))
+    if (!person) return null
 
-    if (filteredHistory.length === 0) return null
-
-    // Aggregate data
-    const totalEarnings = filteredHistory.reduce((sum, h) => sum + h.totalEarnings, 0)
-    const totalSales = filteredHistory.reduce((sum, h) => sum + h.sales, 0)
-    const totalPackages = filteredHistory.reduce((sum, h) => sum + h.packages, 0)
-    const avgAchievement = filteredHistory.reduce((sum, h) => sum + h.achievement, 0) / filteredHistory.length
-    const avgRank = Math.round(filteredHistory.reduce((sum, h) => sum + h.rank, 0) / filteredHistory.length)
-    
     return {
-      totalEarnings,
-      totalSales,
-      totalPackages,
-      avgAchievement,
-      avgRank,
-      monthCount: filteredHistory.length,
-      bestMonth: filteredHistory.reduce((best, h) => h.achievement > best.achievement ? h : best),
-      history: filteredHistory
+      ...person,
+      achievement: calculatedData.teamAchievement,
+      tier: calculatedData.tier,
+      totalStaff: calculatedData.staffCount
     }
   }
 
-  const aggregatedData = getAggregatedPersonalData()
-  const chartData = personalHistory.slice(-6).map(m => ({
-    month: m.monthKey.substring(5),
-    achievement: m.achievement,
-    earnings: m.totalEarnings / 1000
+  const personalData = getPersonalData()
+
+  // Prepare chart data
+  const salesChartData = results.slice(0, 10).map(r => ({
+    name: r.name.split(' ')[0],
+    sales: r.sales,
+    packages: r.packages
   }))
 
-  if (teamHistory.length === 0 && excelData.length === 0) {
-    return (
-      <section className="card">
-        <div className="card-header">
-          <h2 className="card-title">Performance Analytics</h2>
-          <div className="card-description">
-            Track your progress, spot trends, and unlock achievements based on your performance history.
-          </div>
-        </div>
+  const packagesChartData = results.slice(0, 10).map(r => ({
+    name: r.name.split(' ')[0],
+    packages: r.packages,
+    sales: r.sales
+  }))
 
-        <div style={{
-          padding: '48px 24px',
-          textAlign: 'center',
-          background: 'var(--bg-tertiary)',
-          borderRadius: 'var(--radius-md)',
-          border: '2px dashed var(--border-color)'
-        }}>
-          <div style={{fontSize: '48px', marginBottom: '16px'}}>📊</div>
-          <h3 style={{fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>
-            No Data Yet
-          </h3>
-          <p style={{color: 'var(--text-muted)', marginBottom: '24px'}}>
-            Calculate team incentives in Bulk mode (Monthly view) or upload Excel here to start tracking.
-          </p>
-        </div>
+  const scatterData = results.map(r => ({
+    name: r.name,
+    packages: r.packages,
+    sales: r.sales
+  }))
 
-        <div style={{marginTop: '24px'}}>
-          <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '12px'}}>Or Upload Excel Directly</h3>
-          <input 
-            type="file" 
-            accept=".xlsx,.xls" 
-            onChange={handleFileUpload}
-            disabled={!xlsxLoaded}
-          />
-          {!xlsxLoaded && <p style={{fontSize: '12px', color: 'var(--warning)', marginTop: '8px'}}>⏳ Loading Excel library...</p>}
-        </div>
-      </section>
-    )
-  }
+  const avgSalesData = results.slice(0, 10).map(r => ({
+    name: r.name.split(' ')[0],
+    avgSales: r.avgSalesPerDay,
+    avgPackages: r.avgPackagesPerDay
+  }))
 
   return (
     <section className="card">
       <div className="card-header">
-        <h2 className="card-title">Performance Analytics</h2>
+        <h2 className="card-title">📊 Analytics Dashboard</h2>
         <div className="card-description">
-          Track your progress, spot trends, and unlock achievements.
+          Upload Excel, calculate, and visualize performance with interactive charts across multiple periods.
         </div>
       </div>
 
-      {/* Excel Upload Section */}
+      {/* Upload Section */}
       <div style={{marginBottom: '24px', padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
         <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)'}}>
-          📂 Upload Excel for Analysis
+          📂 Upload Excel
         </h3>
         <input 
           type="file" 
@@ -402,7 +276,7 @@ export function AnalyticsTab() {
           <div>
             <div className="form-grid" style={{marginBottom: '12px'}}>
               <div className="form-group">
-                <label>View Mode</label>
+                <label>View Period</label>
                 <select value={viewMode} onChange={(e) => setViewMode(e.target.value as ViewMode)}>
                   <option value="monthly">Monthly</option>
                   <option value="q1">Q1 (Jan-Mar)</option>
@@ -411,8 +285,8 @@ export function AnalyticsTab() {
                   <option value="q4">Q4 (Oct-Dec)</option>
                   <option value="h1">H1 (Jan-Jun)</option>
                   <option value="h2">H2 (Jul-Dec)</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="alltime">All-Time</option>
+                  <option value="yearly">Annual</option>
+                  <option value="overall">Overall (All-Time)</option>
                 </select>
               </div>
 
@@ -436,7 +310,7 @@ export function AnalyticsTab() {
                 </div>
               )}
 
-              {viewMode !== 'alltime' && (
+              {viewMode !== 'overall' && (
                 <div className="form-group">
                   <label>Year</label>
                   <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
@@ -446,24 +320,227 @@ export function AnalyticsTab() {
                   </select>
                 </div>
               )}
+
+              <div className="form-group">
+                <label>Target (Optional)</label>
+                <input
+                  type="number"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  placeholder="Auto-detect"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>P1 Split: {p1Split}%</label>
+                <input
+                  type="range"
+                  min="50"
+                  max="70"
+                  value={p1Split}
+                  onChange={(e) => setP1Split(Number(e.target.value))}
+                />
+              </div>
             </div>
-            <button className="btn btn-primary" onClick={handleCalculateFromExcel}>
-              Calculate & Save
+            <button className="btn btn-primary" onClick={handleCalculate}>
+              Calculate & Analyze
             </button>
           </div>
         )}
       </div>
 
-      {/* Name Selector */}
-      {teamHistory.length > 0 && (
-        <>
+      {/* Results */}
+      {calculatedData && results.length > 0 && (
+        <div>
+          {/* Summary Cards */}
           <div style={{marginBottom: '24px'}}>
-            <label style={{display: 'block', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>
-              Select Your Name (Optional)
+            <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '12px'}}>
+              {calculatedData.viewTitle} Summary
+              {calculatedData.sheetCount > 1 && (
+                <span style={{fontSize: '13px', color: 'var(--text-muted)', marginLeft: '8px'}}>
+                  ({calculatedData.sheetCount} months aggregated)
+                </span>
+              )}
+            </h3>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px'}}>
+              <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Achievement</div>
+                <div style={{fontSize: '24px', fontWeight: '700', color: calculatedData.teamAchievement >= 100 ? 'var(--success)' : 'var(--warning)'}}>
+                  {calculatedData.teamAchievement.toFixed(1)}%
+                </div>
+              </div>
+
+              <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Tier</div>
+                <div style={{fontSize: '20px', fontWeight: '700', color: calculatedData.tier.color}}>
+                  {calculatedData.tier.name}
+                </div>
+              </div>
+
+              <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Total Pool</div>
+                <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--success)'}}>
+                  {formatCurrency(calculatedData.totalPool)}
+                </div>
+              </div>
+
+              <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Team Size</div>
+                <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                  {calculatedData.staffCount}
+                </div>
+              </div>
+
+              <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Avg per Person</div>
+                <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary)'}}>
+                  {formatCurrency(calculatedData.totalPool / calculatedData.staffCount)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Toggle */}
+          <div style={{marginBottom: '12px', display: 'flex', gap: '8px'}}>
+            <button 
+              onClick={() => setActiveChart('sales')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+                background: activeChart === 'sales' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                color: activeChart === 'sales' ? 'white' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer'
+              }}
+            >
+              💵 Sales Charts
+            </button>
+            <button 
+              onClick={() => setActiveChart('packages')}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+                background: activeChart === 'packages' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                color: activeChart === 'packages' ? 'white' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer'
+              }}
+            >
+              📦 Packages Charts
+            </button>
+          </div>
+
+          {/* Charts Grid */}
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px'}}>
+            
+            {/* Sales Bar Chart */}
+            {activeChart === 'sales' && (
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Top 10 - Sales Performance</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={salesChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                    <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                    <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                    <Tooltip 
+                      contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                      formatter={(value: any) => [`AED ${formatCurrency(value)}`, 'Sales']}
+                    />
+                    <Bar dataKey="sales" fill="#2196f3" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Packages Bar Chart */}
+            {activeChart === 'packages' && (
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Top 10 - Package Count</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={packagesChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                    <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                    <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                    <Tooltip 
+                      contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                      formatter={(value: any) => [value, 'Packages']}
+                    />
+                    <Bar dataKey="packages" fill="#9c27b0" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Sales vs Packages Scatter */}
+            <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+              <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Sales vs Packages Correlation</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <ScatterChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="packages" stroke="var(--text-muted)" style={{fontSize: '12px'}} name="Packages" />
+                  <YAxis dataKey="sales" stroke="var(--text-muted)" style={{fontSize: '12px'}} name="Sales" />
+                  <Tooltip 
+                    contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                    cursor={{ strokeDasharray: '3 3' }}
+                    formatter={(value: any, name: string) => [
+                      name === 'sales' ? `AED ${formatCurrency(value)}` : value,
+                      name === 'sales' ? 'Sales' : 'Packages'
+                    ]}
+                  />
+                  <Scatter data={scatterData} fill="#4caf50" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Average Performance */}
+            <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+              <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Top 10 - Daily Averages</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={avgSalesData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                  <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                  <Tooltip 
+                    contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                  />
+                  <Legend />
+                  <Bar dataKey="avgSales" fill="#ff9800" name="Avg Sales/Day" />
+                  <Bar dataKey="avgPackages" fill="#00bcd4" name="Avg Pkgs/Day" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Distribution Line Chart */}
+            <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+              <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Performance Distribution</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={salesChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                  <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                  <Tooltip 
+                    contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="sales" stroke="#2196f3" strokeWidth={2} name="Sales" />
+                  <Line type="monotone" dataKey="packages" stroke="#9c27b0" strokeWidth={2} name="Packages" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Name Selector for Personal Stats */}
+          <div style={{marginBottom: '24px'}}>
+            <label style={{display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px'}}>
+              View Individual Performance (Optional)
             </label>
-            <select 
-              value={selectedPersonName || ''}
-              onChange={(e) => handleNameChange(e.target.value)}
+            <select
+              value={selectedName}
+              onChange={(e) => setSelectedName(e.target.value)}
               style={{
                 width: '100%',
                 maxWidth: '400px',
@@ -472,338 +549,123 @@ export function AnalyticsTab() {
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)',
                 background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="">View Team Overview</option>
-              {availableNames.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-            <p style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px'}}>
-              {selectedPersonName 
-                ? `Viewing personal analytics for ${selectedPersonName}` 
-                : 'Select your name to see personalized analytics and badges'}
-            </p>
-          </div>
-
-          {/* View Mode for Analytics Display */}
-          <div style={{marginBottom: '24px', padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-            <label style={{display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px'}}>Analytics View Period</label>
-            <select 
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value as ViewMode)}
-              style={{
-                width: '100%',
-                maxWidth: '300px',
-                padding: '10px',
-                fontSize: '14px',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)'
               }}
             >
-              <option value="monthly">Monthly View</option>
-              <option value="q1">Q1 View (Jan-Mar)</option>
-              <option value="q2">Q2 View (Apr-Jun)</option>
-              <option value="q3">Q3 View (Jul-Sep)</option>
-              <option value="q4">Q4 View (Oct-Dec)</option>
-              <option value="h1">H1 View (Jan-Jun)</option>
-              <option value="h2">H2 View (Jul-Dec)</option>
-              <option value="yearly">Yearly View</option>
-              <option value="alltime">All-Time View</option>
+              <option value="">-- Select a person --</option>
+              {results.map(r => (
+                <option key={r.name} value={r.name}>{r.name}</option>
+              ))}
             </select>
-
-            {viewMode === 'monthly' && (
-              <div style={{display: 'flex', gap: '12px', marginTop: '12px'}}>
-                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{padding: '8px', fontSize: '13px'}}>
-                  <option value="Jan">January</option>
-                  <option value="Feb">February</option>
-                  <option value="Mar">March</option>
-                  <option value="Apr">April</option>
-                  <option value="May">May</option>
-                  <option value="Jun">June</option>
-                  <option value="Jul">July</option>
-                  <option value="Aug">August</option>
-                  <option value="Sep">September</option>
-                  <option value="Oct">October</option>
-                  <option value="Nov">November</option>
-                  <option value="Dec">December</option>
-                </select>
-                {availableYears.length > 0 && (
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={{padding: '8px', fontSize: '13px'}}>
-                    {availableYears.map(year => (
-                      <option key={year} value={year}>20{year}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            )}
-
-            {viewMode !== 'alltime' && viewMode !== 'monthly' && availableYears.length > 0 && (
-              <div style={{marginTop: '12px'}}>
-                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} style={{padding: '8px', fontSize: '13px'}}>
-                  {availableYears.map(year => (
-                    <option key={year} value={year}>20{year}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
-          {/* Team Overview or Personal Analytics */}
-          {!selectedPersonName && (
-            <div>
-              <h3 style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '16px'}}>
-                📊 Team Overview
+          {/* Personal Stats */}
+          {personalData && (
+            <div style={{marginBottom: '24px', padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--accent-primary)'}}>
+              <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)'}}>
+                👤 {personalData.name}'s Performance
               </h3>
-              <div style={{padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                <div style={{marginBottom: '20px'}}>
-                  <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px'}}>Months Tracked</div>
-                  <div style={{fontSize: '28px', fontWeight: '700', color: 'var(--accent-primary)', fontFamily: "'JetBrains Mono', monospace"}}>
-                    {teamHistory.length}
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px'}}>
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Rank</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', color: 'var(--accent-primary)'}}>
+                    #{personalData.rank}
+                  </div>
+                  <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px'}}>
+                    of {personalData.totalStaff}
                   </div>
                 </div>
-                <div style={{marginBottom: '16px'}}>
-                  <div style={{fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Recent Months</div>
-                  {teamHistory.slice(-6).map(month => (
-                    <div key={month.monthKey} style={{
-                      padding: '12px',
-                      background: 'var(--bg-primary)',
-                      borderRadius: 'var(--radius-sm)',
-                      marginBottom: '8px',
-                      border: '1px solid var(--border-color)'
-                    }}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '4px'}}>
-                        <span style={{fontWeight: '600', color: 'var(--text-primary)'}}>{month.monthKey}</span>
-                        <span style={{fontSize: '13px', color: 'var(--text-muted)'}}>{month.totalStaff} staff</span>
-                      </div>
-                      <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                        <span style={{fontSize: '13px', color: 'var(--text-secondary)'}}>
-                          {month.teamAchievement.toFixed(1)}% • {month.tier}
-                        </span>
-                        <span style={{fontSize: '13px', fontWeight: '600', color: 'var(--success)'}}>
-                          AED {formatCurrency(month.totalPool)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Total Incentive</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', color: 'var(--success)'}}>
+                    {formatCurrency(personalData.totalIncentive)}
+                  </div>
                 </div>
-                <div style={{
-                  padding: '12px',
-                  background: 'rgba(0, 206, 209, 0.08)',
-                  border: '1px solid rgba(0, 206, 209, 0.2)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)'
-                }}>
-                  💡 <strong>Select your name above</strong> to see personalized analytics, performance trends, and unlock achievement badges!
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Sales</div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                    {formatCurrency(personalData.sales)}
+                  </div>
+                  <div style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px'}}>
+                    {personalData.packages} packages
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Working Days</div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                    {personalData.workingDays}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Avg Sales/Day</div>
+                  <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                    {formatCurrency(personalData.avgSalesPerDay)}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Avg Pkgs/Day</div>
+                  <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                    {personalData.avgPackagesPerDay.toFixed(2)}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Contribution</div>
+                  <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)'}}>
+                    {personalData.contribution.toFixed(2)}%
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>P1 + P2</div>
+                  <div style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>
+                    {formatCurrency(personalData.p1)} + {formatCurrency(personalData.p2)}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {selectedPersonName && aggregatedData && (
-            <div>
-              <div style={{padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: '32px', border: '2px solid var(--border-color)'}}>
-                <h3 style={{fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '16px'}}>
-                  {viewMode === 'monthly' ? '⏱️ Monthly' : viewMode === 'alltime' ? '📊 All-Time' : `📈 ${viewMode.toUpperCase()}`} Performance
-                </h3>
-
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px'}}>
-                  <div style={{padding: '16px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
-                    <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Total Earnings</div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--success)'}}>AED {formatCurrency(aggregatedData.totalEarnings)}</div>
-                  </div>
-                  
-                  <div style={{padding: '16px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
-                    <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Total Sales</div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--accent-primary)'}}>AED {formatCurrency(aggregatedData.totalSales)}</div>
-                  </div>
-
-                  <div style={{padding: '16px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
-                    <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Avg Achievement</div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>{aggregatedData.avgAchievement.toFixed(1)}%</div>
-                  </div>
-
-                  <div style={{padding: '16px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
-                    <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Avg Rank</div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>#{aggregatedData.avgRank}</div>
-                  </div>
-
-                  <div style={{padding: '16px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
-                    <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px'}}>Months Included</div>
-                    <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)'}}>{aggregatedData.monthCount}</div>
-                  </div>
-                </div>
-              </div>
-
-              {personalHistory.length > 0 && (
-                <div style={{marginBottom: '32px'}}>
-                  <h3 style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '16px'}}>
-                    📈 6-Month Performance Trend
-                  </h3>
-                  <div style={{padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                        <XAxis dataKey="month" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
-                        <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
-                        <Tooltip 
-                          contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px'}}
-                          formatter={(value: any) => [`${value.toFixed(1)}%`, 'Achievement']}
-                        />
-                        <Line type="monotone" dataKey="achievement" stroke="var(--accent-primary)" strokeWidth={3} dot={{ fill: 'var(--accent-primary)', r: 4 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-              {lifetimeStats && (
-                <div style={{marginBottom: '32px'}}>
-                  <h3 style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '16px'}}>
-                    🏆 Career Highlights (All-Time)
-                  </h3>
-                  <div style={{padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                    <div style={{marginBottom: '20px'}}>
-                      <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px'}}>Total Earned</div>
-                      <div style={{fontSize: '28px', fontWeight: '700', color: 'var(--success)', fontFamily: "'JetBrains Mono', monospace"}}>
-                        AED {formatCurrency(lifetimeStats.totalEarnings)}
-                      </div>
-                    </div>
-                    <div style={{display: 'grid', gap: '12px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)'}}>
-                        <span style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Months Tracked</span>
-                        <span style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>{lifetimeStats.monthsTracked}</span>
-                      </div>
-                      <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-color)'}}>
-                        <span style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Best Month</span>
-                        <span style={{fontSize: '13px', fontWeight: '600', color: 'var(--success)'}}>
-                          {lifetimeStats.bestMonth.achievement.toFixed(1)}% • {lifetimeStats.bestMonth.monthKey}
-                        </span>
-                      </div>
-                      <div style={{display: 'flex', justifyContent: 'space-between', padding: '8px 0'}}>
-                        <span style={{fontSize: '13px', color: 'var(--text-secondary)'}}>Current Streak</span>
-                        <span style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                          {lifetimeStats.currentStreak > 0 ? `🔥 ${lifetimeStats.currentStreak} months` : 'None'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {badges.length > 0 && (
-                <div style={{marginBottom: '32px'}}>
-                  <h3 style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '16px'}}>
-                    🎖️ Achievement Badges ({badges.length} unlocked)
-                  </h3>
-                  <div style={{padding: '24px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px'}}>
-                      {badges.map(badgeId => {
-                        const badge = getBadgeInfo(badgeId)
-                        return (
-                          <div key={badgeId} style={{
-                            padding: '16px',
-                            background: 'var(--bg-primary)',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '2px solid var(--accent-primary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}>
-                            <span style={{fontSize: '32px'}}>{badge.icon}</span>
-                            <div>
-                              <div style={{fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)'}}>{badge.name}</div>
-                              <div style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px'}}>{badge.description}</div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Data Management */}
+          {/* Warning */}
           <div style={{
+            marginTop: '24px',
             padding: '16px',
-            background: 'var(--bg-tertiary)',
+            background: 'rgba(255, 193, 7, 0.08)',
+            border: '1px solid rgba(255, 193, 7, 0.3)',
             borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-color)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px'
+            fontSize: '13px',
+            color: 'var(--text-secondary)'
           }}>
-            <div>
-              <div style={{fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)'}}>Analytics Data</div>
-              <div style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px'}}>
-                Tracking {teamHistory.length} months • Stored locally in your browser
-              </div>
-            </div>
-            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-              {selectedPersonName && personalHistory.length > 0 && (
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => exportAnalyticsToPDF(personalHistory, lifetimeStats, rankHistory)}
-                >
-                  📕 Export PDF
-                </button>
-              )}
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  if (confirm('Clear all analytics data? This cannot be undone.')) {
-                    localStorage.removeItem('smart_incentive_analytics')
-                    window.location.reload()
-                  }
-                }}
-              >
-                Clear Data
-              </button>
-            </div>
+            ⚠️ <strong>Note:</strong> These results are temporary and will be lost when you close or refresh the page. 
+            To save data permanently, use the <strong>Bulk</strong> tab with Monthly view.
           </div>
+        </div>
+      )}
 
-          {newBadges.length > 0 && (
-            <div style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              background: 'var(--bg-primary)',
-              padding: '20px',
-              borderRadius: 'var(--radius-md)',
-              border: '2px solid var(--success)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              zIndex: 1000,
-              maxWidth: '300px'
-            }}>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px'}}>
-                <h4 style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>
-                  🎉 New Achievement{newBadges.length > 1 ? 's' : ''}!
-                </h4>
-                <button
-                  onClick={() => setNewBadges([])}
-                  style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-muted)'}}
-                >
-                  ×
-                </button>
-              </div>
-              <div style={{fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px'}}>
-                You've unlocked {newBadges.length} new badge{newBadges.length > 1 ? 's' : ''}!
-              </div>
-              <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
-                {newBadges.map(b => getBadgeInfo(b).name).join(', ')}
-              </div>
-            </div>
-          )}
-        </>
+      {/* Empty State */}
+      {!file && (
+        <div style={{
+          padding: '48px 24px',
+          textAlign: 'center',
+          background: 'var(--bg-tertiary)',
+          borderRadius: 'var(--radius-md)',
+          border: '2px dashed var(--border-color)'
+        }}>
+          <div style={{fontSize: '48px', marginBottom: '16px'}}>📊</div>
+          <h3 style={{fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>
+            Analytics Dashboard
+          </h3>
+          <p style={{color: 'var(--text-muted)', marginBottom: '24px'}}>
+            Upload Excel to calculate and visualize performance across multiple periods.
+            <br />
+            <strong>Supports:</strong> Monthly, Q1-Q4, H1-H2, Annual, and Overall analysis.
+          </p>
+        </div>
       )}
     </section>
   )
