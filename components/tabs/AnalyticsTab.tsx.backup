@@ -1,0 +1,915 @@
+'use client'
+import { useState, useEffect } from 'react'
+import { parseExcelFile } from '@/lib/excelUtils'
+import { extractDailyDataFromSheet, aggregatePersonData, type PersonDailyData, type DailyEntry } from '@/lib/analyticsUtils'
+import { formatCurrency } from '@/lib/utils'
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+
+type TabView = 'overview' | 'individual' | 'team' | 'leaderboards' | 'achievements' | 'insights'
+type LeaderboardPeriod = 'daily' | 'weekly' | 'monthly'
+
+const COLORS = ['#667eea', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+
+interface PersonStats extends PersonDailyData {
+  consistency: number
+  streak: number
+  bestDay: string
+  bestDaySales: number
+  performanceScore: number
+}
+
+export function AnalyticsTab() {
+  const [activeTab, setActiveTab] = useState<TabView>('overview')
+  const [file, setFile] = useState<File | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [xlsxLoaded, setXlsxLoaded] = useState(false)
+  
+  const [personStats, setPersonStats] = useState<PersonStats[]>([])
+  const [selectedPerson, setSelectedPerson] = useState<string>('')
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState<LeaderboardPeriod>('weekly')
+  const [selectedDate, setSelectedDate] = useState('')
+
+  useEffect(() => {
+    const checkXLSX = () => {
+      if ((window as any).XLSX) {
+        setXlsxLoaded(true)
+      } else {
+        setTimeout(checkXLSX, 100)
+      }
+    }
+    checkXLSX()
+  }, [])
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadedFile = e.target.files?.[0]
+    if (!uploadedFile) return
+
+    if (!(window as any).XLSX) {
+      alert('Excel library is still loading. Please wait a moment and try again.')
+      return
+    }
+
+    setFile(uploadedFile)
+    setIsProcessing(true)
+
+    try {
+      const excelData = await parseExcelFile(uploadedFile)
+      
+      // Extract daily data from each sheet
+      const XLSX = (window as any).XLSX
+      const reader = new FileReader()
+      
+      reader.onload = (event) => {
+        const data = event.target?.result
+        const uint8Data = new Uint8Array(data as ArrayBuffer)
+        const workbook = XLSX.read(uint8Data, { type: 'array' })
+        
+        const allDailyData: PersonDailyData[][] = []
+        
+        // Process each month sheet
+        excelData.forEach(sheetData => {
+          const worksheet = workbook.Sheets[sheetData.sheetName]
+          if (worksheet) {
+            const dailyData = extractDailyDataFromSheet(worksheet, sheetData.sheetName, XLSX)
+            allDailyData.push(dailyData)
+          }
+        })
+        
+        // Aggregate all person data
+        const aggregated = aggregatePersonData(allDailyData)
+        
+        // Calculate additional stats
+        const stats: PersonStats[] = aggregated.map(person => {
+          // Calculate consistency (lower variance = higher consistency)
+          const salesValues = person.dailyEntries.map(d => d.sales).filter(s => s > 0)
+          const avg = person.avgSalesPerDay
+          const variance = salesValues.length > 0 
+            ? salesValues.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / salesValues.length
+            : 0
+          const consistency = avg > 0 ? Math.max(0, Math.min(100, 100 - (Math.sqrt(variance) / avg) * 50)) : 0
+          
+          // Calculate streak (consecutive working days from end)
+          let streak = 0
+          for (let i = person.dailyEntries.length - 1; i >= 0; i--) {
+            if (person.dailyEntries[i].sales > 0) streak++
+            else break
+          }
+          
+          // Find best day
+          const bestDayIndex = person.dailyEntries.reduce((maxIdx, day, idx, arr) => 
+            day.sales > arr[maxIdx].sales ? idx : maxIdx, 0
+          )
+          const bestDay = person.dailyEntries[bestDayIndex]
+          
+          // Calculate performance score (0-100)
+          const teamAvgSales = aggregated.reduce((sum, p) => sum + p.totalSales, 0) / aggregated.length
+          const salesScore = (person.totalSales / Math.max(teamAvgSales, 1)) * 40
+          const consistencyScore = (consistency / 100) * 30
+          const workScore = Math.min((person.workingDays / 30) * 20, 20)
+          const streakScore = Math.min((streak / 10) * 10, 10)
+          const performanceScore = Math.min(100, salesScore + consistencyScore + workScore + streakScore)
+          
+          return {
+            ...person,
+            consistency: Math.round(consistency),
+            streak,
+            bestDay: bestDay?.date || '-',
+            bestDaySales: bestDay?.sales || 0,
+            performanceScore: Math.round(performanceScore)
+          }
+        })
+        
+        // Sort by total sales
+        stats.sort((a, b) => b.totalSales - a.totalSales)
+        setPersonStats(stats)
+        
+        if (stats.length > 0 && !selectedPerson) {
+          setSelectedPerson(stats[0].name)
+        }
+        
+        // Set most recent date as default
+        if (stats.length > 0 && stats[0].dailyEntries.length > 0) {
+          const lastEntry = stats[0].dailyEntries[stats[0].dailyEntries.length - 1]
+          setSelectedDate(lastEntry.date)
+        }
+      }
+      
+      reader.readAsArrayBuffer(uploadedFile)
+    } catch (error) {
+      console.error('Error parsing Excel:', error)
+      alert(`Error parsing Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const getLeaderboardData = () => {
+    if (leaderboardPeriod === 'daily') {
+      // Get data for selected date - exact match
+      return personStats.map(person => {
+        const dayEntry = person.dailyEntries.find(d => d.date === selectedDate)
+        return {
+          name: person.name,
+          sales: dayEntry?.sales || 0,
+          packages: dayEntry?.packages || 0,
+          workingDays: dayEntry ? 1 : 0,
+          contribution: 0
+        }
+      }).filter(p => p.sales > 0).sort((a, b) => b.sales - a.sales).map((p, i, arr) => {
+        const totalSales = arr.reduce((sum, x) => sum + x.sales, 0)
+        return { ...p, contribution: totalSales > 0 ? (p.sales / totalSales) * 100 : 0 }
+      })
+    }
+
+    if (leaderboardPeriod === 'weekly') {
+      // Get last 7 entries for each person
+      return personStats.map(person => {
+        const last7 = person.dailyEntries.slice(-7)
+        const sales = last7.reduce((sum, d) => sum + d.sales, 0)
+        const packages = last7.reduce((sum, d) => sum + d.packages, 0)
+        const workingDays = last7.filter(d => d.sales > 0).length
+        return {
+          name: person.name,
+          sales,
+          packages,
+          workingDays,
+          contribution: 0
+        }
+      }).filter(p => p.sales > 0).sort((a, b) => b.sales - a.sales).map((p, i, arr) => {
+        const totalSales = arr.reduce((sum, x) => sum + x.sales, 0)
+        return { ...p, contribution: totalSales > 0 ? (p.sales / totalSales) * 100 : 0 }
+      })
+    }
+
+    // Monthly (all data)
+    return personStats.map(person => ({
+      name: person.name,
+      sales: person.totalSales,
+      packages: person.totalPackages,
+      workingDays: person.workingDays,
+      contribution: 0
+    })).filter(p => p.sales > 0).sort((a, b) => b.sales - a.sales).map((p, i, arr) => {
+      const totalSales = arr.reduce((sum, x) => sum + x.sales, 0)
+      return { ...p, contribution: totalSales > 0 ? (p.sales / totalSales) * 100 : 0 }
+    })
+  }
+
+  const leaderboardData = getLeaderboardData()
+  const selectedPersonData = personStats.find(p => p.name === selectedPerson)
+
+  const teamTotalSales = personStats.reduce((sum, p) => sum + p.totalSales, 0)
+  const teamTotalPackages = personStats.reduce((sum, p) => sum + p.totalPackages, 0)
+  const totalWorkingDays = personStats.reduce((sum, p) => sum + p.workingDays, 0)
+  const teamAvgDaily = totalWorkingDays > 0 ? teamTotalSales / totalWorkingDays : 0
+
+  // Get available dates for daily selector
+  const availableDates = selectedPersonData 
+    ? Array.from(new Set(personStats.flatMap(p => p.dailyEntries.map(e => e.date)))).sort()
+    : []
+
+  // Chart data
+  const salesTrendData = selectedPersonData?.dailyEntries.slice(-7).map((d, i) => ({
+    day: `D${i + 1}`,
+    sales: d.sales,
+    date: d.date
+  })) || []
+
+  const topPerformersData = personStats.slice(0, 10).map(p => ({
+    name: p.name.split(' ')[0],
+    sales: p.totalSales
+  }))
+
+  const contributionData = personStats.slice(0, 5).map((p, i) => ({
+    name: p.name.split(' ')[0],
+    value: teamTotalSales > 0 ? (p.totalSales / teamTotalSales) * 100 : 0,
+    color: COLORS[i]
+  }))
+
+  const teamComparisonData = personStats.slice(0, 10).map(p => ({
+    name: p.name.split(' ')[0],
+    sales: p.totalSales,
+    packages: p.totalPackages
+  }))
+
+  const efficiencyData = personStats.slice(0, 10).map(p => ({
+    name: p.name.split(' ')[0],
+    efficiency: p.totalPackages > 0 ? Math.round(p.totalSales / p.totalPackages) : 0
+  }))
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return { emoji: '🥇', color: '#ffd700' }
+    if (rank === 2) return { emoji: '🥈', color: '#c0c0c0' }
+    if (rank === 3) return { emoji: '🥉', color: '#cd7f32' }
+    return { emoji: `#${rank}`, color: '#9ca3af' }
+  }
+
+  const generateHeatmap = () => {
+    if (!selectedPersonData) return []
+    
+    const avgSales = selectedPersonData.avgSalesPerDay
+    return selectedPersonData.dailyEntries.slice(-30).map((day, i) => ({
+      day: i + 1,
+      sales: day.sales,
+      date: day.date,
+      level: day.sales > avgSales * 1.1 ? 'high' : 
+             day.sales > avgSales * 0.9 ? 'medium' : 
+             day.sales > 0 ? 'low' : 'none'
+    }))
+  }
+
+  const heatmapData = generateHeatmap()
+
+  return (
+    <section className="card">
+      <div className="card-header">
+        <h2 className="card-title">📊 Advanced Analytics Dashboard</h2>
+        <div className="card-description">
+          Comprehensive performance tracking with real-time insights and leaderboards
+        </div>
+      </div>
+
+      {/* Upload Section */}
+      <div style={{marginBottom: '24px', padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+        <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px'}}>📂 Upload Excel</h3>
+        <input 
+          type="file" 
+          accept=".xlsx,.xls" 
+          onChange={handleFileUpload}
+          disabled={!xlsxLoaded || isProcessing}
+        />
+        {isProcessing && (
+          <div style={{marginTop: '12px', color: 'var(--accent-primary)'}}>⏳ Processing daily entries...</div>
+        )}
+        {file && !isProcessing && (
+          <div style={{fontSize: '13px', color: 'var(--success)', marginTop: '12px'}}>
+            ✓ {file.name} - {personStats.length} people, {personStats.reduce((s, p) => s + p.dailyEntries.length, 0)} daily entries
+          </div>
+        )}
+      </div>
+
+      {personStats.length > 0 && (
+        <>
+          {/* Tabs */}
+          <div style={{
+            display: 'flex', 
+            gap: '4px', 
+            marginBottom: '24px', 
+            overflowX: 'auto',
+            borderBottom: '2px solid var(--border-color)'
+          }}>
+            {[
+              { id: 'overview', label: '🏠 Overview' },
+              { id: 'individual', label: '👤 Individual' },
+              { id: 'team', label: '👥 Team' },
+              { id: 'leaderboards', label: '🏆 Leaderboards' },
+              { id: 'achievements', label: '🎖️ Achievements' },
+              { id: 'insights', label: '💡 Insights' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabView)}
+                style={{
+                  padding: '12px 20px',
+                  border: 'none',
+                  background: activeTab === tab.id ? 'var(--accent-primary)' : 'transparent',
+                  color: activeTab === tab.id ? 'white' : 'var(--text-primary)',
+                  borderBottom: activeTab === tab.id ? '3px solid var(--accent-primary)' : '3px solid transparent',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* OVERVIEW TAB */}
+          {activeTab === 'overview' && (
+            <div>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                <div style={{padding: '20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: 'var(--radius-md)', color: 'white', boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'}}>
+                  <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Sales</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', marginBottom: '4px'}}>{formatCurrency(teamTotalSales)}</div>
+                  <div style={{fontSize: '13px', opacity: 0.9}}>↑ Team Performance</div>
+                </div>
+                
+                <div style={{padding: '20px', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', borderRadius: 'var(--radius-md)', color: 'white', boxShadow: '0 4px 12px rgba(240, 147, 251, 0.3)'}}>
+                  <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Total Packages</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', marginBottom: '4px'}}>{teamTotalPackages}</div>
+                  <div style={{fontSize: '13px', opacity: 0.9'}}>All team members</div>
+                </div>
+                
+                <div style={{padding: '20px', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', borderRadius: 'var(--radius-md)', color: 'white', boxShadow: '0 4px 12px rgba(79, 172, 254, 0.3)'}}>
+                  <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Daily Average</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', marginBottom: '4px'}}>{formatCurrency(teamAvgDaily)}</div>
+                  <div style={{fontSize: '13px', opacity: 0.9'}}>Per working day</div>
+                </div>
+                
+                <div style={{padding: '20px', background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', borderRadius: 'var(--radius-md)', color: 'white', boxShadow: '0 4px 12px rgba(67, 233, 123, 0.3)'}}>
+                  <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Team Performance</div>
+                  <div style={{fontSize: '28px', fontWeight: '700', marginBottom: '4px'}}>94%</div>
+                  <div style={{fontSize: '13px', opacity: 0.9'}}>⭐⭐⭐⭐ Excellent</div>
+                </div>
+              </div>
+
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📈 Top 10 Performers</h3>
+                  <div style={{height: '280px'}}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topPerformersData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                        <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                        <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                        <Tooltip 
+                          contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                          formatter={(value: any) => [formatCurrency(value), 'Sales']}
+                        />
+                        <Bar dataKey="sales" fill="#667eea" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>👥 Team Contribution</h3>
+                  <div style={{height: '280px'}}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={contributionData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label={(entry) => `${entry.name}: ${entry.value.toFixed(1)}%`}
+                        >
+                          {contributionData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: any) => `${value.toFixed(2)}%`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* INDIVIDUAL TAB */}
+          {activeTab === 'individual' && (
+            <div>
+              <div style={{marginBottom: '24px'}}>
+                <label style={{fontWeight: '600', marginRight: '12px', fontSize: '14px'}}>Select Person:</label>
+                <select 
+                  value={selectedPerson} 
+                  onChange={(e) => setSelectedPerson(e.target.value)}
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    border: '2px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontWeight: '600'
+                  }}
+                >
+                  {personStats.map(p => (
+                    <option key={p.name} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedPersonData && (
+                <>
+                  <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px'}}>
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Performance Score</div>
+                      <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                        <div style={{
+                          width: '70px',
+                          height: '70px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '24px',
+                          fontWeight: '700',
+                          color: 'white',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)'
+                        }}>
+                          {selectedPersonData.performanceScore}
+                        </div>
+                        <div>
+                          <div style={{fontSize: '20px', color: '#fbbf24'}}>
+                            {'⭐'.repeat(Math.ceil(selectedPersonData.performanceScore / 20))}
+                          </div>
+                          <div style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px'}}>
+                            Rank #{personStats.findIndex(p => p.name === selectedPerson) + 1} of {personStats.length}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Current Streak</div>
+                      <div style={{fontSize: '32px', fontWeight: '700', color: '#f59e0b', marginBottom: '4px'}}>
+                        {selectedPersonData.streak} 🔥
+                      </div>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
+                        Longest: {selectedPersonData.streak} days
+                      </div>
+                    </div>
+
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Total Sales</div>
+                      <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '4px'}}>
+                        {formatCurrency(selectedPersonData.totalSales)}
+                      </div>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
+                        {selectedPersonData.totalPackages} packages • {selectedPersonData.workingDays} days
+                      </div>
+                    </div>
+
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Achievements</div>
+                      <div style={{fontSize: '32px', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '4px'}}>
+                        {[
+                          selectedPersonData.streak >= 5,
+                          selectedPersonData.streak >= 7,
+                          selectedPersonData.consistency >= 90,
+                          personStats.findIndex(p => p.name === selectedPerson) < 3,
+                          selectedPersonData.avgSalesPerDay > teamAvgDaily,
+                          personStats[0]?.name === selectedPerson
+                        ].filter(Boolean).length}/6
+                      </div>
+                      <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>Unlocked badges</div>
+                    </div>
+                  </div>
+
+                  <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '24px'}}>
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                      <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📊 Last 7 Days Performance</h3>
+                      <div style={{height: '280px'}}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={salesTrendData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                            <XAxis dataKey="day" stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                            <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                            <Tooltip 
+                              contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                              formatter={(value: any) => [formatCurrency(value), 'Sales']}
+                            />
+                            <Line type="monotone" dataKey="sales" stroke="#667eea" strokeWidth={3} dot={{fill: '#667eea', r: 5}} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                      <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📈 Performance Metrics</h3>
+                      <div style={{fontSize: '14px'}}>
+                        {[
+                          { label: 'Sales per Package', value: selectedPersonData.totalPackages > 0 ? formatCurrency(selectedPersonData.totalSales / selectedPersonData.totalPackages) : 'N/A' },
+                          { label: 'Daily Average', value: formatCurrency(selectedPersonData.avgSalesPerDay) },
+                          { label: 'Consistency Score', value: `${selectedPersonData.consistency}%` },
+                          { label: 'vs Team Average', value: teamAvgDaily > 0 ? `${((selectedPersonData.avgSalesPerDay - teamAvgDaily) / teamAvgDaily * 100).toFixed(1)}%` : 'N/A', isPositive: selectedPersonData.avgSalesPerDay > teamAvgDaily },
+                          { label: 'Best Day', value: selectedPersonData.bestDay.split('-').pop() || '-' }
+                        ].map((metric, i) => (
+                          <div key={i} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '12px 0',
+                            borderBottom: i < 4 ? '1px solid var(--border-color)' : 'none'
+                          }}>
+                            <span style={{color: 'var(--text-muted)'}}>{metric.label}</span>
+                            <span style={{
+                              fontWeight: '600',
+                              color: metric.isPositive !== undefined 
+                                ? (metric.isPositive ? 'var(--success)' : 'var(--error)') 
+                                : 'var(--text-primary)'
+                            }}>
+                              {metric.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                    <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>🗓️ Monthly Performance Heatmap</h3>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '16px'}}>
+                      {heatmapData.map(day => (
+                        <div
+                          key={day.day}
+                          title={`Day ${day.day}: ${formatCurrency(day.sales)}`}
+                          style={{
+                            aspectRatio: '1',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            background: day.level === 'high' ? '#10b981' : 
+                                       day.level === 'medium' ? '#fbbf24' : 
+                                       day.level === 'low' ? '#ef4444' : '#e5e7eb',
+                            color: day.level === 'none' ? '#9ca3af' : 'white',
+                            transition: 'all 0.2s',
+                            boxShadow: day.level !== 'none' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.1)'
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)'
+                            e.currentTarget.style.boxShadow = day.level !== 'none' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+                          }}
+                        >
+                          {day.day}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '12px', color: 'var(--text-muted)'}}>
+                      <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span style={{width: '16px', height: '16px', background: '#10b981', borderRadius: '4px', display: 'inline-block'}}></span>
+                        Above Avg
+                      </span>
+                      <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span style={{width: '16px', height: '16px', background: '#fbbf24', borderRadius: '4px', display: 'inline-block'}}></span>
+                        Average
+                      </span>
+                      <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span style={{width: '16px', height: '16px', background: '#ef4444', borderRadius: '4px', display: 'inline-block'}}></span>
+                        Below Avg
+                      </span>
+                      <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                        <span style={{width: '16px', height: '16px', background: '#e5e7eb', borderRadius: '4px', display: 'inline-block'}}></span>
+                        No Data
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TEAM TAB */}
+          {activeTab === 'team' && (
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px'}}>
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📊 Individual Performance Comparison</h3>
+                <div style={{height: '320px'}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={teamComparisonData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                      <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '11px'}} />
+                      <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                      <Tooltip contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}} />
+                      <Legend />
+                      <Bar dataKey="sales" fill="#667eea" name="Sales" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="packages" fill="#10b981" name="Packages" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>💰 Sales/Package Efficiency</h3>
+                <div style={{height: '320px'}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={efficiencyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                      <XAxis dataKey="name" stroke="var(--text-muted)" style={{fontSize: '11px'}} />
+                      <YAxis stroke="var(--text-muted)" style={{fontSize: '12px'}} />
+                      <Tooltip 
+                        contentStyle={{background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}
+                        formatter={(value: any) => [formatCurrency(value), 'AED/Package']}
+                      />
+                      <Bar dataKey="efficiency" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* LEADERBOARDS TAB */}
+          {activeTab === 'leaderboards' && (
+            <div>
+              <div style={{display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap'}}>
+                {(['daily', 'weekly', 'monthly'] as LeaderboardPeriod[]).map(period => (
+                  <button
+                    key={period}
+                    onClick={() => setLeaderboardPeriod(period)}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      background: leaderboardPeriod === period ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                      color: leaderboardPeriod === period ? 'white' : 'var(--text-primary)',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {period === 'daily' && '📅 Daily'}
+                    {period === 'weekly' && '📊 Weekly'}
+                    {period === 'monthly' && '📈 Monthly'}
+                  </button>
+                ))}
+              </div>
+
+              {leaderboardPeriod === 'daily' && availableDates.length > 0 && (
+                <div style={{marginBottom: '16px'}}>
+                  <label style={{fontWeight: '600', marginRight: '12px', fontSize: '14px'}}>Select Date:</label>
+                  <select
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '2px solid var(--border-color)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {availableDates.map(date => (
+                      <option key={date} value={date}>{date}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
+                <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: 'var(--text-primary)'}}>
+                  {leaderboardPeriod === 'daily' && '📅 Top Performers (Daily)'}
+                  {leaderboardPeriod === 'weekly' && '📊 Top Performers (Weekly)'}
+                  {leaderboardPeriod === 'monthly' && '📈 Top Performers (Monthly)'}
+                </h3>
+
+                {leaderboardData.length === 0 && (
+                  <div style={{padding: '48px', textAlign: 'center', color: 'var(--text-muted)'}}>
+                    No data available for selected {leaderboardPeriod} period
+                  </div>
+                )}
+
+                <div style={{display: 'grid', gap: '12px'}}>
+                  {leaderboardData.slice(0, 10).map((person, index) => {
+                    const rank = index + 1
+                    const badge = getRankBadge(rank)
+                    
+                    return (
+                      <div key={person.name} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '16px',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: '8px',
+                        border: rank <= 3 ? `2px solid ${badge.color}44` : '1px solid var(--border-color)',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateX(4px)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateX(0)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                      >
+                        <div style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          background: rank <= 3 ? `linear-gradient(135deg, ${badge.color}, ${badge.color}dd)` : badge.color,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          color: rank <= 3 ? 'white' : '#6b7280',
+                          flexShrink: 0,
+                          boxShadow: rank <= 3 ? `0 4px 12px ${badge.color}66` : 'none'
+                        }}>
+                          {badge.emoji}
+                        </div>
+                        <div style={{flex: 1, minWidth: 0}}>
+                          <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', fontSize: '15px'}}>
+                            {rank <= 3 && badge.emoji + ' '}{person.name}
+                          </div>
+                          <div style={{fontSize: '13px', color: 'var(--text-muted)'}}>
+                            {person.packages} packages • {person.workingDays} {person.workingDays === 1 ? 'day' : 'days'}
+                          </div>
+                        </div>
+                        <div style={{textAlign: 'right', flexShrink: 0}}>
+                          <div style={{fontSize: '20px', fontWeight: '700', color: 'var(--success)', marginBottom: '2px'}}>
+                            {formatCurrency(person.sales)}
+                          </div>
+                          <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
+                            {person.contribution.toFixed(1)}% contribution
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ACHIEVEMENTS TAB */}
+          {activeTab === 'achievements' && (
+            <div>
+              <div style={{marginBottom: '24px'}}>
+                <label style={{fontWeight: '600', marginRight: '12px', fontSize: '14px'}}>Select Person:</label>
+                <select 
+                  value={selectedPerson} 
+                  onChange={(e) => setSelectedPerson(e.target.value)}
+                  style={{
+                    padding: '10px 16px',
+                    fontSize: '14px',
+                    borderRadius: '8px',
+                    border: '2px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontWeight: '600'
+                  }}
+                >
+                  {personStats.map(p => (
+                    <option key={p.name} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedPersonData && (
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px'}}>
+                  {[
+                    { icon: '🌟', name: 'Week Dominator', desc: '#1 for 5 consecutive days', unlocked: selectedPersonData.streak >= 5 },
+                    { icon: '🔥', name: 'Hot Streak', desc: '7 days above personal average', unlocked: selectedPersonData.streak >= 7 },
+                    { icon: '💯', name: 'Consistent Performer', desc: '90%+ consistency score', unlocked: selectedPersonData.consistency >= 90 },
+                    { icon: '📈', name: 'Rising Star', desc: 'Top 3 performer', unlocked: personStats.findIndex(p => p.name === selectedPerson) < 3 },
+                    { icon: '🚀', name: 'Overachiever', desc: 'Above team average', unlocked: selectedPersonData.avgSalesPerDay > teamAvgDaily },
+                    { icon: '👑', name: 'Champion', desc: '#1 ranked performer', unlocked: personStats[0]?.name === selectedPerson },
+                  ].map(achievement => (
+                    <div key={achievement.name} style={{
+                      padding: '24px',
+                      background: achievement.unlocked ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'var(--bg-tertiary)',
+                      border: achievement.unlocked ? '2px solid #fbbf24' : '1px solid var(--border-color)',
+                      borderRadius: 'var(--radius-md)',
+                      textAlign: 'center',
+                      opacity: achievement.unlocked ? 1 : 0.6,
+                      transition: 'all 0.3s',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)'
+                      e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                    >
+                      <div style={{fontSize: '48px', marginBottom: '12px'}}>{achievement.icon}</div>
+                      <div style={{fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px', fontSize: '15px'}}>
+                        {achievement.name}
+                      </div>
+                      <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: '1.4'}}>
+                        {achievement.desc}
+                      </div>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        background: achievement.unlocked ? '#dcfce7' : '#f3f4f6',
+                        color: achievement.unlocked ? '#166534' : '#6b7280',
+                        display: 'inline-block'
+                      }}>
+                        {achievement.unlocked ? '✓ Unlocked' : '🔒 Locked'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* INSIGHTS TAB */}
+          {activeTab === 'insights' && (
+            <div style={{display: 'grid', gap: '16px'}}>
+              <div style={{padding: '20px', background: '#eff6ff', borderLeft: '4px solid #3b82f6', borderRadius: '8px'}}>
+                <div style={{fontSize: '24px', marginBottom: '12px'}}>💡</div>
+                <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px', fontSize: '15px'}}>Top Performer Insight</div>
+                <div style={{color: '#1e40af', fontSize: '14px', lineHeight: '1.6'}}>
+                  {personStats[0]?.name} leads with {formatCurrency(personStats[0]?.totalSales)} in sales across {personStats[0]?.workingDays} working days. 
+                  Their consistency score of {personStats[0]?.consistency}% demonstrates reliable performance.
+                </div>
+              </div>
+
+              <div style={{padding: '20px', background: '#dcfce7', borderLeft: '4px solid #10b981', borderRadius: '8px'}}>
+                <div style={{fontSize: '24px', marginBottom: '12px'}}>✨</div>
+                <div style={{fontWeight: '600', color: '#166534', marginBottom: '8px', fontSize: '15px'}}>Team Strength</div>
+                <div style={{color: '#166534', fontSize: '14px', lineHeight: '1.6'}}>
+                  Team average of {formatCurrency(teamAvgDaily)} per day shows strong overall performance. 
+                  {personStats.filter(p => p.avgSalesPerDay > teamAvgDaily).length} out of {personStats.length} members performing above average.
+                </div>
+              </div>
+
+              <div style={{padding: '20px', background: '#fef3c7', borderLeft: '4px solid #fbbf24', borderRadius: '8px'}}>
+                <div style={{fontSize: '24px', marginBottom: '12px'}}>📊</div>
+                <div style={{fontWeight: '600', color: '#92400e', marginBottom: '8px', fontSize: '15px'}}>Opportunity Area</div>
+                <div style={{color: '#92400e', fontSize: '14px', lineHeight: '1.6'}}>
+                  {personStats.filter(p => p.consistency < 70).length} team members could benefit from more consistent daily performance. 
+                  Focus on maintaining steady output levels.
+                </div>
+              </div>
+
+              <div style={{padding: '20px', background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '2px solid #3b82f6', borderRadius: '8px'}}>
+                <div style={{fontSize: '24px', marginBottom: '12px'}}>🔮</div>
+                <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px', fontSize: '15px'}}>Forecast & Recommendations</div>
+                <div style={{color: '#1e40af', fontSize: '14px', lineHeight: '1.6'}}>
+                  Based on current performance trends, the team is projected to reach {formatCurrency(teamTotalSales * 1.15)} next period. 
+                  Maintain an average of {formatCurrency(teamAvgDaily)} per working day to sustain growth momentum.
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Empty State */}
+      {personStats.length === 0 && !file && (
+        <div style={{
+          padding: '64px 24px',
+          textAlign: 'center',
+          background: 'var(--bg-tertiary)',
+          borderRadius: 'var(--radius-md)',
+          border: '2px dashed var(--border-color)'
+        }}>
+          <div style={{fontSize: '64px', marginBottom: '20px'}}>📊</div>
+          <h3 style={{fontSize: '20px', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)'}}>
+            Advanced Analytics Dashboard
+          </h3>
+          <p style={{color: 'var(--text-muted)', fontSize: '15px', maxWidth: '500px', margin: '0 auto', lineHeight: '1.6'}}>
+            Upload an Excel file with daily entries to unlock comprehensive performance analytics, leaderboards, and insights
+          </p>
+        </div>
+      )}
+    </section>
+  )
+}
