@@ -5,6 +5,7 @@ import { BulkTab } from '@/components/tabs/BulkTab'
 import { AnalyticsTab } from '@/components/tabs/AnalyticsTab'
 import { SettingsTab } from '@/components/tabs/SettingsTab'
 import { AboutTab } from '@/components/tabs/AboutTab'
+// import { DataEntryTab } from '@/components/tabs/DataEntryTab' // MOCKUP - Uncomment to enable
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('individual')
@@ -52,8 +53,24 @@ export default function Home() {
           className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
           onClick={() => setActiveTab('analytics')}
         >
+          Analytics
+        </button>
+        {/* DATA ENTRY TAB - MOCKUP (Uncomment to show)
+        <button 
+          className={`nav-tab ${activeTab === 'dataentry' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dataentry')}
+        >
+          Data Entry <span style={{fontSize: '10px', opacity: '0.7'}}>*mockup</span>
+        </button>
+        */}
+        {/* ANALYTICS TAB - HIDDEN (Uncomment to show)
+        <button 
+          className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
           Analytics <span style={{fontSize: '10px', opacity: '0.7'}}>*beta</span>
         </button>
+        */}
         <button 
           className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
@@ -70,6 +87,8 @@ export default function Home() {
 
       {activeTab === 'individual' && <IndividualTab />}
       {activeTab === 'bulk' && <BulkTab />}
+      {/* DATA ENTRY TAB - MOCKUP (Uncomment to show) */}
+      {/* {activeTab === 'dataentry' && <DataEntryTab />} */}
       {activeTab === 'analytics' && <AnalyticsTab />}
       {activeTab === 'settings' && <SettingsTab />}
       {activeTab === 'about' && <AboutTab />}

@@ -10,10 +10,10 @@ export interface Tier {
 }
 
 export const DEFAULT_TIERS: Tier[] = [
-  { id: 'tier1', name: 'Tier 1', min: 75, max: 85, rate: 1.5, color: '#ffa726' },
-  { id: 'tier2', name: 'Tier 2', min: 85, max: 101, rate: 2.5, color: '#00CED1' },
-  { id: 'tier3', name: 'Tier 3', min: 101, max: 111, rate: 3.0, color: '#20B2AA' },
-  { id: 'tier4', name: 'Tier 4', min: 111, max: Infinity, rate: 3.5, color: '#48D1CC' },
+  { id: 'tier1', name: 'Tier 1', min: 75, max: 85, rate: 1.5, color: '#ff9800' },  // Orange
+  { id: 'tier2', name: 'Tier 2', min: 85, max: 101, rate: 2.5, color: '#2196f3' }, // Blue
+  { id: 'tier3', name: 'Tier 3', min: 101, max: 111, rate: 3.0, color: '#9c27b0' }, // Purple
+  { id: 'tier4', name: 'Tier 4', min: 111, max: Infinity, rate: 3.5, color: '#4caf50' }, // Green
 ]
 
 export function loadTiers(): Tier[] {
