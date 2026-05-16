@@ -9,7 +9,7 @@ export function AboutTab() {
 
       <div style={{padding: '20px'}}>
         <h3 style={{color: 'var(--accent-primary)', marginBottom: '12px', fontSize: '20px'}}>
-          Smart Incentive Calculator v7.2.1
+          Smart Incentive Calculator v7.2.2
         </h3>
         <p style={{color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.8'}}>
           A comprehensive tool for calculating sales incentives based on team performance and achievement tiers. 
@@ -259,7 +259,7 @@ export function AboutTab() {
           Version & Credits
         </h4>
         <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6'}}>
-          <p><strong style={{color: 'var(--text-primary)'}}>Version:</strong> 7.2.1</p>
+          <p><strong style={{color: 'var(--text-primary)'}}>Version:</strong> 7.2.2</p>
           <p><strong style={{color: 'var(--text-primary)'}}>Built by:</strong> HT under the Keep Alive Project</p>
           <p><strong style={{color: 'var(--text-primary)'}}>Built with:</strong> Next.js 15, React 19, TypeScript 5, and Claude (for Analytics)</p>
           <p><strong style={{color: 'var(--text-primary)'}}>Theme:</strong> Glassmorphism • Dark/Light Mode</p>
