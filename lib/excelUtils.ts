@@ -5,6 +5,7 @@ export interface StaffData {
   packages: number
   sales: number
   workingDays: number
+  clients?: number // Added for May 26 onwards
 }
 
 export interface ExcelData {
@@ -162,16 +163,25 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
     if (nameCell && typeCell && typeCell.v === 'Count of Packages') {
       const name = String(nameCell.v).trim()
       
+      // Check if the next row has "Count of Clients" (new format from May 26 onwards)
+      const nextRowTypeAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
+      const nextRowTypeCell = worksheet[nextRowTypeAddress]
+      const hasClientsRow = nextRowTypeCell && String(nextRowTypeCell.v).includes('Count of Clients')
+      
       if (name && !['STAFF', 'p25', '`', 'Grand totals'].includes(name)) {
+        // Determine row offsets based on format
+        let salesRowOffset = hasClientsRow ? 2 : 1  // Sales is either +1 or +2 rows down
+        
         // Get packages and sales from the month's total column
         const pkgAddress = XLSX.utils.encode_cell({ r: row - 1, c: monthTotalCol })
-        const salesAddress = XLSX.utils.encode_cell({ r: row, c: monthTotalCol })
+        const salesAddress = XLSX.utils.encode_cell({ r: row - 1 + salesRowOffset, c: monthTotalCol })
         
         const pkgCell = worksheet[pkgAddress]
         const salesCell = worksheet[salesAddress]
         
         let packages = 0
         let sales = 0
+        let clients = 0
         let workingDays = 0
         
         // Handle packages (could be formula or number)
@@ -180,6 +190,20 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
             packages = pkgCell.v
           } else if (typeof pkgCell.w === 'string') {
             packages = parseFloat(pkgCell.w) || 0
+          }
+        }
+        
+        // Handle clients if present (new format)
+        if (hasClientsRow) {
+          const clientsAddress = XLSX.utils.encode_cell({ r: row, c: monthTotalCol })
+          const clientsCell = worksheet[clientsAddress]
+          
+          if (clientsCell && clientsCell.v !== 'NA') {
+            if (typeof clientsCell.v === 'number') {
+              clients = clientsCell.v
+            } else if (typeof clientsCell.w === 'string') {
+              clients = parseFloat(clientsCell.w) || 0
+            }
           }
         }
         
@@ -197,7 +221,7 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
         for (let col = 3; col < range.e.c; col++) {
           if (col === monthTotalCol) continue // Skip the total column
           
-          const dailySalesAddress = XLSX.utils.encode_cell({ r: row, c: col })
+          const dailySalesAddress = XLSX.utils.encode_cell({ r: row - 1 + salesRowOffset, c: col })
           const dailyCell = worksheet[dailySalesAddress]
           
           // Count if cell exists, is not NA, and has a positive value
@@ -214,15 +238,22 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
           workingDays = 1
         }
         
-        staff.push({
+        const staffEntry: StaffData = {
           name,
           packages: Math.round(packages),
           sales: Math.round(sales * 100) / 100,
           workingDays
-        })
+        }
+        
+        // Add clients if available (new format)
+        if (hasClientsRow && clients > 0) {
+          staffEntry.clients = Math.round(clients)
+        }
+        
+        staff.push(staffEntry)
       }
       
-      row += 2
+      row += hasClientsRow ? 3 : 2
     } else if (nameCell && String(nameCell.v).trim() === 'Grand totals') {
       break
     } else {
@@ -246,11 +277,14 @@ export function aggregateSheets(sheets: ExcelData[]): ExcelData {
   sheets.forEach(sheet => {
     sheet.staff.forEach(person => {
       if (!aggregated[person.name]) {
-        aggregated[person.name] = { name: person.name, packages: 0, sales: 0, workingDays: 0 }
+        aggregated[person.name] = { name: person.name, packages: 0, sales: 0, workingDays: 0, clients: 0 }
       }
       aggregated[person.name].packages += person.packages
       aggregated[person.name].sales += person.sales
       aggregated[person.name].workingDays += person.workingDays
+      if (person.clients) {
+        aggregated[person.name].clients = (aggregated[person.name].clients || 0) + person.clients
+      }
     })
     totalPackages += sheet.teamTotal.packages
     totalSales += sheet.teamTotal.sales

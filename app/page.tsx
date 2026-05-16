@@ -1,8 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { IndividualTab } from '@/components/tabs/IndividualTab'
-import { BulkTab } from '@/components/tabs/BulkTab'
-import { AnalyticsTab } from '@/components/tabs/AnalyticsTab'
+import { BulkAnalyticsTab } from '@/components/tabs/BulkAnalyticsTab'
 import { SettingsTab } from '@/components/tabs/SettingsTab'
 import { AboutTab } from '@/components/tabs/AboutTab'
 // import { DataEntryTab } from '@/components/tabs/DataEntryTab' // MOCKUP - Uncomment to enable
@@ -33,7 +32,7 @@ export default function Home() {
           {theme === 'dark' ? '🌙' : '☀️'}
         </button>
         <h1>Smart Incentive Calculator</h1>
-        <p className="subtitle">v5.1</p>
+        <p className="subtitle">v7.2.1</p>
       </header>
 
       <nav className="nav-tabs">
@@ -44,16 +43,10 @@ export default function Home() {
           Individual
         </button>
         <button 
-          className={`nav-tab ${activeTab === 'bulk' ? 'active' : ''}`}
-          onClick={() => setActiveTab('bulk')}
+          className={`nav-tab ${activeTab === 'bulk-analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('bulk-analytics')}
         >
-          Bulk
-        </button>
-        <button 
-          className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          Analytics
+          Bulk & Analytics
         </button>
         {/* DATA ENTRY TAB - MOCKUP (Uncomment to show)
         <button 
@@ -61,14 +54,6 @@ export default function Home() {
           onClick={() => setActiveTab('dataentry')}
         >
           Data Entry <span style={{fontSize: '10px', opacity: '0.7'}}>*mockup</span>
-        </button>
-        */}
-        {/* ANALYTICS TAB - HIDDEN (Uncomment to show)
-        <button 
-          className={`nav-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          Analytics <span style={{fontSize: '10px', opacity: '0.7'}}>*beta</span>
         </button>
         */}
         <button 
@@ -86,10 +71,9 @@ export default function Home() {
       </nav>
 
       {activeTab === 'individual' && <IndividualTab />}
-      {activeTab === 'bulk' && <BulkTab />}
+      {activeTab === 'bulk-analytics' && <BulkAnalyticsTab />}
       {/* DATA ENTRY TAB - MOCKUP (Uncomment to show) */}
       {/* {activeTab === 'dataentry' && <DataEntryTab />} */}
-      {activeTab === 'analytics' && <AnalyticsTab />}
       {activeTab === 'settings' && <SettingsTab />}
       {activeTab === 'about' && <AboutTab />}
     </div>

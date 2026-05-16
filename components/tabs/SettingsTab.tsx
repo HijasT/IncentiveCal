@@ -112,7 +112,7 @@ export function SettingsTab() {
                     {tier.name}
                   </div>
                   <div style={{fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px'}}>
-                    {tier.min}% - {tier.max === Infinity ? '∞' : `${tier.max}%`}
+                    {tier.max === Infinity ? `above ${tier.min}%` : `${tier.min}% - ${tier.max}%`}
                   </div>
                   <div style={{fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)'}}>
                     Rate: {tier.rate}%

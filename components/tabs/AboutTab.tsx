@@ -9,7 +9,7 @@ export function AboutTab() {
 
       <div style={{padding: '20px'}}>
         <h3 style={{color: 'var(--accent-primary)', marginBottom: '12px', fontSize: '20px'}}>
-          Smart Incentive Calculator v5.1
+          Smart Incentive Calculator v7.2.1
         </h3>
         <p style={{color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.8'}}>
           A comprehensive tool for calculating sales incentives based on team performance and achievement tiers. 
@@ -147,15 +147,146 @@ export function AboutTab() {
         </div>
 
         <h4 style={{color: 'var(--text-primary)', marginBottom: '12px', marginTop: '28px', fontSize: '16px'}}>
-          Version & License
+          📊 Performance Score v7.2.0 (Percentile-Based)
         </h4>
-        <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6'}}>
-          <p><strong style={{color: 'var(--text-primary)'}}>Version:</strong> 5.1.0</p>
-          <p><strong style={{color: 'var(--text-primary)'}}>Built with:</strong> Next.js 14, React 18, TypeScript 5</p>
-          <p><strong style={{color: 'var(--text-primary)'}}>License:</strong> © 2026 HT - Licensed for general use, Smart Salem prohibited from deployment</p>
+        <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px'}}>
+          <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
+            <p style={{marginBottom: '16px', color: 'var(--text-primary)', fontWeight: '600'}}>
+              The Analytics Dashboard uses a percentile-based weighted formula to calculate individual performance scores (0-100):
+            </p>
+            
+            <div style={{
+              padding: '16px',
+              background: 'linear-gradient(135deg, #667eea, #5568d3)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '20px',
+              color: 'white',
+              fontWeight: '600',
+              fontSize: '15px',
+              textAlign: 'center'
+            }}>
+              Performance Score = (Sales × 50%) + (Productivity × 25%) + (Efficiency × 25%)
+            </div>
+
+            <p style={{marginBottom: '16px', color: 'var(--text-primary)', fontWeight: '600'}}>Component Breakdown:</p>
+
+            <div style={{marginBottom: '20px'}}>
+              <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
+                🏆 1. Sales Performance (50% weight) - Hybrid Formula
+              </p>
+              <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
+                  Rank Score = ((Total People - Rank + 1) ÷ Total People) × 100
+                </code>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
+                  Volume Score = (My Sales ÷ Top Seller) × 100
+                </code>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
+                  Final = (Rank × 60%) + (Volume × 40%)
+                </code>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(102, 126, 234, 0.1)', borderRadius: '6px'}}>
+                  Example: Rank #2/29, 113K sales (vs 130K top)<br/>
+                  → Rank: 96.55, Volume: 87.20<br/>
+                  → <strong style={{color: '#667eea'}}>Final: 92.81/100</strong>
+                </div>
+              </div>
+
+              <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
+                💼 2. Productivity (25% weight) - Percentile-Based
+              </p>
+              <div style={{marginLeft: '12px', marginBottom: '16px'}}>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
+                  Daily Sales = Total Sales ÷ Working Days
+                </code>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
+                  Score = ((Total - Daily Rank + 1) ÷ Total) × 100
+                </code>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px'}}>
+                  Example: 5,967/day, ranked #2/29<br/>
+                  → <strong style={{color: '#f59e0b'}}>96.55/100 (Top 3.4%)</strong>
+                </div>
+              </div>
+
+              <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
+                🎯 3. Efficiency (25% weight) - Percentile-Based
+              </p>
+              <div style={{marginLeft: '12px', marginBottom: '12px'}}>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
+                  Per Client = Total Sales ÷ Clients Served
+                </code>
+                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
+                  Score = ((Total - Per Client Rank + 1) ÷ Total) × 100
+                </code>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px'}}>
+                  Example: 1,828/client, ranked #3/29<br/>
+                  → <strong style={{color: '#10b981'}}>93.10/100 (Top 6.9%)</strong>
+                </div>
+              </div>
+            </div>
+
+            <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Complete Example:</p>
+            <div style={{
+              padding: '16px',
+              background: 'rgba(102, 126, 234, 0.1)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(102, 126, 234, 0.3)',
+              fontSize: '13px',
+              lineHeight: '1.8'
+            }}>
+              <strong>Ahmed (Example Staff):</strong><br/>
+              • Sales: 92.81 × 0.50 = <strong>46.41 pts</strong><br/>
+              • Productivity: 96.55 × 0.25 = <strong>24.14 pts</strong><br/>
+              • Efficiency: 93.10 × 0.25 = <strong>23.28 pts</strong><br/>
+              <br/>
+              <strong style={{color: '#667eea', fontSize: '16px'}}>Total: 93.82/100 (🏆 Exceptional!)</strong>
+            </div>
+
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: 'rgba(16, 185, 129, 0.1)',
+              borderLeft: '3px solid #10b981',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '13px'
+            }}>
+              <strong style={{color: '#10b981'}}>💡 Why Percentile-Based?</strong> Position in team distribution is fair and transparent. 
+              Top performer = 100, others proportional to rank. No artificial caps, always 0-100 scale.
+            </div>
+          </div>
         </div>
 
-        <div style={{marginTop: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px'}}>
+        <h4 style={{color: 'var(--text-primary)', marginBottom: '12px', marginTop: '28px', fontSize: '16px'}}>
+          Version & Credits
+        </h4>
+        <div style={{padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6'}}>
+          <p><strong style={{color: 'var(--text-primary)'}}>Version:</strong> 7.2.1</p>
+          <p><strong style={{color: 'var(--text-primary)'}}>Built by:</strong> HT under the Keep Alive Project</p>
+          <p><strong style={{color: 'var(--text-primary)'}}>Built with:</strong> Next.js 15, React 19, TypeScript 5, and Claude (for Analytics)</p>
+          <p><strong style={{color: 'var(--text-primary)'}}>Theme:</strong> Glassmorphism • Dark/Light Mode</p>
+        </div>
+
+        {/* Legal Disclaimer - Footer */}
+        <div style={{
+          marginTop: '32px',
+          padding: '12px 16px',
+          background: 'rgba(239, 68, 68, 0.1)',
+          borderLeft: '3px solid #ef4444',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '11px',
+          lineHeight: '1.6',
+          color: 'var(--text-secondary)'
+        }}>
+          <p style={{fontWeight: '600', color: '#ef4444', marginBottom: '6px'}}>
+            ⚠️ DISCLAIMER
+          </p>
+          <p style={{marginBottom: '4px'}}>
+            This is a demonstration/prototype only. Not authorized for Smart Salem or any organization. 
+            Provided "as is" without warranty. Not for production, payroll, or financial decisions. 
+            Personal/educational use only.
+          </p>
+        </div>
+
+        <div style={{marginTop: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px'}}>
           <p>Made with ❤️ for sales teams everywhere</p>
         </div>
       </div>

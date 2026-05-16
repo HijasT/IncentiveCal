@@ -17,15 +17,27 @@ export const DEFAULT_TIERS: Tier[] = [
 ]
 
 export function loadTiers(): Tier[] {
+  // Ensure we're in browser environment (Next.js SSR safety)
+  if (typeof window === 'undefined') return DEFAULT_TIERS
+  
   try {
     const stored = localStorage.getItem('sic_tiers')
-    return stored ? JSON.parse(stored) : DEFAULT_TIERS
+    if (!stored) return DEFAULT_TIERS
+    
+    const parsed = JSON.parse(stored)
+    
+    // FIX: JSON.stringify converts Infinity to null, restore it
+    return parsed.map((tier: Tier) => ({
+      ...tier,
+      max: tier.max === null ? Infinity : tier.max
+    }))
   } catch {
     return DEFAULT_TIERS
   }
 }
 
 export function saveTiers(tiers: Tier[]) {
+  if (typeof window === 'undefined') return // Safety check for SSR
   localStorage.setItem('sic_tiers', JSON.stringify(tiers))
 }
 
@@ -72,8 +84,17 @@ export function calculateIncentive(
 ): CalculationResult {
   const tiers = customTiers || loadTiers()
 
-  if (teamTarget <= 0 || teamSales <= 0 || mySales < 0 || staffCount <= 0) {
-    return { error: 'All values must be positive numbers' } as any
+  // Better NaN and validation checks
+  if (isNaN(teamTarget) || isNaN(teamSales) || isNaN(mySales) || isNaN(staffCount) || isNaN(p1Percent)) {
+    return { error: 'Please enter valid numbers for all fields' } as any
+  }
+
+  if (teamTarget <= 0 || teamSales < 0 || mySales < 0 || staffCount <= 0) {
+    return { error: 'Target, staff count must be positive. Sales cannot be negative.' } as any
+  }
+
+  if (teamSales === 0) {
+    return { error: 'Team sales must be greater than zero' } as any
   }
 
   if (mySales > teamSales) {

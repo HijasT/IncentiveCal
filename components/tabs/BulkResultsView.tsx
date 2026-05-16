@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { parseExcelFile, getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } from '@/lib/excelUtils'
-import { calculateIncentive, formatCurrency, getTier, DEFAULT_TIERS, type Tier } from '@/lib/utils'
+import { getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } from '@/lib/excelUtils'
+import { calculateIncentive, formatCurrency, getTier, loadTiers, DEFAULT_TIERS, type Tier } from '@/lib/utils'
 import { saveTeamData, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
 
@@ -15,17 +15,19 @@ interface BulkResult extends StaffData {
   contribution: number
   avgPackagesPerDay: number
   avgSalesPerDay: number
+  clients?: number
 }
 
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
 
-export function BulkTab() {
-  const [file, setFile] = useState<File | null>(null)
-  const [excelData, setExcelData] = useState<ExcelData[]>([])
-  const [viewMode, setViewMode] = useState<ViewMode>('monthly')
-  const [selectedMonth, setSelectedMonth] = useState('Jun')
-  const [selectedYear, setSelectedYear] = useState('')
-  const [availableYears, setAvailableYears] = useState<string[]>([])
+interface BulkResultsViewProps {
+  excelData: ExcelData[]
+  viewMode: ViewMode
+  selectedMonth: string
+  selectedYear: string
+}
+
+export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYear }: BulkResultsViewProps) {
   const [target, setTarget] = useState('')
   const [autoTarget, setAutoTarget] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
@@ -34,58 +36,6 @@ export function BulkTab() {
   const [calculatedData, setCalculatedData] = useState<any>(null)
   const [sortColumn, setSortColumn] = useState<keyof BulkResult>('sales')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [xlsxLoaded, setXlsxLoaded] = useState(false)
-
-  useEffect(() => {
-    const checkXLSX = () => {
-      if ((window as any).XLSX) {
-        setXlsxLoaded(true)
-      } else {
-        setTimeout(checkXLSX, 100)
-      }
-    }
-    checkXLSX()
-  }, [])
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0]
-    if (!uploadedFile) return
-
-    if (!(window as any).XLSX) {
-      alert('Excel library is still loading. Please wait a moment and try again.')
-      return
-    }
-
-    setFile(uploadedFile)
-    setIsProcessing(true)
-
-    try {
-      const data = await parseExcelFile(uploadedFile)
-      setExcelData(data)
-      
-      const years = [...new Set(data.map(d => d.sheetName.split(' ')[1] || d.sheetName.slice(-2)))].sort()
-      setAvailableYears(years)
-      
-      const now = new Date()
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      const currentMonth = monthNames[now.getMonth()]
-      const currentYear = now.getFullYear().toString().slice(-2)
-      
-      setSelectedMonth(currentMonth)
-      if (years.includes(currentYear)) {
-        setSelectedYear(currentYear)
-      } else {
-        setSelectedYear(years[years.length - 1])
-      }
-    } catch (error) {
-      console.error('Error parsing Excel:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Error parsing Excel file: ${errorMsg}`)
-    } finally {
-      setIsProcessing(false)
-    }
-  }
 
   const getSheetsForView = (): ExcelData[] => {
     if (viewMode === 'monthly') {
@@ -161,6 +111,7 @@ export function BulkTab() {
         packages: person.packages,
         sales: person.sales,
         workingDays: person.workingDays,
+        clients: person.clients,
         achievement: teamAchievement,
         tierName: tier.name,
         tierRate: tier.rate,
@@ -175,6 +126,9 @@ export function BulkTab() {
 
     bulkResults.sort((a, b) => b.sales - a.sales)
 
+    // Calculate total clients
+    const totalClients = aggregated.staff.reduce((sum, p) => sum + (p.clients || 0), 0)
+
     setResults(bulkResults)
     setCalculatedData({
       teamAchievement,
@@ -183,6 +137,7 @@ export function BulkTab() {
       target: finalTarget,
       teamSales,
       teamPackages: aggregated.teamTotal.packages,
+      totalClients,
       staffCount: aggregated.staff.length,
       sheets: sheets.map(s => s.sheetName),
       viewMode
@@ -297,7 +252,7 @@ export function BulkTab() {
   const calculateNextTier = () => {
     if (!calculatedData) return null
     
-    const sortedTiers = [...DEFAULT_TIERS].sort((a, b) => a.min - b.min)
+    const sortedTiers = [...loadTiers()].sort((a, b) => a.min - b.min)
     const currentTierIndex = sortedTiers.findIndex(t => t.id === calculatedData.tier.id)
     
     if (calculatedData.tier.rate === 0) {
@@ -345,94 +300,10 @@ export function BulkTab() {
   const nextTierInfo = calculateNextTier()
 
   return (
-    <section className="card">
-      <div className="privacy-notice">
-        <span className="privacy-icon">🔒</span>
-        <span>100% local calculation • No data shared • Browser-only processing • Your data stays private</span>
-      </div>
-
-      <div className="card-header">
-        <h2 className="card-title">Team Incentive Analysis</h2>
-        <div className="card-description">
-          Upload your sales tracking Excel file to automatically calculate team incentives with rankings and downloadable reports.
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Upload Sales Tracker Excel (.xlsx)</label>
-        <input 
-          id="bulk-file" 
-          type="file" 
-          accept=".xlsx,.xls" 
-          onChange={handleFileUpload}
-          disabled={isProcessing || !xlsxLoaded}
-        />
-        {!xlsxLoaded && (
-          <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--warning)'}}>
-            ⏳ Loading Excel library...
-          </div>
-        )}
-        {file && (
-          <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--success)'}}>
-            ✓ {file.name} loaded ({excelData.length} sheets found)
-          </div>
-        )}
-        {isProcessing && (
-          <div style={{marginTop: '8px', fontSize: '13px', color: 'var(--accent-primary)'}}>
-            📂 Processing Excel file...
-          </div>
-        )}
-      </div>
-
+    <>
       {excelData.length > 0 && (
         <>
-          <div className="form-grid" style={{marginTop: '24px'}}>
-            <div className="form-group">
-              <label>View Mode</label>
-              <select value={viewMode} onChange={(e) => setViewMode(e.target.value as ViewMode)}>
-                <option value="monthly">Monthly</option>
-                <option value="q1">Q1 (Jan-Mar)</option>
-                <option value="q2">Q2 (Apr-Jun)</option>
-                <option value="q3">Q3 (Jul-Sep)</option>
-                <option value="q4">Q4 (Oct-Dec)</option>
-                <option value="h1">H1 (Jan-Jun)</option>
-                <option value="h2">H2 (Jul-Dec)</option>
-                <option value="yearly">Yearly</option>
-                <option value="alltime">All-Time</option>
-              </select>
-            </div>
-
-            {viewMode === 'monthly' && (
-              <div className="form-group">
-                <label>Month</label>
-                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
-                  <option value="Jan">January</option>
-                  <option value="Feb">February</option>
-                  <option value="Mar">March</option>
-                  <option value="Apr">April</option>
-                  <option value="May">May</option>
-                  <option value="Jun">June</option>
-                  <option value="Jul">July</option>
-                  <option value="Aug">August</option>
-                  <option value="Sep">September</option>
-                  <option value="Oct">October</option>
-                  <option value="Nov">November</option>
-                  <option value="Dec">December</option>
-                </select>
-              </div>
-            )}
-
-            {viewMode !== 'alltime' && (
-              <div className="form-group">
-                <label>Year</label>
-                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
-                  {availableYears.map(year => (
-                    <option key={year} value={year}>20{year}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
+          <div className="form-grid" style={{marginTop: '0'}}>
             <div className="form-group">
               <label>Team Target (AED) <span style={{fontSize: '12px', color: 'var(--text-muted)'}}>Auto or Manual</span></label>
               <input 
@@ -548,6 +419,12 @@ export function BulkTab() {
               <div className="stat-label">Team Sales</div>
               <div className="stat-value" style={{fontSize: '18px'}}>AED {formatCurrency(calculatedData.teamSales)}</div>
             </div>
+            {calculatedData.totalClients > 0 && (
+              <div className="stat-card">
+                <div className="stat-label">Total Clients</div>
+                <div className="stat-value" style={{fontSize: '20px', color: '#06b6d4'}}>{calculatedData.totalClients} 👥</div>
+              </div>
+            )}
           </div>
 
           <div style={{overflowX: 'auto', marginBottom: '24px'}}>
@@ -564,6 +441,9 @@ export function BulkTab() {
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('packages')}>
                     📦 Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={tableHeaderStyle} onClick={() => handleSort('clients')}>
+                    👥 Clients {sortColumn === 'clients' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('sales')}>
                     💵 Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -616,6 +496,7 @@ export function BulkTab() {
                         AED {formatCurrency(person.totalIncentive)}
                       </td>
                       <td style={tableCellStyle}>{person.packages}</td>
+                      <td style={tableCellStyle}>{person.clients || '-'}</td>
                       <td style={tableCellStyle}>AED {formatCurrency(person.sales)}</td>
                       <td style={{...tableCellStyle, fontSize: '13px', color: 'var(--text-muted)'}}>
                         {person.workingDays || 0}
@@ -693,7 +574,7 @@ export function BulkTab() {
           </div>
         </div>
       )}
-    </section>
+    </>
   )
 }
 
