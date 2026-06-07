@@ -217,6 +217,14 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
     return labels[mode]
   }
 
+
+  const TAB_ICONS: Record<string, React.ReactNode> = {
+    overview:     <HomeIcon />,
+    individual:   <UserIcon />,
+    leaderboards: <TrophyIcon />,
+    achievements: <AwardIcon />,
+    insights:     <InsightIcon />,
+  }
   return (
     <>
       {personData.length > 0 ? (
@@ -227,19 +235,12 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
             marginBottom: '24px',
             overflowX: 'auto',
             padding: '6px',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid var(--glass-border)',
+            background: 'var(--bg-card)',
+            
+            border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-lg)'
           }}>
             {[
-              const TAB_LABELS: Record<string, { icon: React.ReactNode; text: string }> = {
-				overview:     { icon: <HomeIcon />,    text: 'Overview' },
-				individual:   { icon: <UserIcon />,    text: 'Individual' },
-				leaderboards: { icon: <TrophyIcon />,  text: 'Leaderboards' },
-				achievements: { icon: <AwardIcon />,   text: 'Achievements' },
-				insights:     { icon: <InsightIcon />, text: 'Insights' },
-				}
             ].map(tab => (
               <button
                 key={tab.id}
@@ -248,7 +249,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   flex: 1,
                   padding: '12px 16px',
                   border: 'none',
-                  background: activeSubTab === tab.id ? 'var(--gradient-primary)' : 'transparent',
+                  background: activeSubTab === tab.id ? 'var(--accent-primary)' : 'transparent',
                   color: activeSubTab === tab.id ? 'white' : 'var(--text-secondary)',
                   borderRadius: 'var(--radius-md)',
                   fontWeight: '600',
@@ -259,7 +260,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   boxShadow: activeSubTab === tab.id ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
                 }}
               >
-                {TAB_LABELS[tab.id]?.icon}{TAB_LABELS[tab.id]?.text ?? tab.label}
+                <TabIcon id={tab.id} />{tab.label}
               </button>
             ))}
           </div>
@@ -267,22 +268,22 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
           {activeSubTab === 'overview' ? (
             <div>
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px'}}>
-                <div style={{padding: '20px', background: 'linear-gradient(135deg, #667eea, #764ba2)', borderRadius: 'var(--radius-md)', color: 'white'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px'}}>TOTAL SALES</div>
                   <div style={{fontSize: '28px', fontWeight: '700'}}>{formatCurrency(teamTotal)}</div>
                   <div style={{fontSize: '13px', opacity: 0.9}}>{getViewModeLabel(viewMode)}</div>
                 </div>
-                <div style={{padding: '20px', background: 'linear-gradient(135deg, #f093fb, #f5576c)', borderRadius: 'var(--radius-md)', color: 'white'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px'}}>TOTAL PACKAGES</div>
                   <div style={{fontSize: '28px', fontWeight: '700'}}>{teamPackages}</div>
                   <div style={{fontSize: '13px', opacity: 0.9}}>{getViewModeLabel(viewMode)}</div>
                 </div>
-                <div style={{padding: '20px', background: 'linear-gradient(135deg, #4facfe, #00f2fe)', borderRadius: 'var(--radius-md)', color: 'white'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px'}}>DAILY AVERAGE</div>
                   <div style={{fontSize: '28px', fontWeight: '700'}}>{formatCurrency(avgDaily)}</div>
                   <div style={{fontSize: '13px', opacity: 0.9}}>Per working day</div>
                 </div>
-                <div style={{padding: '20px', background: 'linear-gradient(135deg, #43e97b, #38f9d7)', borderRadius: 'var(--radius-md)', color: 'white'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', opacity: 0.9, marginBottom: '8px'}}>TEAM SIZE</div>
                   <div style={{fontSize: '28px', fontWeight: '700'}}>{personData.length}</div>
                   <div style={{fontSize: '13px', opacity: 0.9}}>Active members</div>
@@ -291,7 +292,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
 
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px'}}>
                 <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📈 Top 10 Performers</h3>
+                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}><TrendIcon />Top 10 Performers</h3>
                   <div style={{height: '280px'}}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={topPerformers}>
@@ -306,7 +307,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 </div>
 
                 <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>👥 Team Contribution</h3>
+                  <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>Team Contribution</h3>
                   <div style={{height: '280px'}}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -321,7 +322,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               </div>
 
               <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
-                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}>📊 Team Performance Comparison</h3>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '16px'}}><BarChartIcon />Team Performance Comparison</h3>
                 <div style={{height: '320px'}}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={personData.slice(0, 10).map(p => ({name: p.name.split(' ')[0], sales: p.sales, packages: p.packages}))}>
@@ -351,7 +352,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               {/* Overall Performance Score */}
               <div style={{
                 padding: '24px',
-                background: 'linear-gradient(135deg, var(--turquoise-primary), var(--turquoise-dark))',
+                background: 'var(--accent-primary)',
                 borderRadius: 'var(--radius-lg)',
                 marginBottom: '24px',
                 boxShadow: 'var(--shadow-lg), var(--glow-turquoise)'
@@ -368,25 +369,20 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       out of 100 • Rank #{selected.rank}
                     </div>
                   </div>
-                  <div style={{fontSize: '64px'}}>
-                    {(selected.performanceScore || 0) >= 90 ? '🏆' : 
-                     (selected.performanceScore || 0) >= 75 ? '⭐' :
-                     (selected.performanceScore || 0) >= 60 ? '💪' : '📈'}
-                  </div>
                 </div>
               </div>
 
               {/* Score Breakdown - 4 Weighted Components */}
               <div style={{
                 padding: '20px',
-                background: 'var(--glass-bg)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid var(--glass-border)',
+                background: 'var(--bg-card)',
+                
+                border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-md)',
                 marginBottom: '24px'
               }}>
                 <h3 style={{fontSize: '16px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)'}}>
-                  📊 Performance Breakdown
+                  Performance Breakdown
                 </h3>
                 
                 <div style={{display: 'grid', gap: '16px'}}>
@@ -394,7 +390,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        🏆 Sales Performance
+                        Sales Performance
                         <span 
                           title="Hybrid formula: 60% based on your sales rank position + 40% based on your sales volume vs top seller. Rewards both position and actual performance gap."
                           style={{
@@ -429,7 +425,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{
                         width: `${selected.salesScore || 0}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #667eea, #5568d3)',
+                        background: 'var(--accent-primary)',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
@@ -442,7 +438,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        💼 Productivity
+                        Productivity
                         <span 
                           title="Percentile-based ranking by daily sales output. Shows where you rank among the team in daily sales (Total Sales ÷ Working Days). Top performer = 100."
                           style={{
@@ -477,7 +473,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{
                         width: `${selected.productivityScore || 0}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+                        background: '#f59e0b',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
@@ -490,7 +486,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        🎯 Efficiency
+                        Efficiency
                         <span 
                           title="Percentile-based ranking by sales per client. Shows where you rank in average sale value (Total Sales ÷ Clients Served). Top performer = 100."
                           style={{
@@ -525,7 +521,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{
                         width: `${selected.efficiencyScore || 0}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #10b981, #059669)',
+                        background: '#10b981',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
@@ -561,14 +557,14 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 {selected.clients !== undefined && selected.clients > 0 ? (
                   <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
                     <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Clients Served</div>
-                    <div style={{fontSize: '32px', fontWeight: '700', color: '#06b6d4'}}>{selected.clients} 👥</div>
+                    <div style={{fontSize: '32px', fontWeight: '700', color: '#06b6d4'}}>{selected.clients}</div>
                     <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>Unique clients</div>
                   </div>
                 ) : null}
 
                 <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Working Days</div>
-                  <div style={{fontSize: '32px', fontWeight: '700', color: '#f59e0b'}}>{selected.workingDays} 📅</div>
+                  <div style={{fontSize: '32px', fontWeight: '700', color: '#f59e0b'}}>{selected.workingDays}</div>
                   <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{Math.round((selected.workingDays/22)*100)}% attendance</div>
                 </div>
               </div>
@@ -579,11 +575,11 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px'}}>
               {[
                 { title: '🥇 Daily Champion', data: personData.slice(0, 3) },
-                { title: '👑 Weekly Leaders', data: personData.slice(0, 3) },
-                { title: '📦 Top Packages', data: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3) },
-                { title: '🔥 Most Consistent', data: [...personData].sort((a, b) => (b.consistency || 0) - (a.consistency || 0)).slice(0, 3) },
-                { title: '👥 Most Clients', data: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3) },
-                { title: '💪 Longest Streak', data: [...personData].sort((a, b) => (b.streak || 0) - (a.streak || 0)).slice(0, 3) }
+                { title: 'Weekly Leaders', data: personData.slice(0, 3) },
+                { title: 'Top Packages', data: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3) },
+                { title: 'Most Consistent', data: [...personData].sort((a, b) => (b.consistency || 0) - (a.consistency || 0)).slice(0, 3) },
+                { title: 'Most Clients', data: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3) },
+                { title: 'Longest Streak', data: [...personData].sort((a, b) => (b.streak || 0) - (a.streak || 0)).slice(0, 3) }
               ].map(board => (
                 <div key={board.title} style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px'}}>{board.title}</h3>
@@ -638,7 +634,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                     <div style={{fontSize: '48px', marginBottom: '12px'}}>{ach.icon}</div>
                     <div style={{fontWeight: '700', marginBottom: '8px'}}>{ach.name}</div>
                     <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px'}}>{ach.desc}</div>
-                    <div style={{fontSize: '13px', fontWeight: '700', color: ach.unlocked ? '#166534' : '#6b7280'}}>{ach.unlocked ? '✓ Unlocked' : '🔒 Locked'}</div>
+                    <div style={{fontSize: '13px', fontWeight: '700', color: ach.unlocked ? '#166534' : '#6b7280'}}>{ach.unlocked ? '✓ Unlocked' : 'Locked'}</div>
                   </div>
                 ))}
               </div>
@@ -648,25 +644,21 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
           {activeSubTab === 'insights' ? (
             <div style={{display: 'grid', gap: '16px'}}>
               <div style={{padding: '20px', background: '#eff6ff', borderLeft: '4px solid #3b82f6', borderRadius: '8px'}}>
-                <div style={{fontSize: '24px', marginBottom: '12px'}}>💡</div>
                 <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px'}}>Top Performer</div>
                 <div style={{color: '#1e40af', fontSize: '14px'}}>{personData[0]?.name} leads with {formatCurrency(personData[0]?.sales)} in sales. Consistency: {personData[0]?.consistency}%</div>
               </div>
 
               <div style={{padding: '20px', background: '#dcfce7', borderLeft: '4px solid #10b981', borderRadius: '8px'}}>
-                <div style={{fontSize: '24px', marginBottom: '12px'}}>✨</div>
                 <div style={{fontWeight: '600', color: '#166534', marginBottom: '8px'}}>Team Strength</div>
                 <div style={{color: '#166534', fontSize: '14px'}}>Team average of {formatCurrency(avgDaily)} per day. {personData.filter(p => p.sales / Math.max(p.workingDays, 1) > avgDaily).length}/{personData.length} above average</div>
               </div>
 
               <div style={{padding: '20px', background: '#fef3c7', borderLeft: '4px solid #fbbf24', borderRadius: '8px'}}>
-                <div style={{fontSize: '24px', marginBottom: '12px'}}>📊</div>
                 <div style={{fontWeight: '600', color: '#92400e', marginBottom: '8px'}}>Opportunity</div>
                 <div style={{color: '#92400e', fontSize: '14px'}}>{personData.filter(p => (p.consistency || 0) < 70).length} members could improve consistency</div>
               </div>
 
-              <div style={{padding: '20px', background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '2px solid #3b82f6', borderRadius: '8px'}}>
-                <div style={{fontSize: '24px', marginBottom: '12px'}}>🔮</div>
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
                 <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px'}}>Forecast</div>
                 <div style={{color: '#1e40af', fontSize: '14px'}}>Projected: {formatCurrency(teamTotal * 1.15)} next period at current pace</div>
               </div>
@@ -676,4 +668,13 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
       ) : null}
     </>
   )
+}
+
+function TabIcon({ id }: { id: string }) {
+  if (id === 'overview')     return <HomeIcon />
+  if (id === 'individual')   return <UserIcon />
+  if (id === 'leaderboards') return <TrophyIcon />
+  if (id === 'achievements') return <AwardIcon />
+  if (id === 'insights')     return <InsightIcon />
+  return null
 }

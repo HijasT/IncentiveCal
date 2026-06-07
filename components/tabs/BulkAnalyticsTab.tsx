@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { parseExcelFile, type ExcelData } from '@/lib/excelUtils'
 import { BulkResultsView } from './BulkResultsView'
 import { AnalyticsDashboardView } from './AnalyticsDashboardView'
+import { BarChartIcon, TrendIcon, UploadIcon } from '@/components/icons'
 
 type SubView = 'bulk' | 'analytics'
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
@@ -70,12 +71,11 @@ export function BulkAnalyticsTab() {
   return (
     <section className="card">
       <div className="privacy-notice">
-        <span className="privacy-icon">🔒</span>
-        <span>100% local calculation • No data shared • Browser-only processing • Your data stays private</span>
+        <span>100% local calculation · No data shared · Browser-only processing · Your data stays private</span>
       </div>
 
       <div className="card-header">
-        <h2 className="card-title">📊 Bulk Calculations & Advanced Analytics</h2>
+        <h2 className="card-title"><BarChartIcon className="icon-lg" />Bulk Calculations & Advanced Analytics</h2>
         <div className="card-description">Upload your Excel file to calculate bulk incentives and view comprehensive performance analytics</div>
       </div>
 
@@ -89,7 +89,7 @@ export function BulkAnalyticsTab() {
         textAlign: 'center'
       }}>
         <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--accent-primary)'}}>
-          📂 Upload Excel File (Shared)
+          <UploadIcon />Upload Excel File (Shared)
         </h3>
         <input 
           type="file" 
@@ -289,7 +289,7 @@ export function BulkAnalyticsTab() {
                 flex: 1,
                 padding: '14px 20px',
                 border: 'none',
-                background: subView === 'bulk' ? 'var(--gradient-primary)' : 'transparent',
+                background: subView === 'bulk' ? 'var(--accent-primary)' : 'transparent',
                 color: subView === 'bulk' ? 'white' : 'var(--text-secondary)',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
@@ -299,7 +299,7 @@ export function BulkAnalyticsTab() {
                 boxShadow: subView === 'bulk' ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
               }}
             >
-              📊 Bulk Results
+              <BarChartIcon />Bulk Results
             </button>
             <button
               onClick={() => setSubView('analytics')}
@@ -307,7 +307,7 @@ export function BulkAnalyticsTab() {
                 flex: 1,
                 padding: '14px 20px',
                 border: 'none',
-                background: subView === 'analytics' ? 'var(--gradient-primary)' : 'transparent',
+                background: subView === 'analytics' ? 'var(--accent-primary)' : 'transparent',
                 color: subView === 'analytics' ? 'white' : 'var(--text-secondary)',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
@@ -317,7 +317,7 @@ export function BulkAnalyticsTab() {
                 boxShadow: subView === 'analytics' ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
               }}
             >
-              📈 Analytics Dashboard (beta)
+              <TrendIcon />Analytics Dashboard (beta)
             </button>
           </div>
 
@@ -349,7 +349,9 @@ export function BulkAnalyticsTab() {
           borderRadius: 'var(--radius-md)',
           border: '2px dashed var(--border-color)'
         }}>
-          <div style={{fontSize: '64px', marginBottom: '20px'}}>📊</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:'20px',color:'var(--text-muted)'}}>
+            <BarChartIcon className="icon-lg" style={{width:'56px',height:'56px'}} />
+          </div>
           <h3 style={{fontSize: '20px', fontWeight: '700', marginBottom: '12px'}}>
             Upload Excel to Get Started
           </h3>

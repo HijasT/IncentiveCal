@@ -23,8 +23,7 @@ export function IndividualTab() {
   return (
     <section className="card">
       <div className="privacy-notice">
-        <span className="privacy-icon">🔒</span>
-        <span>100% local calculation • No data shared • Browser-only processing • Your data stays private</span>
+        <span>100% local calculation · No data shared · Browser-only processing · Your data stays private</span>
       </div>
 
       <div className="card-header">
@@ -107,7 +106,6 @@ export function IndividualTab() {
       {results && !results.error && (
         <div className="results-panel">
           <div className="results-header">
-            <span>💰</span>
             <span>Your Incentive Breakdown</span>
           </div>
           
@@ -168,7 +166,6 @@ export function IndividualTab() {
               background: 'rgba(0, 230, 118, 0.08)'
             } : {}}>
               <div className="reverse-calc-title" style={results.nextTierInfo.isMaxTier ? {color: 'var(--success)'} : {}}>
-                <span>{results.nextTierInfo.isMaxTier ? '🎉' : '🎯'}</span>
                 <span>Tier Ladder</span>
               </div>
               {results.nextTierInfo.isMaxTier ? (

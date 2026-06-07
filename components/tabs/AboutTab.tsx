@@ -21,12 +21,12 @@ export function AboutTab() {
         </h4>
         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px', marginBottom: '24px'}}>
           {[
-            { icon: '💰', title: 'Individual Calculator', desc: 'Calculate personal incentives with P1/P2 splits' },
-            { icon: '📊', title: 'Bulk Processing', desc: 'Upload Excel and process entire team at once' },
-            { icon: '📈', title: 'Performance Analytics', desc: 'Track trends, achievements, and milestones' },
-            { icon: '⚙️', title: 'Customizable Tiers', desc: 'Configure achievement thresholds and rates' },
-            { icon: '🎯', title: 'Tier Ladder', desc: 'See requirements to reach next tier level' },
-            { icon: '🔒', title: '100% Private', desc: 'All calculations happen in your browser' },
+            { title: 'Individual Calculator', desc: 'Calculate personal incentives with P1/P2 splits' },
+            { title: 'Bulk Processing', desc: 'Upload Excel and process entire team at once' },
+            { title: 'Performance Analytics', desc: 'Track trends, achievements, and milestones' },
+            { title: 'Customizable Tiers', desc: 'Configure achievement thresholds and rates' },
+            { title: 'Tier Ladder', desc: 'See requirements to reach next tier level' },
+            { title: '100% Private', desc: 'All calculations happen in your browser' },
           ].map((feature, i) => (
             <div key={i} style={{
               padding: '16px',
@@ -34,7 +34,6 @@ export function AboutTab() {
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-color)'
             }}>
-              <div style={{fontSize: '28px', marginBottom: '8px'}}>{feature.icon}</div>
               <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', fontSize: '14px'}}>
                 {feature.title}
               </div>
@@ -147,7 +146,7 @@ export function AboutTab() {
         </div>
 
         <h4 style={{color: 'var(--text-primary)', marginBottom: '12px', marginTop: '28px', fontSize: '16px'}}>
-          📊 Performance Score v7.2.0 (Percentile-Based)
+          Performance Score v7.2.0 (Percentile-Based)
         </h4>
         <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px'}}>
           <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
@@ -172,7 +171,7 @@ export function AboutTab() {
 
             <div style={{marginBottom: '20px'}}>
               <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
-                🏆 1. Sales Performance (50% weight) - Hybrid Formula
+                1. Sales Performance (50% weight) - Hybrid Formula
               </p>
               <div style={{marginLeft: '12px', marginBottom: '16px'}}>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
@@ -192,7 +191,7 @@ export function AboutTab() {
               </div>
 
               <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
-                💼 2. Productivity (25% weight) - Percentile-Based
+                2. Productivity (25% weight) - Percentile-Based
               </p>
               <div style={{marginLeft: '12px', marginBottom: '16px'}}>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
@@ -208,7 +207,7 @@ export function AboutTab() {
               </div>
 
               <p style={{color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px'}}>
-                🎯 3. Efficiency (25% weight) - Percentile-Based
+                3. Efficiency (25% weight) - Percentile-Based
               </p>
               <div style={{marginLeft: '12px', marginBottom: '12px'}}>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
@@ -238,7 +237,7 @@ export function AboutTab() {
               • Productivity: 96.55 × 0.25 = <strong>24.14 pts</strong><br/>
               • Efficiency: 93.10 × 0.25 = <strong>23.28 pts</strong><br/>
               <br/>
-              <strong style={{color: '#667eea', fontSize: '16px'}}>Total: 93.82/100 (🏆 Exceptional!)</strong>
+              <strong style={{color: '#667eea', fontSize: '16px'}}>Total: 93.82/100 (Exceptional!)</strong>
             </div>
 
             <div style={{
@@ -249,7 +248,7 @@ export function AboutTab() {
               borderRadius: 'var(--radius-sm)',
               fontSize: '13px'
             }}>
-              <strong style={{color: '#10b981'}}>💡 Why Percentile-Based?</strong> Position in team distribution is fair and transparent. 
+              <strong style={{color: '#10b981'}}>Why Percentile-Based?</strong> Position in team distribution is fair and transparent. 
               Top performer = 100, others proportional to rank. No artificial caps, always 0-100 scale.
             </div>
           </div>
@@ -277,7 +276,7 @@ export function AboutTab() {
           color: 'var(--text-secondary)'
         }}>
           <p style={{fontWeight: '600', color: '#ef4444', marginBottom: '6px'}}>
-            ⚠️ DISCLAIMER
+            DISCLAIMER
           </p>
           <p style={{marginBottom: '4px'}}>
             This is a demonstration/prototype only. Not authorized for Smart Salem or any organization. 

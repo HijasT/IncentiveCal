@@ -4,6 +4,7 @@ import { getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } f
 import { calculateIncentive, formatCurrency, getTier, loadTiers, DEFAULT_TIERS, type Tier } from '@/lib/utils'
 import { saveTeamData, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
+import { DownloadIcon } from '@/components/icons'
 
 interface BulkResult extends StaffData {
   achievement: number
@@ -369,7 +370,6 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
             borderRadius: 'var(--radius-md)',
             marginBottom: '24px'
           }}>
-            <span style={{fontSize: '24px'}}>💰</span>
             <span style={{fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)'}}>
               Team Incentives - {getViewTitle()}
             </span>
@@ -422,7 +422,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
             {calculatedData.totalClients > 0 && (
               <div className="stat-card">
                 <div className="stat-label">Total Clients</div>
-                <div className="stat-value" style={{fontSize: '20px', color: '#06b6d4'}}>{calculatedData.totalClients} 👥</div>
+                <div className="stat-value" style={{fontSize: '20px', color: '#06b6d4'}}>{calculatedData.totalClients}</div>
               </div>
             )}
           </div>
@@ -437,25 +437,25 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                     Name {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('totalIncentive')}>
-                    💰 Total {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Total {sortColumn === 'totalIncentive' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('packages')}>
-                    📦 Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Packages {sortColumn === 'packages' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('clients')}>
-                    👥 Clients {sortColumn === 'clients' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Clients {sortColumn === 'clients' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('sales')}>
-                    💵 Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Sales {sortColumn === 'sales' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('workingDays')}>
-                    📅 Days {sortColumn === 'workingDays' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Days {sortColumn === 'workingDays' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('avgPackagesPerDay')}>
-                    📦/Day {sortColumn === 'avgPackagesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Packages/Day {sortColumn === 'avgPackagesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={{...tableHeaderStyle, fontSize: '12px', cursor: 'pointer'}} onClick={() => handleSort('avgSalesPerDay')}>
-                    💵/Day {sortColumn === 'avgSalesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Sales/Day {sortColumn === 'avgSalesPerDay' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('contribution')}>
                     % Share {sortColumn === 'contribution' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -527,8 +527,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                 marginBottom: '24px'
               }}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                  <span style={{fontSize: '20px'}}>🎉</span>
-                  <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>Tier Ladder</span>
+                      <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--success)'}}>Tier Ladder</span>
                 </div>
                 <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
                   + AED {formatCurrency(nextTierInfo.extraIncentive)}
@@ -549,8 +548,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                 marginBottom: '24px'
               }}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px'}}>
-                  <span style={{fontSize: '20px'}}>🎯</span>
-                  <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Tier Ladder</span>
+                      <span style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>Tier Ladder</span>
                 </div>
                 <div style={{fontSize: '24px', fontWeight: '700', color: 'var(--accent-primary)', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace"}}>
                   AED {formatCurrency(nextTierInfo.deficit)}
@@ -566,10 +564,10 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
 
           <div style={{display: 'flex', gap: '12px'}}>
             <button className="btn btn-secondary" onClick={handleExportCSV}>
-              <span>📄 Download CSV</span>
+              <><DownloadIcon />Download CSV</>
             </button>
             <button className="btn btn-secondary" onClick={() => exportBulkToPDF(calculatedData, results)}>
-              <span>📕 Download PDF</span>
+              <><DownloadIcon />Download PDF</>
             </button>
           </div>
         </div>

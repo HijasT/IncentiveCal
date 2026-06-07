@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { IndividualTab } from '@/components/tabs/IndividualTab'
+import { MoonIcon, SunIcon } from '@/components/icons'
 import { BulkAnalyticsTab } from '@/components/tabs/BulkAnalyticsTab'
 import { SettingsTab } from '@/components/tabs/SettingsTab'
 import { AboutTab } from '@/components/tabs/AboutTab'
-// import { DataEntryTab } from '@/components/tabs/DataEntryTab' // MOCKUP - Uncomment to enable
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('individual')
@@ -29,7 +29,7 @@ export default function Home() {
     <div className="container">
       <header className="header">
         <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-          {theme === 'dark' ? '🌙' : '☀️'}
+          {theme === 'dark' ? <MoonIcon large /> : <SunIcon large />}
         </button>
         <h1>Smart Incentive Calculator</h1>
         <p className="subtitle">v7.2.1</p>

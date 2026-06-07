@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { DEFAULT_TIERS, loadTiers, saveTiers, type Tier } from '@/lib/utils'
+import { SlidersIcon, SaveIcon, BarChartIcon } from '@/components/icons'
 
 export function SettingsTab() {
   const [tiers, setTiers] = useState<Tier[]>(DEFAULT_TIERS)
@@ -54,21 +55,21 @@ export function SettingsTab() {
     
     saveTiers(sortedTiers)
     setTiers(sortedTiers)
-    alert('✓ Tier settings saved successfully!')
+    alert('Tier settings saved.')
   }
 
   const handleReset = () => {
     if (confirm('Reset to default tier settings?')) {
       setTiers(DEFAULT_TIERS)
       saveTiers(DEFAULT_TIERS)
-      alert('✓ Tier settings reset to defaults!')
+      alert('Tier settings reset to defaults.')
     }
   }
 
   return (
     <section className="card">
       <div className="card-header">
-        <h2 className="card-title">⚙️ Tier Configuration</h2>
+        <h2 className="card-title"><SlidersIcon className="icon-lg" />Tier Configuration</h2>
         <div className="card-description">
           Customize achievement tiers, rates, and colors
         </div>
@@ -93,7 +94,7 @@ export function SettingsTab() {
             justifyContent: 'space-between'
           }}
         >
-          <span>📊 Current Tier System</span>
+          <span><BarChartIcon />Current Tier System</span>
           <span style={{fontSize: '12px', opacity: 0.7}}>{showDefaults ? '▼ Hide' : '▶ Show'}</span>
         </button>
 
@@ -124,7 +125,7 @@ export function SettingsTab() {
               ))}
             </div>
             <div style={{padding: '12px', background: 'rgba(33, 150, 243, 0.08)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)'}}>
-              💡 This shows your current tier configuration. Click "Reset to Defaults" to restore original colors: Orange → Blue → Purple → Green
+              Your current tier configuration. Click "Reset to Defaults" to restore original colors (Orange · Blue · Purple · Green).
             </div>
           </div>
         )}
@@ -276,7 +277,7 @@ export function SettingsTab() {
           <span>↺ Reset to Defaults</span>
         </button>
         <button className="btn btn-primary" onClick={handleSave} style={{flex: '1'}}>
-          <span>💾 Save Settings</span>
+<><SaveIcon />Save Settings</>
         </button>
       </div>
 
