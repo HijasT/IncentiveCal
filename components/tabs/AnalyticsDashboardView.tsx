@@ -1,4 +1,5 @@
 'use client'
+import { HomeIcon, UserIcon, TrophyIcon, AwardIcon, InsightIcon, TrendIcon, BarChartIcon } from '@/components/icons'
 import { useState, useEffect, useMemo } from 'react'
 import { type ExcelData } from '@/lib/excelUtils'
 import { formatCurrency } from '@/lib/utils'
@@ -232,11 +233,13 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
             borderRadius: 'var(--radius-lg)'
           }}>
             {[
-              { id: 'overview', label: '🏠 Overview & Team' },
-              { id: 'individual', label: '👤 Individual' },
-              { id: 'leaderboards', label: '🏆 Leaderboards' },
-              { id: 'achievements', label: '🎖️ Achievements' },
-              { id: 'insights', label: '💡 Insights' }
+              const TAB_LABELS: Record<string, { icon: React.ReactNode; text: string }> = {
+				overview:     { icon: <HomeIcon />,    text: 'Overview' },
+				individual:   { icon: <UserIcon />,    text: 'Individual' },
+				leaderboards: { icon: <TrophyIcon />,  text: 'Leaderboards' },
+				achievements: { icon: <AwardIcon />,   text: 'Achievements' },
+				insights:     { icon: <InsightIcon />, text: 'Insights' },
+				}
             ].map(tab => (
               <button
                 key={tab.id}
@@ -256,7 +259,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   boxShadow: activeSubTab === tab.id ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
                 }}
               >
-                {tab.label}
+                {TAB_LABELS[tab.id]?.icon}{TAB_LABELS[tab.id]?.text ?? tab.label}
               </button>
             ))}
           </div>
