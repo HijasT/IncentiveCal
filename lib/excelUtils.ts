@@ -78,21 +78,39 @@ export async function parseExcelFile(file: File): Promise<ExcelData[]> {
   })
 }
 
-// Get available month sheets - matches original HTML logic
-function getAvailableMonthsFromWorkbook(workbook: any): string[] {
-  const months: string[] = []
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+// Get available month sheets - accepts both abbreviated and full month names,
+// normalises everything to short form so downstream code stays consistent.
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  
+
+const FULL_TO_SHORT: Record<string, string> = {
+  January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr',
+  June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep',
+  October: 'Oct', November: 'Nov', December: 'Dec',
+  // May is already short, no entry needed
+}
+
+function normaliseSheetName(name: string): string {
+  for (const [full, abbr] of Object.entries(FULL_TO_SHORT)) {
+    if (name.includes(full)) return name.replace(full, abbr)
+  }
+  return name
+}
+
+function getAvailableMonthsFromWorkbook(workbook: any): string[] {
+  const allNames = [...SHORT_MONTHS, ...Object.keys(FULL_TO_SHORT), 'May']
+  const months: string[] = []
+
   workbook.SheetNames.forEach((sheetName: string) => {
-    const hasMonth = monthNames.some(month => sheetName.includes(month))
-    const hasYear = /\d{2}/.test(sheetName)
-    
-    if (hasMonth && hasYear && sheetName.length <= 10) {
-      months.push(sheetName)
+    const hasMonth = allNames.some(m => sheetName.includes(m))
+    const hasYear  = /\d{2}/.test(sheetName)
+
+    // Accept up to 15 chars to cover "September 26" (12) etc.
+    if (hasMonth && hasYear && sheetName.length <= 15) {
+      months.push(normaliseSheetName(sheetName))
     }
   })
-  
+
   return months.sort()
 }
 
@@ -216,17 +234,40 @@ function extractStaffFromSheet(worksheet: any, sheetName: string, XLSX: any): { 
           }
         }
         
-        // Count working days by checking daily columns (columns 3 onwards, excluding total column)
-        // Look for daily sales values that are not NA and not zero
-        for (let col = 3; col < range.e.c; col++) {
-          if (col === monthTotalCol) continue // Skip the total column
-          
+        // Identify genuine daily columns: headers whose value is an integer 1–31.
+        // This excludes summary columns (weekly totals, averages, percentiles etc.)
+        // which hold text or large date-serial values, preventing over-counting.
+        const dayColumns: number[] = []
+        for (let col = 3; col <= range.e.c; col++) {
+          if (col === monthTotalCol) continue
+          const hAddr = XLSX.utils.encode_cell({ r: 2, c: col })
+          const hCell = worksheet[hAddr]
+          if (!hCell) continue
+          // Raw value: plain integer 1-31
+          if (typeof hCell.v === 'number' && Number.isInteger(hCell.v) && hCell.v >= 1 && hCell.v <= 31) {
+            dayColumns.push(col)
+            continue
+          }
+          // Formatted value: string that is purely a number 1-31 (handles some date formats)
+          if (hCell.w) {
+            const w = String(hCell.w).trim()
+            const n = parseInt(w, 10)
+            if (!isNaN(n) && n >= 1 && n <= 31 && String(n) === w) {
+              dayColumns.push(col)
+            }
+          }
+        }
+
+        // Count working days only across genuine day columns
+        for (const col of dayColumns) {
           const dailySalesAddress = XLSX.utils.encode_cell({ r: row - 1 + salesRowOffset, c: col })
           const dailyCell = worksheet[dailySalesAddress]
-          
-          // Count if cell exists, is not NA, and has a positive value
-          if (dailyCell && dailyCell.v !== 'NA' && dailyCell.v !== null && dailyCell.v !== undefined && dailyCell.v !== '') {
-            const value = typeof dailyCell.v === 'number' ? dailyCell.v : parseFloat(String(dailyCell.w || dailyCell.v || '0'))
+
+          if (dailyCell && dailyCell.v !== 'NA' && dailyCell.v !== null &&
+              dailyCell.v !== undefined && dailyCell.v !== '') {
+            const value = typeof dailyCell.v === 'number'
+              ? dailyCell.v
+              : parseFloat(String(dailyCell.w || dailyCell.v || '0'))
             if (!isNaN(value) && value > 0) {
               workingDays++
             }
