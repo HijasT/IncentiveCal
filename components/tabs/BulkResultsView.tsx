@@ -32,7 +32,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
   const [target, setTarget] = useState('')
   const [autoTarget, setAutoTarget] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
-  const [p1Split, setP1Split] = useState(60)
+  const [p1Split, setP1Split] = useState(50)
   const [results, setResults] = useState<BulkResult[]>([])
   const [calculatedData, setCalculatedData] = useState<any>(null)
   const [sortColumn, setSortColumn] = useState<keyof BulkResult>('sales')

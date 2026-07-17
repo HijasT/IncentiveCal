@@ -6,8 +6,8 @@ export function IndividualTab() {
   const [teamTarget, setTeamTarget] = useState('')
   const [teamSales, setTeamSales] = useState('')
   const [mySales, setMySales] = useState('')
-  const [staffCount, setStaffCount] = useState('30')
-  const [p1Split, setP1Split] = useState(60)
+  const [staffCount, setStaffCount] = useState('29')
+  const [p1Split, setP1Split] = useState(50)
   const [results, setResults] = useState<CalculationResult | null>(null)
 
   const calculate = () => {
