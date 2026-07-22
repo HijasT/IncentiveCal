@@ -1,13 +1,14 @@
 'use client'
 import { useState } from 'react'
+import { DEFAULT_P1_SPLIT, DEFAULT_STAFF_COUNT } from '@/lib/config'
 import { calculateIncentive, formatCurrency, type CalculationResult } from '@/lib/utils'
 
 export function IndividualTab() {
   const [teamTarget, setTeamTarget] = useState('')
   const [teamSales, setTeamSales] = useState('')
   const [mySales, setMySales] = useState('')
-  const [staffCount, setStaffCount] = useState('29')
-  const [p1Split, setP1Split] = useState(50)
+  const [staffCount, setStaffCount] = useState(String(DEFAULT_STAFF_COUNT))
+  const [p1Split, setP1Split] = useState(DEFAULT_P1_SPLIT)
   const [results, setResults] = useState<CalculationResult | null>(null)
 
   const calculate = () => {

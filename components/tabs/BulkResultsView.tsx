@@ -4,6 +4,7 @@ import { getAvailableMonths, aggregateSheets, type ExcelData, type StaffData } f
 import { calculateIncentive, formatCurrency, getTier, loadTiers, DEFAULT_TIERS, type Tier } from '@/lib/utils'
 import { saveTeamData, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
+import { DEFAULT_P1_SPLIT } from '@/lib/config'
 import { DownloadIcon } from '@/components/icons'
 
 interface BulkResult extends StaffData {
@@ -32,11 +33,12 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
   const [target, setTarget] = useState('')
   const [autoTarget, setAutoTarget] = useState(0)
   const [staffCount, setStaffCount] = useState(0)
-  const [p1Split, setP1Split] = useState(50)
+  const [p1Split, setP1Split] = useState(DEFAULT_P1_SPLIT)
   const [results, setResults] = useState<BulkResult[]>([])
   const [calculatedData, setCalculatedData] = useState<any>(null)
   const [sortColumn, setSortColumn] = useState<keyof BulkResult>('sales')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [excludedStaff, setExcludedStaff] = useState<Set<string>>(new Set())
 
   const getSheetsForView = (): ExcelData[] => {
     if (viewMode === 'monthly') {
@@ -68,6 +70,25 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
     })
   }
 
+  const toggleExclude = (name: string) => {
+    setExcludedStaff(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  const clearExclusions = () => setExcludedStaff(new Set())
+
+  // Auto-recalculate when exclusions change, but only if a calculation exists
+  // We use a ref to avoid running on mount
+  const isFirstRender = typeof window !== 'undefined' ? false : true
+  useEffect(() => {
+    if (calculatedData) handleCalculate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludedStaff])
+
   const handleCalculate = () => {
     const sheets = getSheetsForView()
     
@@ -98,15 +119,19 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
       return
     }
 
-    const teamSales = aggregated.teamTotal.sales
+    // Filter out excluded staff before recalculating
+    const activeStaff = aggregated.staff.filter(p => !excludedStaff.has(p.name))
+
+    const teamSales = activeStaff.reduce((sum, p) => sum + p.sales, 0)
+    const teamPackages = activeStaff.reduce((sum, p) => sum + p.packages, 0)
     const teamAchievement = (teamSales / finalTarget) * 100
     const tier = getTier(teamAchievement)
     const totalPool = (tier.rate / 100) * teamSales
 
-    const bulkResults: BulkResult[] = aggregated.staff.map(person => {
-      const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, aggregated.staff.length, p1Split)
+    const bulkResults: BulkResult[] = activeStaff.map(person => {
+      const personCalc = calculateIncentive(finalTarget, teamSales, person.sales, activeStaff.length, p1Split)
       const workDays = person.workingDays || 1
-      
+
       return {
         name: person.name,
         packages: person.packages,
@@ -127,8 +152,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
 
     bulkResults.sort((a, b) => b.sales - a.sales)
 
-    // Calculate total clients
-    const totalClients = aggregated.staff.reduce((sum, p) => sum + (p.clients || 0), 0)
+    const totalClients = activeStaff.reduce((sum, p) => sum + (p.clients || 0), 0)
 
     setResults(bulkResults)
     setCalculatedData({
@@ -137,9 +161,10 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
       totalPool,
       target: finalTarget,
       teamSales,
-      teamPackages: aggregated.teamTotal.packages,
+      teamPackages,
       totalClients,
-      staffCount: aggregated.staff.length,
+      staffCount: activeStaff.length,
+      excludedCount: excludedStaff.size,
       sheets: sheets.map(s => s.sheetName),
       viewMode
     })
@@ -387,6 +412,35 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
             <strong style={{color: 'var(--accent-primary)'}}>Sheets used:</strong> {calculatedData.sheets.join(', ')}
           </div>
 
+          {calculatedData.excludedCount > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'rgba(251,191,36,0.1)',
+              border: '1px solid rgba(251,191,36,0.4)',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: '16px',
+              fontSize: '13px',
+              color: 'var(--warning)'
+            }}>
+              <span>
+                <strong>{calculatedData.excludedCount} staff excluded</strong>
+                {' '}— totals and incentives recalculated for the remaining {calculatedData.staffCount}
+              </span>
+              <button
+                onClick={clearExclusions}
+                style={{
+                  background: 'none', border: '1px solid var(--warning)',
+                  color: 'var(--warning)', padding: '4px 10px',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: '600'
+                }}
+              >
+                Restore all
+              </button>
+            </div>
+          )}
+
           <div className="summary-stats" style={{marginBottom: '32px'}}>
             <div className="stat-card">
               <div className="stat-label">Team Achievement</div>
@@ -465,6 +519,9 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                   </th>
                   <th style={tableHeaderStyle} onClick={() => handleSort('p2')}>
                     P2 {sortColumn === 'p2' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{...tableHeaderStyle, width: '60px', textAlign: 'center'}}>
+                    Excl.
                   </th>
                 </tr>
               </thead>

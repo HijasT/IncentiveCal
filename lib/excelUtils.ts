@@ -159,29 +159,59 @@ function extractStaffFromSheet(
     monthTotalCol = 2
   }
 
-  // Build list of genuine daily columns: headers in row 3 whose value is an
-  // integer 1–31. This excludes weekly subtotals, averages, percentile columns
-  // and any other summary columns that would inflate the working-days count.
+  // Build list of genuine daily columns.
+  //
+  // Excel stores day-of-month headers in several ways depending on how the
+  // sheet was built:
+  //   a) Plain integer 1–31     → hCell.v is 1, 2 … 31
+  //   b) Date serial number     → hCell.v is e.g. 46574 (large number); the
+  //      formatted display hCell.w shows the day: "1", "01", "1-Jun", "Jun-1"
+  //   c) String "1"–"31"        → hCell.v is the string itself
+  //
+  // We accept a column as a "day column" when we can extract a day number
+  // 1–31 from either the raw value or the formatted string.  Everything else
+  // (month-total column, weekly sub-totals, text headers, large non-date
+  // numbers) is excluded.
   const dayColumns: number[] = []
+
   for (let col = 3; col <= range.e.c; col++) {
     if (col === monthTotalCol) continue
     const hCell = worksheet[XLSX.utils.encode_cell({ r: 2, c: col })]
     if (!hCell) continue
 
-    // Plain integer value 1-31
-    if (typeof hCell.v === 'number' &&
-        Number.isInteger(hCell.v) &&
+    let dayNum: number | null = null
+
+    // Case (a): plain integer 1–31 stored directly
+    if (typeof hCell.v === 'number' && Number.isInteger(hCell.v) &&
         hCell.v >= 1 && hCell.v <= 31) {
-      dayColumns.push(col)
-      continue
-    }
-    // Formatted string "1"–"31" (some Excel date formats)
-    if (hCell.w) {
-      const n = parseInt(String(hCell.w).trim(), 10)
-      if (!isNaN(n) && n >= 1 && n <= 31 && String(n) === String(hCell.w).trim()) {
-        dayColumns.push(col)
+      dayNum = hCell.v
+
+    // Case (b): Excel date serial — hCell.t === 'd' or large number
+    // Extract day from the formatted display string (hCell.w)
+    } else if (typeof hCell.v === 'number' && hCell.v > 31 && hCell.w) {
+      // hCell.w might be "1", "01", "1-Jun", "Jun-1", "1/6", "6/1" etc.
+      // Try to pull the first numeric token that is 1–31
+      const match = String(hCell.w).match(/\b(\d{1,2})\b/)
+      if (match) {
+        const n = parseInt(match[1], 10)
+        if (n >= 1 && n <= 31) dayNum = n
+      }
+
+    // Case (c): string value like "1" or "01"
+    } else if (typeof hCell.v === 'string') {
+      const n = parseInt(hCell.v.trim(), 10)
+      if (!isNaN(n) && n >= 1 && n <= 31) dayNum = n
+
+    // Case (d): formatted display even when raw value is unrecognised
+    } else if (hCell.w) {
+      const match = String(hCell.w).match(/^\s*(\d{1,2})\s*$/)
+      if (match) {
+        const n = parseInt(match[1], 10)
+        if (n >= 1 && n <= 31) dayNum = n
       }
     }
+
+    if (dayNum !== null) dayColumns.push(col)
   }
 
   // Walk staff rows starting at row 4
