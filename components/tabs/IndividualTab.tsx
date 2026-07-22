@@ -83,18 +83,18 @@ export function IndividualTab() {
         </div>
         <input 
           type="range" 
-          min="10" 
-          max="90" 
+          min="0" 
+          max="100" 
           value={p1Split}
           step="5" 
           onChange={(e) => setP1Split(Number(e.target.value))}
         />
         <div className="slider-ticks">
-          <span>10/90</span>
-          <span>30/70</span>
+          <span>0/100</span>
+          <span>25/75</span>
           <span>50/50</span>
-          <span>70/30</span>
-          <span>90/10</span>
+          <span>75/25</span>
+          <span>100/0</span>
         </div>
       </div>
 

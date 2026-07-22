@@ -9,7 +9,7 @@ export function AboutTab() {
 
       <div style={{padding: '20px'}}>
         <h3 style={{color: 'var(--accent-primary)', marginBottom: '12px', fontSize: '20px'}}>
-          Smart Incentive Calculator v7.2.2
+          Smart Incentive Calculator v7.2.5
         </h3>
         <p style={{color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.8'}}>
           A comprehensive tool for calculating sales incentives based on team performance and achievement tiers. 

@@ -15,7 +15,6 @@ export function BulkAnalyticsTab() {
   const [selectedYear, setSelectedYear] = useState('26')
   const [excelData, setExcelData] = useState<ExcelData[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
-  const [xlsxLoaded, setXlsxLoaded] = useState(false)
   const [availableYears, setAvailableYears] = useState<string[]>([])
 
   // Extract available years from excelData
@@ -34,25 +33,9 @@ export function BulkAnalyticsTab() {
     }
   }, [excelData])
 
-  useEffect(() => {
-    const checkXLSX = () => {
-      if ((window as any).XLSX) {
-        setXlsxLoaded(true)
-      } else {
-        setTimeout(checkXLSX, 100)
-      }
-    }
-    checkXLSX()
-  }, [])
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0]
     if (!uploadedFile) return
-
-    if (!(window as any).XLSX) {
-      alert('Excel library is still loading. Please wait a moment and try again.')
-      return
-    }
 
     setIsProcessing(true)
 
@@ -95,20 +78,18 @@ export function BulkAnalyticsTab() {
           type="file" 
           accept=".xlsx,.xls" 
           onChange={handleFileUpload}
-          disabled={!xlsxLoaded || isProcessing}
+          disabled={isProcessing}
           style={{
             padding: '10px 20px',
             background: 'rgba(0, 206, 209, 0.1)',
             border: '1px solid rgba(0, 206, 209, 0.3)',
             borderRadius: '6px',
             color: 'var(--text-primary)',
-            cursor: xlsxLoaded && !isProcessing ? 'pointer' : 'not-allowed'
+            cursor: isProcessing ? 'not-allowed' : 'pointer'
           }}
         />
         <p style={{fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px'}}>
-          {!xlsxLoaded ? 'Loading Excel library...' : 
-           isProcessing ? 'Processing...' : 
-           'Upload once - use for both Bulk Results and Analytics'}
+          {isProcessing ? 'Processing...' : 'Upload once — use for both Bulk Results and Analytics'}
         </p>
       </div>
 
