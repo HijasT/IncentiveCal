@@ -7,7 +7,7 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
     import('jspdf-autotable'),
   ])
 
-  const doc = new jsPDF()
+  const doc = new jsPDF({ orientation: 'landscape' })
   const pageWidth = doc.internal.pageSize.getWidth()
 
   doc.setFontSize(20)
@@ -59,7 +59,13 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
     person.name,
     formatCurrency(person.totalIncentive),
     person.packages,
+    person.clients ?? '-',
     formatCurrency(person.sales),
+    person.workingDays,
+    person.avgPackagesPerDay.toFixed(2),
+    formatCurrency(person.avgSalesPerDay),
+    person.clients ? person.avgClientsPerDay.toFixed(2) : '-',
+    person.clients ? person.maxKpiClients : '-',
     `${person.contribution.toFixed(2)}%`,
     formatCurrency(person.p1),
     formatCurrency(person.p2),
@@ -67,7 +73,7 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
 
   autoTable(doc, {
     startY: finalY + 3,
-    head: [['Rank', '', 'Name', 'Total (AED)', 'Packages', 'Sales (AED)', '% Share', 'P1 (AED)', 'P2 (AED)']],
+    head: [['Rank', '', 'Name', 'Total (AED)', 'Packages', 'Clients', 'Sales (AED)', 'Days', 'Pkg/Day', 'Sales/Day', 'Clients/Day', 'Max KPI Clients', '% Share', 'P1 (AED)', 'P2 (AED)']],
     body: tableData,
     theme: 'grid',
     headStyles: { fillColor: [0, 206, 209] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 9 },

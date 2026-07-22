@@ -8,14 +8,46 @@ import { BarChartIcon, TrendIcon, UploadIcon } from '@/components/icons'
 type SubView = 'bulk' | 'analytics'
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
 
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const getCurrentMonthShort = () => SHORT_MONTHS[new Date().getMonth()]
+const getCurrentYearShort  = () => String(new Date().getFullYear()).slice(-2)
+
+// Persists the shared upload + view selection so switching tabs (which
+// unmounts this component) doesn't lose the uploaded workbook.
+const STORAGE_KEY = 'sic_bulk_upload'
+
+interface PersistedUpload {
+  excelData: ExcelData[]
+  viewMode: ViewMode
+  selectedMonth: string
+  selectedYear: string
+}
+
+function loadPersistedUpload(): Partial<PersistedUpload> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function BulkAnalyticsTab() {
   const [subView, setSubView] = useState<SubView>('bulk')
-  const [viewMode, setViewMode] = useState<ViewMode>('monthly')
-  const [selectedMonth, setSelectedMonth] = useState('May')
-  const [selectedYear, setSelectedYear] = useState('26')
-  const [excelData, setExcelData] = useState<ExcelData[]>([])
+  const persisted = loadPersistedUpload()
+  const [viewMode, setViewMode] = useState<ViewMode>(persisted.viewMode ?? 'monthly')
+  const [selectedMonth, setSelectedMonth] = useState(persisted.selectedMonth ?? getCurrentMonthShort())
+  const [selectedYear, setSelectedYear] = useState(persisted.selectedYear ?? getCurrentYearShort())
+  const [excelData, setExcelData] = useState<ExcelData[]>(persisted.excelData ?? [])
   const [isProcessing, setIsProcessing] = useState(false)
   const [availableYears, setAvailableYears] = useState<string[]>([])
+
+  // Persist shared upload state so it survives a tab switch/remount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ excelData, viewMode, selectedMonth, selectedYear }))
+  }, [excelData, viewMode, selectedMonth, selectedYear])
 
   // Extract available years from excelData
   useEffect(() => {
@@ -25,6 +57,9 @@ export function BulkAnalyticsTab() {
         const match = sheet.sheetName.match(/\d{2}$/)
         if (match) years.add(match[0])
       })
+      // Keep the currently selected year selectable even if no sheet matches it yet
+      // (e.g. auto-selected current year on upload before that sheet exists).
+      if (selectedYear) years.add(selectedYear)
       const yearList = Array.from(years).sort()
       setAvailableYears(yearList)
       if (yearList.length > 0 && !selectedYear) {
@@ -42,6 +77,11 @@ export function BulkAnalyticsTab() {
     try {
       const data = await parseExcelFile(uploadedFile)
       setExcelData(data)
+      // Auto-select the current month/year on every fresh upload — the user
+      // still has to press "Calculate" explicitly, this only sets the filter.
+      setViewMode('monthly')
+      setSelectedMonth(getCurrentMonthShort())
+      setSelectedYear(getCurrentYearShort())
     } catch (error) {
       console.error('Error parsing Excel:', error)
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'

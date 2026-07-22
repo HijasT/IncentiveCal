@@ -56,17 +56,64 @@ const TD: React.CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
+// Persists computed results so switching tabs (which unmounts this
+// component) doesn't lose the last calculation.
+const STORAGE_KEY = 'sic_bulk_results'
+
+interface PersistedResults {
+  target: string
+  autoTarget: number
+  staffCount: number
+  p1Split: number
+  results: BulkResult[]
+  calculatedData: any
+  excludedStaff: string[]
+}
+
+function loadPersistedResults(): Partial<PersistedResults> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYear }: Props) {
-  const [target, setTarget]           = useState('')
-  const [autoTarget, setAutoTarget]   = useState(0)
-  const [staffCount, setStaffCount]   = useState(0)
-  const [p1Split, setP1Split]         = useState(DEFAULT_P1_SPLIT)
-  const [results, setResults]         = useState<BulkResult[]>([])
-  const [calculatedData, setCalcData] = useState<any>(null)
+  const persisted = loadPersistedResults()
+  const [target, setTarget]           = useState(persisted.target ?? '')
+  const [autoTarget, setAutoTarget]   = useState(persisted.autoTarget ?? 0)
+  const [staffCount, setStaffCount]   = useState(persisted.staffCount ?? 0)
+  const [p1Split, setP1Split]         = useState(persisted.p1Split ?? DEFAULT_P1_SPLIT)
+  const [results, setResults]         = useState<BulkResult[]>(persisted.results ?? [])
+  const [calculatedData, setCalcData] = useState<any>(persisted.calculatedData ?? null)
   const [sortColumn, setSortCol]      = useState<SortCol>('sales')
   const [sortDir, setSortDir]         = useState<'asc' | 'desc'>('desc')
-  const [excludedStaff, setExcluded]  = useState<Set<string>>(new Set())
-  const hasCalcRef = useRef(false)
+  const [excludedStaff, setExcluded]  = useState<Set<string>>(new Set(persisted.excludedStaff ?? []))
+  const hasCalcRef = useRef(!!persisted.calculatedData)
+
+  // Persist the last calculation so it survives a tab switch/remount.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      target, autoTarget, staffCount, p1Split, results, calculatedData,
+      excludedStaff: Array.from(excludedStaff),
+    }))
+  }, [target, autoTarget, staffCount, p1Split, results, calculatedData, excludedStaff])
+
+  // Clear a previous calculation when a genuinely new file is uploaded while
+  // this view is mounted (not on the initial mount/restore from persistence).
+  const prevExcelDataRef = useRef(excelData)
+  useEffect(() => {
+    if (prevExcelDataRef.current !== excelData) {
+      prevExcelDataRef.current = excelData
+      setResults([])
+      setCalcData(null)
+      setExcluded(new Set())
+      hasCalcRef.current = false
+    }
+  }, [excelData])
 
   const getSheetsForView = (): ExcelData[] => {
     if (viewMode === 'alltime') return excelData
@@ -98,7 +145,15 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
 
   const clearExclusions = () => setExcluded(new Set())
 
+  // Recalculate on exclusion toggles only — not on mount, so restoring a
+  // persisted calculation (see hasCalcRef init above) doesn't itself
+  // re-trigger a calculation or alert() if the view selectors have since changed.
+  const isFirstRender = useRef(true)
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     if (hasCalcRef.current) handleCalculate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [excludedStaff])
@@ -289,8 +344,10 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
             <div className="stat-card"><div className="stat-label">Achievement</div><div className="stat-value">{calculatedData.teamAchievement.toFixed(2)}<span className="stat-unit">%</span></div></div>
             <div className="stat-card">
               <div className="stat-label">Current Tier</div>
-              <div className="stat-value" style={{fontSize:'18px'}}>{calculatedData.tier.name}</div>
-              <div className="tier-badge" style={{background:`${calculatedData.tier.color}22`,color:calculatedData.tier.color,marginTop:'8px'}}>{calculatedData.tier.rate}% rate</div>
+              <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                <div className="stat-value" style={{fontSize:'18px'}}>{calculatedData.tier.name}</div>
+                <div className="tier-badge" style={{background:`${calculatedData.tier.color}22`,color:calculatedData.tier.color,marginTop:0}}>{calculatedData.tier.rate}% rate</div>
+              </div>
             </div>
             <div className="stat-card"><div className="stat-label">Total Pool</div><div className="stat-value" style={{fontSize:'18px'}}>AED {formatCurrency(calculatedData.totalPool)}</div></div>
             <div className="stat-card"><div className="stat-label">Active Staff</div><div className="stat-value">{calculatedData.staffCount}</div></div>

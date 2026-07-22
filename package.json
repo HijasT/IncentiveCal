@@ -1,6 +1,6 @@
 {
   "name": "smart-incentive-calculator",
-  "version": "7.3.0",
+  "version": "7.3.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
