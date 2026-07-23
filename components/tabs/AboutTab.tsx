@@ -127,7 +127,7 @@ export function AboutTab() {
             </div>
 
             <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Final Result:</p>
-            <div style={{marginLeft: '12px', padding: '12px', background: 'rgba(0, 206, 209, 0.1)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(0, 206, 209, 0.3)'}}>
+            <div style={{marginLeft: '12px', padding: '12px', background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)'}}>
               <strong style={{color: 'var(--success)', fontSize: '16px'}}>Total Incentive = P1 + P2</strong><br/>
               <strong style={{color: 'var(--success)', fontSize: '16px'}}>Total Incentive = 456.21 + 882.00</strong><br/>
               <strong style={{color: 'var(--success)', fontSize: '18px'}}>Total Incentive = AED 1,338.21</strong>
@@ -138,7 +138,7 @@ export function AboutTab() {
         <h4 style={{color: 'var(--text-primary)', marginBottom: '12px', marginTop: '28px', fontSize: '16px'}}>
           Privacy & Data
         </h4>
-        <div style={{padding: '16px', background: 'rgba(0, 206, 209, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(0, 206, 209, 0.2)', marginBottom: '24px'}}>
+        <div style={{padding: '16px', background: 'var(--accent-soft)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px'}}>
           <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
             All data is stored locally in your browser. No server or database required. 
             Your calculations, settings, and analytics never leave your device.
@@ -156,13 +156,14 @@ export function AboutTab() {
             
             <div style={{
               padding: '16px',
-              background: 'linear-gradient(135deg, #667eea, #5568d3)',
+              background: 'var(--accent-primary)',
               borderRadius: 'var(--radius-md)',
               marginBottom: '20px',
               color: 'white',
               fontWeight: '600',
               fontSize: '15px',
-              textAlign: 'center'
+              textAlign: 'center',
+              fontFamily: "'JetBrains Mono', monospace"
             }}>
               Performance Score = (Sales × 50%) + (Productivity × 25%) + (Efficiency × 25%)
             </div>
@@ -183,10 +184,10 @@ export function AboutTab() {
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
                   Final = (Rank × 60%) + (Volume × 40%)
                 </code>
-                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(102, 126, 234, 0.1)', borderRadius: '6px'}}>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', borderRadius: '6px'}}>
                   Example: Rank #2/29, 113K sales (vs 130K top)<br/>
                   → Rank: 96.55, Volume: 87.20<br/>
-                  → <strong style={{color: '#667eea'}}>Final: 92.81/100</strong>
+                  → <strong style={{color: 'var(--accent-primary)'}}>Final: 92.81/100</strong>
                 </div>
               </div>
 
@@ -200,9 +201,9 @@ export function AboutTab() {
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
                   Score = ((Total - Daily Rank + 1) ÷ Total) × 100
                 </code>
-                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '6px'}}>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--warning) 10%, transparent)', borderRadius: '6px'}}>
                   Example: 5,967/day, ranked #2/29<br/>
-                  → <strong style={{color: '#f59e0b'}}>96.55/100 (Top 3.4%)</strong>
+                  → <strong style={{color: 'var(--warning)'}}>96.55/100 (Top 3.4%)</strong>
                 </div>
               </div>
 
@@ -216,9 +217,9 @@ export function AboutTab() {
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
                   Score = ((Total - Per Client Rank + 1) ÷ Total) × 100
                 </code>
-                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px'}}>
+                <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--success) 10%, transparent)', borderRadius: '6px'}}>
                   Example: 1,828/client, ranked #3/29<br/>
-                  → <strong style={{color: '#10b981'}}>93.10/100 (Top 6.9%)</strong>
+                  → <strong style={{color: 'var(--success)'}}>93.10/100 (Top 6.9%)</strong>
                 </div>
               </div>
             </div>
@@ -226,9 +227,9 @@ export function AboutTab() {
             <p style={{marginBottom: '12px', color: 'var(--text-primary)', fontWeight: '600'}}>Complete Example:</p>
             <div style={{
               padding: '16px',
-              background: 'rgba(102, 126, 234, 0.1)',
+              background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)',
               borderRadius: 'var(--radius-sm)',
-              border: '1px solid rgba(102, 126, 234, 0.3)',
+              border: '1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent)',
               fontSize: '13px',
               lineHeight: '1.8'
             }}>
@@ -237,18 +238,18 @@ export function AboutTab() {
               • Productivity: 96.55 × 0.25 = <strong>24.14 pts</strong><br/>
               • Efficiency: 93.10 × 0.25 = <strong>23.28 pts</strong><br/>
               <br/>
-              <strong style={{color: '#667eea', fontSize: '16px'}}>Total: 93.82/100 (Exceptional!)</strong>
+              <strong style={{color: 'var(--accent-primary)', fontSize: '16px'}}>Total: 93.82/100 (Exceptional!)</strong>
             </div>
 
             <div style={{
               marginTop: '16px',
               padding: '12px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              borderLeft: '3px solid #10b981',
+              background: 'color-mix(in srgb, var(--success) 10%, transparent)',
+              borderLeft: '3px solid var(--success)',
               borderRadius: 'var(--radius-sm)',
               fontSize: '13px'
             }}>
-              <strong style={{color: '#10b981'}}>Why Percentile-Based?</strong> Position in team distribution is fair and transparent. 
+              <strong style={{color: 'var(--success)'}}>Why Percentile-Based?</strong> Position in team distribution is fair and transparent.
               Top performer = 100, others proportional to rank. No artificial caps, always 0-100 scale.
             </div>
           </div>
@@ -261,21 +262,21 @@ export function AboutTab() {
           <p><strong style={{color: 'var(--text-primary)'}}>Version:</strong> {APP_VERSION}</p>
           <p><strong style={{color: 'var(--text-primary)'}}>Built by:</strong> HT under the Keep Alive Project</p>
           <p><strong style={{color: 'var(--text-primary)'}}>Built with:</strong> Next.js 15, React 19, TypeScript 5, and Claude (for Analytics)</p>
-          <p><strong style={{color: 'var(--text-primary)'}}>Theme:</strong> Glassmorphism • Dark/Light Mode</p>
+          <p><strong style={{color: 'var(--text-primary)'}}>Theme:</strong> Flat • Dark/Light Mode</p>
         </div>
 
         {/* Legal Disclaimer - Footer */}
         <div style={{
           marginTop: '32px',
           padding: '12px 16px',
-          background: 'rgba(239, 68, 68, 0.1)',
-          borderLeft: '3px solid #ef4444',
+          background: 'color-mix(in srgb, var(--error) 10%, transparent)',
+          borderLeft: '3px solid var(--error)',
           borderRadius: 'var(--radius-sm)',
           fontSize: '11px',
           lineHeight: '1.6',
           color: 'var(--text-secondary)'
         }}>
-          <p style={{fontWeight: '600', color: '#ef4444', marginBottom: '6px'}}>
+          <p style={{fontWeight: '600', color: 'var(--error)', marginBottom: '6px'}}>
             DISCLAIMER
           </p>
           <p style={{marginBottom: '4px'}}>

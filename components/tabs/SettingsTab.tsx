@@ -104,7 +104,7 @@ export function SettingsTab() {
               {tiers.map(tier => (
                 <div key={tier.id} style={{
                   padding: '16px',
-                  background: `linear-gradient(135deg, ${tier.color}22, ${tier.color}44)`,
+                  background: `${tier.color}18`,
                   border: `2px solid ${tier.color}`,
                   borderRadius: 'var(--radius-md)',
                   textAlign: 'center'
@@ -124,7 +124,7 @@ export function SettingsTab() {
                 </div>
               ))}
             </div>
-            <div style={{padding: '12px', background: 'rgba(33, 150, 243, 0.08)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)'}}>
+            <div style={{padding: '12px', background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)'}}>
               Your current tier configuration. Click "Reset to Defaults" to restore original colors (Orange · Blue · Purple · Green).
             </div>
           </div>
@@ -252,7 +252,7 @@ export function SettingsTab() {
             <div style={{
               marginTop: '16px',
               padding: '12px 16px',
-              background: `linear-gradient(135deg, ${tier.color}33, ${tier.color}55)`,
+              background: `${tier.color}18`,
               border: `2px solid ${tier.color}`,
               borderRadius: 'var(--radius-sm)',
               display: 'flex',
@@ -285,14 +285,14 @@ export function SettingsTab() {
       <div style={{
         marginTop: '24px',
         padding: '16px',
-        background: 'rgba(33, 150, 243, 0.08)',
-        border: '1px solid rgba(33, 150, 243, 0.3)',
+        background: 'var(--accent-soft)',
+        border: '1px solid var(--border-color)',
         borderRadius: 'var(--radius-md)',
         fontSize: '13px',
         color: 'var(--text-secondary)',
         lineHeight: '1.6'
       }}>
-        <strong style={{color: 'var(--text-primary)'}}>ℹ️ How it works:</strong>
+        <strong style={{color: 'var(--text-primary)'}}>How it works:</strong>
         <ul style={{marginTop: '8px', marginLeft: '20px'}}>
           <li>Tiers are automatically sorted by minimum achievement %</li>
           <li>Max values are calculated from the next tier's min (highest tier = ∞)</li>

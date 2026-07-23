@@ -12,7 +12,7 @@
  */
 
 /** Displayed in the header, About tab, and page title. */
-export const APP_VERSION = '7.3.2'
+export const APP_VERSION = '8'
 
 /** Default P1 percentage (0–100). P2 = 100 - DEFAULT_P1_SPLIT. */
 export const DEFAULT_P1_SPLIT = 50

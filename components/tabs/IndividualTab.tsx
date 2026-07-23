@@ -118,11 +118,13 @@ export function IndividualTab() {
             
             <div className="result-card">
               <div className="result-label">Tier</div>
-              <div className="result-value" style={{fontSize: '20px'}}>{results.tier.name}</div>
-              <div className="tier-badge" style={{
-                background: `${results.tier.color}22`,
-                color: results.tier.color
-              }}>{results.tier.rate}% rate</div>
+              <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                <div className="result-value" style={{fontSize: '20px'}}>{results.tier.name}</div>
+                <div className="tier-badge" style={{
+                  background: `${results.tier.color}18`,
+                  color: results.tier.color
+                }}>{results.tier.rate}% rate</div>
+              </div>
             </div>
             
             <div className="result-card">

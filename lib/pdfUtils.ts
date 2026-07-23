@@ -11,7 +11,7 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
   const pageWidth = doc.internal.pageSize.getWidth()
 
   doc.setFontSize(20)
-  doc.setTextColor(0, 206, 209)
+  doc.setTextColor(53, 80, 122)
   doc.text('Team Incentives Report', 15, 20)
 
   doc.setFontSize(12)
@@ -44,7 +44,7 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
     styles: { fontSize: 10, cellPadding: 3 },
     columnStyles: {
       0: { fontStyle: 'bold', textColor: [80, 80, 80] as [number, number, number] },
-      1: { textColor: [0, 206, 209] as [number, number, number], fontStyle: 'bold' },
+      1: { textColor: [53, 80, 122] as [number, number, number], fontStyle: 'bold' },
     },
   })
 
@@ -55,7 +55,6 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
 
   const tableData = results.map((person, idx) => [
     `#${idx + 1}`,
-    idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '',
     person.name,
     formatCurrency(person.totalIncentive),
     person.packages,
@@ -73,14 +72,13 @@ export async function exportBulkToPDF(calculatedData: any, results: any[]) {
 
   autoTable(doc, {
     startY: finalY + 3,
-    head: [['Rank', '', 'Name', 'Total (AED)', 'Packages', 'Clients', 'Sales (AED)', 'Days', 'Pkg/Day', 'Sales/Day', 'Clients/Day', 'Max KPI Clients', '% Share', 'P1 (AED)', 'P2 (AED)']],
+    head: [['Rank', 'Name', 'Total (AED)', 'Packages', 'Clients', 'Sales (AED)', 'Days', 'Pkg/Day', 'Sales/Day', 'Clients/Day', 'Max KPI Clients', '% Share', 'P1 (AED)', 'P2 (AED)']],
     body: tableData,
     theme: 'grid',
-    headStyles: { fillColor: [0, 206, 209] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: [53, 80, 122] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 9 },
     styles: { fontSize: 8, cellPadding: 2 },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 12 },
-      1: { halign: 'center', cellWidth: 8 },
+      0: { halign: 'center', cellWidth: 14 },
     },
   })
 
@@ -113,7 +111,7 @@ export async function exportAnalyticsToPDF(
   const doc = new jsPDF()
 
   doc.setFontSize(20)
-  doc.setTextColor(0, 206, 209)
+  doc.setTextColor(53, 80, 122)
   doc.text('Performance Analytics Report', 15, 20)
 
   doc.setFontSize(12)
@@ -142,7 +140,7 @@ export async function exportAnalyticsToPDF(
       styles: { fontSize: 10, cellPadding: 3 },
       columnStyles: {
         0: { fontStyle: 'bold', textColor: [80, 80, 80] as [number, number, number] },
-        1: { textColor: [0, 206, 209] as [number, number, number], fontStyle: 'bold' },
+        1: { textColor: [53, 80, 122] as [number, number, number], fontStyle: 'bold' },
       },
     })
   }
@@ -166,7 +164,7 @@ export async function exportAnalyticsToPDF(
     head: [['Month', 'Achievement', 'Tier', 'Rank', 'Earnings (AED)', 'Sales (AED)']],
     body: historyData,
     theme: 'grid',
-    headStyles: { fillColor: [0, 206, 209] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 9 },
+    headStyles: { fillColor: [53, 80, 122] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 9 },
     styles: { fontSize: 9, cellPadding: 2 },
   })
 

@@ -8,7 +8,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 type SubTab = 'overview' | 'individual' | 'leaderboards' | 'achievements' | 'insights'
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
 
-const COLORS = ['#667eea', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+const COLORS = ['#35507a', '#9c6b3e', '#1f7a5c', '#b23a3a', '#6b7280', '#5c7ab0']
 
 interface PersonData {
   name: string
@@ -196,10 +196,10 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
   )
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return { emoji: '🥇', color: '#ffd700' }
-    if (rank === 2) return { emoji: '🥈', color: '#c0c0c0' }
-    if (rank === 3) return { emoji: '🥉', color: '#cd7f32' }
-    return { emoji: `#${rank}`, color: '#9ca3af' }
+    if (rank === 1) return { label: `#${rank}`, color: 'var(--tier-3)' }
+    if (rank === 2) return { label: `#${rank}`, color: 'var(--tier-2)' }
+    if (rank === 3) return { label: `#${rank}`, color: 'var(--tier-1)' }
+    return { label: `#${rank}`, color: 'var(--text-muted)' }
   }
 
   const getViewModeLabel = (mode: ViewMode): string => {
@@ -231,16 +231,17 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
         <div>
           <div style={{
             display: 'flex',
-            gap: '6px',
+            gap: '4px',
             marginBottom: '24px',
             overflowX: 'auto',
-            padding: '6px',
-            background: 'var(--bg-card)',
-            
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)'
+            borderBottom: '1px solid var(--border-color)'
           }}>
             {[
+              { id: 'overview', label: 'Overview' },
+              { id: 'individual', label: 'Individual' },
+              { id: 'leaderboards', label: 'Leaderboards' },
+              { id: 'achievements', label: 'Achievements' },
+              { id: 'insights', label: 'Insights' },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -249,15 +250,15 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   flex: 1,
                   padding: '12px 16px',
                   border: 'none',
-                  background: activeSubTab === tab.id ? 'var(--accent-primary)' : 'transparent',
-                  color: activeSubTab === tab.id ? 'white' : 'var(--text-secondary)',
-                  borderRadius: 'var(--radius-md)',
+                  borderBottom: activeSubTab === tab.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                  marginBottom: '-1px',
+                  background: 'transparent',
+                  color: activeSubTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
                   fontWeight: '600',
                   fontSize: '13px',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: activeSubTab === tab.id ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
+                  transition: 'var(--transition-base)'
                 }}
               >
                 <TabIcon id={tab.id} />{tab.label}
@@ -300,7 +301,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="sales" fill="#667eea" radius={[8, 8, 0, 0]} />
+                        <Bar dataKey="sales" fill="var(--accent-primary)" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -331,8 +332,8 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="sales" fill="#667eea" name="Sales" />
-                      <Bar dataKey="packages" fill="#10b981" name="Packages" />
+                      <Bar dataKey="sales" fill="var(--accent-primary)" name="Sales" />
+                      <Bar dataKey="packages" fill="var(--success)" name="Packages" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -354,8 +355,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 padding: '24px',
                 background: 'var(--accent-primary)',
                 borderRadius: 'var(--radius-lg)',
-                marginBottom: '24px',
-                boxShadow: 'var(--shadow-lg), var(--glow-turquoise)'
+                marginBottom: '24px'
               }}>
                 <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                   <div>
@@ -396,9 +396,9 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
-                            color: '#667eea',
+                            color: 'var(--accent-primary)',
                             cursor: 'help',
-                            border: '1px solid #667eea',
+                            border: '1px solid var(--accent-primary)',
                             borderRadius: '50%',
                             padding: '0 5px',
                             display: 'inline-block',
@@ -411,7 +411,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           (50% weight)
                         </span>
                       </div>
-                      <div style={{fontSize: '14px', fontWeight: '700', color: '#667eea'}}>
+                      <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--accent-primary)'}}>
                         {selected.salesScore || 0}/100
                       </div>
                     </div>
@@ -444,9 +444,9 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
-                            color: '#f59e0b',
+                            color: 'var(--warning)',
                             cursor: 'help',
-                            border: '1px solid #f59e0b',
+                            border: '1px solid var(--warning)',
                             borderRadius: '50%',
                             padding: '0 5px',
                             display: 'inline-block',
@@ -459,7 +459,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           (25% weight)
                         </span>
                       </div>
-                      <div style={{fontSize: '14px', fontWeight: '700', color: '#f59e0b'}}>
+                      <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--warning)'}}>
                         {selected.productivityScore || 0}/100
                       </div>
                     </div>
@@ -473,7 +473,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{
                         width: `${selected.productivityScore || 0}%`,
                         height: '100%',
-                        background: '#f59e0b',
+                        background: 'var(--warning)',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
@@ -492,9 +492,9 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
-                            color: '#10b981',
+                            color: 'var(--success)',
                             cursor: 'help',
-                            border: '1px solid #10b981',
+                            border: '1px solid var(--success)',
                             borderRadius: '50%',
                             padding: '0 5px',
                             display: 'inline-block',
@@ -507,7 +507,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           (25% weight)
                         </span>
                       </div>
-                      <div style={{fontSize: '14px', fontWeight: '700', color: '#10b981'}}>
+                      <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--success)'}}>
                         {selected.efficiencyScore || 0}/100
                       </div>
                     </div>
@@ -521,7 +521,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{
                         width: `${selected.efficiencyScore || 0}%`,
                         height: '100%',
-                        background: '#10b981',
+                        background: 'var(--success)',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
@@ -557,14 +557,14 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 {selected.clients !== undefined && selected.clients > 0 ? (
                   <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
                     <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Clients Served</div>
-                    <div style={{fontSize: '32px', fontWeight: '700', color: '#06b6d4'}}>{selected.clients}</div>
+                    <div style={{fontSize: '32px', fontWeight: '700', color: 'var(--accent-secondary)'}}>{selected.clients}</div>
                     <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>Unique clients</div>
                   </div>
                 ) : null}
 
                 <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Working Days</div>
-                  <div style={{fontSize: '32px', fontWeight: '700', color: '#f59e0b'}}>{selected.workingDays}</div>
+                  <div style={{fontSize: '32px', fontWeight: '700', color: 'var(--warning)'}}>{selected.workingDays}</div>
                   <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{Math.round((selected.workingDays/22)*100)}% attendance</div>
                 </div>
               </div>
@@ -574,7 +574,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
           {activeSubTab === 'leaderboards' ? (
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px'}}>
               {[
-                { title: '🥇 Daily Champion', data: personData.slice(0, 3) },
+                { title: 'Daily Champion', data: personData.slice(0, 3) },
                 { title: 'Weekly Leaders', data: personData.slice(0, 3) },
                 { title: 'Top Packages', data: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3) },
                 { title: 'Most Consistent', data: [...personData].sort((a, b) => (b.consistency || 0) - (a.consistency || 0)).slice(0, 3) },
@@ -586,8 +586,8 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   {board.data.map((person, idx) => {
                     const badge = getRankBadge(idx + 1)
                     return (
-                      <div key={person.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', marginBottom: '8px', border: idx === 0 ? `2px solid ${badge.color}44` : '1px solid var(--border-color)'}}>
-                        <div style={{width: '36px', height: '36px', borderRadius: '50%', background: badge.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '700', color: idx < 3 ? 'white' : '#6b7280'}}>{badge.emoji}</div>
+                      <div key={person.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
+                        <div style={{width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${badge.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: badge.color, fontFamily: "'JetBrains Mono', monospace"}}>{badge.label}</div>
                         <div style={{flex: 1}}>
                           <div style={{fontWeight: '600'}}>{person.name}</div>
                           <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
@@ -630,11 +630,11 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   { icon: '🌙', name: 'Night Owl', desc: 'Late achiever', unlocked: false },
                   { icon: '☀️', name: 'Early Bird', desc: 'Morning star', unlocked: false }
                 ].map(ach => (
-                  <div key={ach.name} style={{padding: '24px', background: ach.unlocked ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : 'var(--bg-tertiary)', border: ach.unlocked ? '2px solid #fbbf24' : '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', textAlign: 'center', opacity: ach.unlocked ? 1 : 0.6}}>
-                    <div style={{fontSize: '48px', marginBottom: '12px'}}>{ach.icon}</div>
+                  <div key={ach.name} style={{padding: '24px', background: ach.unlocked ? 'var(--accent-soft)' : 'var(--bg-tertiary)', border: ach.unlocked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', textAlign: 'center', opacity: ach.unlocked ? 1 : 0.6}}>
+                    <div style={{fontSize: '40px', marginBottom: '12px'}}>{ach.icon}</div>
                     <div style={{fontWeight: '700', marginBottom: '8px'}}>{ach.name}</div>
                     <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px'}}>{ach.desc}</div>
-                    <div style={{fontSize: '13px', fontWeight: '700', color: ach.unlocked ? '#166534' : '#6b7280'}}>{ach.unlocked ? '✓ Unlocked' : 'Locked'}</div>
+                    <div style={{fontSize: '13px', fontWeight: '700', color: ach.unlocked ? 'var(--success)' : 'var(--text-muted)'}}>{ach.unlocked ? 'Unlocked' : 'Locked'}</div>
                   </div>
                 ))}
               </div>
@@ -643,24 +643,24 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
 
           {activeSubTab === 'insights' ? (
             <div style={{display: 'grid', gap: '16px'}}>
-              <div style={{padding: '20px', background: '#eff6ff', borderLeft: '4px solid #3b82f6', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px'}}>Top Performer</div>
-                <div style={{color: '#1e40af', fontSize: '14px'}}>{personData[0]?.name} leads with {formatCurrency(personData[0]?.sales)} in sales. Consistency: {personData[0]?.consistency}%</div>
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--accent-primary)', borderRadius: '8px'}}>
+                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Top Performer</div>
+                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>{personData[0]?.name} leads with {formatCurrency(personData[0]?.sales)} in sales. Consistency: {personData[0]?.consistency}%</div>
               </div>
 
-              <div style={{padding: '20px', background: '#dcfce7', borderLeft: '4px solid #10b981', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: '#166534', marginBottom: '8px'}}>Team Strength</div>
-                <div style={{color: '#166534', fontSize: '14px'}}>Team average of {formatCurrency(avgDaily)} per day. {personData.filter(p => p.sales / Math.max(p.workingDays, 1) > avgDaily).length}/{personData.length} above average</div>
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--success)', borderRadius: '8px'}}>
+                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Team Strength</div>
+                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Team average of {formatCurrency(avgDaily)} per day. {personData.filter(p => p.sales / Math.max(p.workingDays, 1) > avgDaily).length}/{personData.length} above average</div>
               </div>
 
-              <div style={{padding: '20px', background: '#fef3c7', borderLeft: '4px solid #fbbf24', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: '#92400e', marginBottom: '8px'}}>Opportunity</div>
-                <div style={{color: '#92400e', fontSize: '14px'}}>{personData.filter(p => (p.consistency || 0) < 70).length} members could improve consistency</div>
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--warning)', borderRadius: '8px'}}>
+                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Opportunity</div>
+                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>{personData.filter(p => (p.consistency || 0) < 70).length} members could improve consistency</div>
               </div>
 
               <div style={{padding: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: '#1e40af', marginBottom: '8px'}}>Forecast</div>
-                <div style={{color: '#1e40af', fontSize: '14px'}}>Projected: {formatCurrency(teamTotal * 1.15)} next period at current pace</div>
+                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Forecast</div>
+                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Projected: {formatCurrency(teamTotal * 1.15)} next period at current pace</div>
               </div>
             </div>
           ) : null}

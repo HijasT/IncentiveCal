@@ -327,13 +327,13 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
           </div>
 
           {/* Sheets */}
-          <div style={{padding:'10px 16px',background:'rgba(0,206,209,0.08)',border:'1px solid rgba(0,206,209,0.2)',borderRadius:'var(--radius-sm)',marginBottom:'16px',fontSize:'13px',color:'var(--text-secondary)'}}>
+          <div style={{padding:'10px 16px',background:'var(--bg-tertiary)',border:'1px solid var(--border-color)',borderRadius:'var(--radius-sm)',marginBottom:'16px',fontSize:'13px',color:'var(--text-secondary)'}}>
             <strong style={{color:'var(--accent-primary)'}}>Sheets:</strong> {calculatedData.sheets.join(', ')}
           </div>
 
           {/* Exclusion banner */}
           {calculatedData.excludedCount > 0 && (
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',background:'rgba(251,191,36,0.1)',border:'1px solid rgba(251,191,36,0.4)',borderRadius:'var(--radius-sm)',marginBottom:'16px',fontSize:'13px',color:'var(--warning)'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',background:'color-mix(in srgb, var(--warning) 10%, transparent)',border:'1px solid color-mix(in srgb, var(--warning) 40%, transparent)',borderRadius:'var(--radius-sm)',marginBottom:'16px',fontSize:'13px',color:'var(--warning)'}}>
               <span><strong>{calculatedData.excludedCount} staff excluded</strong> — incentives recalculated for remaining {calculatedData.staffCount}</span>
               <button onClick={clearExclusions} style={{background:'none',border:'1px solid var(--warning)',color:'var(--warning)',padding:'4px 10px',borderRadius:'var(--radius-sm)',cursor:'pointer',fontSize:'12px',fontWeight:'600'}}>Restore all</button>
             </div>
@@ -357,7 +357,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
             <div className="stat-card"><div className="stat-label">Avg Packages / Person</div><div className="stat-value" style={{fontSize:'18px'}}>{calculatedData.avgPackages.toFixed(1)}</div></div>
             {calculatedData.teamClients > 0 && (
               <>
-                <div className="stat-card"><div className="stat-label">Total Clients</div><div className="stat-value" style={{fontSize:'18px',color:'#06b6d4'}}>{calculatedData.teamClients}</div></div>
+                <div className="stat-card"><div className="stat-label">Total Clients</div><div className="stat-value" style={{fontSize:'18px'}}>{calculatedData.teamClients}</div></div>
                 <div className="stat-card"><div className="stat-label">Avg Clients / Person</div><div className="stat-value" style={{fontSize:'18px'}}>{calculatedData.avgClients.toFixed(1)}</div></div>
               </>
             )}
@@ -366,7 +366,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
           {/* Tier Ladder — between stats and table */}
           {nextTierInfo && (
             nextTierInfo.isMaxTier ? (
-              <div style={{padding:'18px 20px',background:'rgba(0,230,118,0.08)',border:'2px solid rgba(0,230,118,0.3)',borderRadius:'var(--radius-md)',marginBottom:'24px'}}>
+              <div style={{padding:'18px 20px',background:'color-mix(in srgb, var(--success) 8%, transparent)',border:'1px solid color-mix(in srgb, var(--success) 30%, transparent)',borderRadius:'var(--radius-md)',marginBottom:'24px'}}>
                 <div style={{fontSize:'11px',fontWeight:'700',color:'var(--success)',marginBottom:'8px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Tier Ladder</div>
                 <div style={{fontSize:'20px',fontWeight:'700',color:'var(--success)',fontFamily:"'JetBrains Mono',monospace",marginBottom:'6px'}}>+ AED {formatCurrency(nextTierInfo.extraIncentive)}</div>
                 <div style={{fontSize:'13px',color:'var(--text-secondary)',lineHeight:'1.6'}}>
@@ -374,7 +374,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                 </div>
               </div>
             ) : (
-              <div style={{padding:'18px 20px',background:'var(--bg-tertiary)',border:'2px solid var(--border-color)',borderRadius:'var(--radius-md)',marginBottom:'24px'}}>
+              <div style={{padding:'18px 20px',background:'var(--bg-tertiary)',border:'1px solid var(--border-color)',borderRadius:'var(--radius-md)',marginBottom:'24px'}}>
                 <div style={{fontSize:'11px',fontWeight:'700',color:'var(--text-muted)',marginBottom:'8px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Tier Ladder — Next: {nextTierInfo.nextTierName} ({nextTierInfo.nextTierRate}%)</div>
                 <div style={{fontSize:'20px',fontWeight:'700',color:'var(--accent-primary)',fontFamily:"'JetBrains Mono',monospace",marginBottom:'6px'}}>AED {formatCurrency(nextTierInfo.deficit)} needed</div>
                 <div style={{fontSize:'13px',color:'var(--text-secondary)',lineHeight:'1.6',marginBottom:'10px'}}>
@@ -396,8 +396,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
               <table style={{width:'100%',borderCollapse:'collapse',minWidth:'1260px'}}>
                 <thead>
                   <tr>
-                    <th style={{...TH,width:'36px'}}>Rank</th>
-                    <th style={{...TH,width:'32px'}}></th>
+                    <th style={{...TH,width:'46px'}}>Rank</th>
                     <th style={TH} onClick={()=>handleSort('name')}>Name{si('name')}</th>
                     <th style={TH} onClick={()=>handleSort('totalIncentive')}>Total{si('totalIncentive')}</th>
                     <th style={TH} onClick={()=>handleSort('packages')}>Packages{si('packages')}</th>
@@ -418,12 +417,10 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                   {sortedResults.map(person => {
                     const rank   = results.findIndex(r => r.name === person.name) + 1
                     const isTop3 = rank <= 3
-                    const badge  = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':''
                     const nc     = isTop3 ? 'var(--accent-primary)' : 'var(--text-secondary)'
                     return (
-                      <tr key={person.name} style={{borderBottom:'1px solid var(--border-color)',background:isTop3?'rgba(0,206,209,0.05)':undefined}}>
-                        <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc}}>#{rank}</td>
-                        <td style={TD}>{badge}</td>
+                      <tr key={person.name} style={{borderBottom:'1px solid var(--border-color)',background:isTop3?'var(--accent-soft)':undefined}}>
+                        <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc,fontFamily:"'JetBrains Mono', monospace"}}>#{rank}</td>
                         <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc}}>{person.name}</td>
                         <td style={{...TD,fontWeight:'600',color:isTop3?'var(--accent-primary)':'var(--success)'}}>AED {formatCurrency(person.totalIncentive)}</td>
                         <td style={TD}>{person.packages}</td>
@@ -441,9 +438,9 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                           <button
                             onClick={()=>toggleExclude(person.name)}
                             title={`Exclude ${person.name} and recalculate`}
-                            style={{background:'none',border:'1px solid rgba(239,68,68,0.4)',color:'rgba(239,68,68,0.7)',width:'26px',height:'26px',borderRadius:'50%',cursor:'pointer',fontSize:'15px',lineHeight:'1',display:'inline-flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}
-                            onMouseEnter={e=>{const b=e.currentTarget;b.style.background='rgba(239,68,68,0.1)';b.style.borderColor='rgba(239,68,68,0.8)';b.style.color='rgb(239,68,68)'}}
-                            onMouseLeave={e=>{const b=e.currentTarget;b.style.background='none';b.style.borderColor='rgba(239,68,68,0.4)';b.style.color='rgba(239,68,68,0.7)'}}
+                            style={{background:'none',border:'1px solid var(--border-color)',color:'var(--text-muted)',width:'24px',height:'24px',borderRadius:'50%',cursor:'pointer',fontSize:'15px',lineHeight:'1',display:'inline-flex',alignItems:'center',justifyContent:'center',transition:'var(--transition-base)'}}
+                            onMouseEnter={e=>{const b=e.currentTarget;b.style.borderColor='var(--error)';b.style.color='var(--error)'}}
+                            onMouseLeave={e=>{const b=e.currentTarget;b.style.borderColor='var(--border-color)';b.style.color='var(--text-muted)'}}
                           >×</button>
                         </td>
                       </tr>

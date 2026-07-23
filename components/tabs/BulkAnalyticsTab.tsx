@@ -106,23 +106,23 @@ export function BulkAnalyticsTab() {
       <div style={{
         marginBottom: '24px',
         padding: '20px',
-        background: 'rgba(0, 206, 209, 0.05)',
-        border: '2px dashed rgba(0, 206, 209, 0.3)',
+        background: 'var(--bg-tertiary)',
+        border: '1px dashed var(--border-color)',
         borderRadius: 'var(--radius-md)',
         textAlign: 'center'
       }}>
         <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--accent-primary)'}}>
           <UploadIcon />Upload Excel File (Shared)
         </h3>
-        <input 
-          type="file" 
-          accept=".xlsx,.xls" 
+        <input
+          type="file"
+          accept=".xlsx,.xls"
           onChange={handleFileUpload}
           disabled={isProcessing}
           style={{
             padding: '10px 20px',
-            background: 'rgba(0, 206, 209, 0.1)',
-            border: '1px solid rgba(0, 206, 209, 0.3)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border-color)',
             borderRadius: '6px',
             color: 'var(--text-primary)',
             cursor: isProcessing ? 'not-allowed' : 'pointer'
@@ -143,9 +143,8 @@ export function BulkAnalyticsTab() {
             gap: '12px',
             marginBottom: '16px',
             padding: '16px',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid var(--glass-border)',
+            background: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-md)'
           }}>
             {/* VIEW MODE */}
@@ -168,20 +167,17 @@ export function BulkAnalyticsTab() {
                   fontWeight: '600',
                   color: 'var(--text-primary)',
                   background: 'var(--bg-secondary)',
-                  border: '2px solid var(--glass-border)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-md)',
                   cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  outline: 'none',
-                  boxShadow: 'var(--shadow-sm)'
+                  transition: 'var(--transition-base)',
+                  outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--turquoise-primary)'
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md), var(--glow-turquoise)'
+                  e.currentTarget.style.borderColor = 'var(--accent-primary)'
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--glass-border)'
-                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                  e.currentTarget.style.borderColor = 'var(--border-color)'
                 }}
               >
                 <option value="monthly">Monthly</option>
@@ -217,20 +213,17 @@ export function BulkAnalyticsTab() {
                     fontWeight: '600',
                     color: 'var(--text-primary)',
                     background: 'var(--bg-secondary)',
-                    border: '2px solid var(--glass-border)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-md)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    outline: 'none',
-                    boxShadow: 'var(--shadow-sm)'
+                    transition: 'var(--transition-base)',
+                    outline: 'none'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--turquoise-primary)'
-                    e.currentTarget.style.boxShadow = 'var(--shadow-md), var(--glow-turquoise)'
+                    e.currentTarget.style.borderColor = 'var(--accent-primary)'
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--glass-border)'
-                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                    e.currentTarget.style.borderColor = 'var(--border-color)'
                   }}
                 >
                   <option value="Jan">January</option>
@@ -270,20 +263,17 @@ export function BulkAnalyticsTab() {
                     fontWeight: '600',
                     color: 'var(--text-primary)',
                     background: 'var(--bg-secondary)',
-                    border: '2px solid var(--glass-border)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-md)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    outline: 'none',
-                    boxShadow: 'var(--shadow-sm)'
+                    transition: 'var(--transition-base)',
+                    outline: 'none'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--turquoise-primary)'
-                    e.currentTarget.style.boxShadow = 'var(--shadow-md), var(--glow-turquoise)'
+                    e.currentTarget.style.borderColor = 'var(--accent-primary)'
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--glass-border)'
-                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                    e.currentTarget.style.borderColor = 'var(--border-color)'
                   }}
                 >
                   {availableYears.map(year => (
@@ -296,28 +286,24 @@ export function BulkAnalyticsTab() {
 
           <div style={{
             display: 'flex',
-            gap: '8px',
+            gap: '4px',
             marginBottom: '24px',
-            padding: '6px',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 'var(--radius-lg)'
+            borderBottom: '1px solid var(--border-color)'
           }}>
             <button
               onClick={() => setSubView('bulk')}
               style={{
                 flex: 1,
-                padding: '14px 20px',
+                padding: '12px 20px',
                 border: 'none',
-                background: subView === 'bulk' ? 'var(--accent-primary)' : 'transparent',
-                color: subView === 'bulk' ? 'white' : 'var(--text-secondary)',
-                borderRadius: 'var(--radius-md)',
+                borderBottom: subView === 'bulk' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                marginBottom: '-1px',
+                background: 'transparent',
+                color: subView === 'bulk' ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontWeight: '600',
                 fontSize: '14px',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: subView === 'bulk' ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
+                transition: 'var(--transition-base)'
               }}
             >
               <BarChartIcon />Bulk Results
@@ -326,16 +312,16 @@ export function BulkAnalyticsTab() {
               onClick={() => setSubView('analytics')}
               style={{
                 flex: 1,
-                padding: '14px 20px',
+                padding: '12px 20px',
                 border: 'none',
-                background: subView === 'analytics' ? 'var(--accent-primary)' : 'transparent',
-                color: subView === 'analytics' ? 'white' : 'var(--text-secondary)',
-                borderRadius: 'var(--radius-md)',
+                borderBottom: subView === 'analytics' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                marginBottom: '-1px',
+                background: 'transparent',
+                color: subView === 'analytics' ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontWeight: '600',
                 fontSize: '14px',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: subView === 'analytics' ? 'var(--shadow-md), var(--glow-turquoise)' : 'none'
+                transition: 'var(--transition-base)'
               }}
             >
               <TrendIcon />Analytics Dashboard (beta)
