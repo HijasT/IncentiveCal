@@ -294,6 +294,11 @@ export function getPersonBadges(name: string | null): string[] {
   return data.badges[name] || []
 }
 
+export const ALL_BADGE_IDS = [
+  'first-sale', 'tier-1', 'tier-2', 'tier-3', 'tier-4', '100-club',
+  'streak-3', 'streak-6', 'streak-12', 'top-10', 'top-5', 'top-3', 'champion',
+]
+
 export function getBadgeInfo(badgeId: string) {
   const badges: Record<string, { name: string; icon: string; description: string }> = {
     'first-sale': {

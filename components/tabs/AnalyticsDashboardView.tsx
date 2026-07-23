@@ -1,9 +1,14 @@
 'use client'
-import { HomeIcon, UserIcon, TrophyIcon, AwardIcon, InsightIcon, TrendIcon, BarChartIcon } from '@/components/icons'
+import { HomeIcon, UserIcon, TrophyIcon, AwardIcon, InsightIcon, TrendIcon, BarChartIcon, DownloadIcon } from '@/components/icons'
 import { useState, useEffect, useMemo } from 'react'
 import { type ExcelData } from '@/lib/excelUtils'
 import { formatCurrency } from '@/lib/utils'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import {
+  getAvailableNames, getPersonalHistory, getTeamHistory, getLifetimeStats,
+  getRankHistory, getPersonBadges, getBadgeInfo, ALL_BADGE_IDS,
+} from '@/lib/analyticsUtils'
+import { exportAnalyticsToPDF } from '@/lib/pdfUtils'
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 type SubTab = 'overview' | 'individual' | 'leaderboards' | 'achievements' | 'insights'
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
@@ -25,10 +30,6 @@ interface PersonData {
   // Rankings for percentile calculation
   productivityRank?: number      // Rank by daily sales
   efficiencyRank?: number        // Rank by sales per client
-  // Legacy fields (for backwards compatibility)
-  attendanceScore?: number
-  consistency?: number
-  streak?: number
 }
 
 interface AnalyticsDashboardViewProps {
@@ -163,14 +164,8 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
       person.productivityScore = Math.round(productivityScore)
       person.efficiencyScore = Math.round(efficiencyScore)
       person.performanceScore = Math.round(performanceScore)
-      
-      // Legacy fields for backwards compatibility
-      const expectedWorkingDays = 22
-      person.attendanceScore = Math.min((person.workingDays / expectedWorkingDays) * 100, 100)
-      person.consistency = Math.round(person.attendanceScore)
-      person.streak = person.rank <= 3 ? 10 - person.rank : Math.floor(Math.random() * 5) + 1
     })
-    
+
     setPersonData(people)
     if (people.length > 0) setSelectedPerson(people[0].name)
   }, [excelData, viewMode, selectedMonth, selectedYear])
@@ -190,10 +185,31 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
   )
 
   // Alphabetically sorted list for dropdown
-  const sortedPersonData = useMemo(() => 
+  const sortedPersonData = useMemo(() =>
     [...personData].sort((a, b) => a.name.localeCompare(b.name)),
     [personData]
   )
+
+  // Real cross-month history, persisted by Bulk Results "Calculate" in Monthly view
+  // (lib/analyticsUtils — independent of the currently uploaded file/view selection)
+  const teamHistory = useMemo(() => getTeamHistory(), [personData])
+  const personalHistory = useMemo(() => getPersonalHistory(selectedPerson), [selectedPerson, personData])
+  const lifetimeStats = useMemo(() => getLifetimeStats(selectedPerson), [selectedPerson, personData])
+  const rankHistory = useMemo(() => getRankHistory(selectedPerson), [selectedPerson, personData])
+  const personBadges = useMemo(() => getPersonBadges(selectedPerson), [selectedPerson, personData])
+  const streakLeaders = useMemo(() => {
+    return getAvailableNames()
+      .map(name => ({ name, streak: getLifetimeStats(name)?.longestStreak || 0 }))
+      .filter(p => p.streak > 0)
+      .sort((a, b) => b.streak - a.streak)
+      .slice(0, 3)
+  }, [personData])
+
+  const monthLabel = (monthKey: string) => {
+    const [y, m] = monthKey.split('-')
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    return `${names[parseInt(m, 10) - 1]} '${y.slice(2)}`
+  }
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) return { label: `#${rank}`, color: 'var(--tier-3)' }
@@ -337,6 +353,27 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+              </div>
+
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '24px'}}>
+                <h3 style={{fontSize: '14px', fontWeight: '600', marginBottom: '4px'}}><TrendIcon />Team Achievement — History</h3>
+                {teamHistory.length >= 2 ? (
+                  <div style={{height: '240px', marginTop: '12px'}}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={teamHistory.map(m => ({ month: monthLabel(m.monthKey), achievement: Number(m.teamAchievement.toFixed(1)) }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis unit="%" />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="achievement" name="Achievement %" stroke="var(--accent-primary)" strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p style={{fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px'}}>
+                    Calculate Bulk Results in Monthly view for at least two months to see the team's achievement trend here.
+                  </p>
+                )}
               </div>
             </div>
           ) : null}
@@ -565,8 +602,54 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-color)'}}>
                   <div style={{fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px'}}>Working Days</div>
                   <div style={{fontSize: '32px', fontWeight: '700', color: 'var(--warning)'}}>{selected.workingDays}</div>
-                  <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{Math.round((selected.workingDays/22)*100)}% attendance</div>
+                  <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{getViewModeLabel(viewMode)}</div>
                 </div>
+              </div>
+
+              {/* Real cross-month history for this person */}
+              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '24px'}}>
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px'}}>
+                  <h3 style={{fontSize: '14px', fontWeight: '600'}}><TrendIcon />{selected.name} — History</h3>
+                  {lifetimeStats && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => exportAnalyticsToPDF(personalHistory, lifetimeStats, rankHistory)}
+                    >
+                      <DownloadIcon />Download PDF
+                    </button>
+                  )}
+                </div>
+
+                {lifetimeStats ? (
+                  <>
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', margin: '16px 0'}}>
+                      <div className="stat-card"><div className="stat-label">Months Tracked</div><div className="stat-value" style={{fontSize:'18px'}}>{lifetimeStats.monthsTracked}</div></div>
+                      <div className="stat-card"><div className="stat-label">Total Earned</div><div className="stat-value" style={{fontSize:'18px'}}>AED {formatCurrency(lifetimeStats.totalEarnings)}</div></div>
+                      <div className="stat-card"><div className="stat-label">Avg / Month</div><div className="stat-value" style={{fontSize:'18px'}}>AED {formatCurrency(lifetimeStats.avgEarnings)}</div></div>
+                      <div className="stat-card"><div className="stat-label">Best Month</div><div className="stat-value" style={{fontSize:'18px'}}>{monthLabel(lifetimeStats.bestMonth.monthKey)}</div></div>
+                      <div className="stat-card"><div className="stat-label">Current Streak</div><div className="stat-value" style={{fontSize:'18px'}}>{lifetimeStats.currentStreak} mo</div></div>
+                      <div className="stat-card"><div className="stat-label">Longest Streak</div><div className="stat-value" style={{fontSize:'18px'}}>{lifetimeStats.longestStreak} mo</div></div>
+                    </div>
+
+                    {personalHistory.length >= 2 && (
+                      <div style={{height: '220px'}}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={personalHistory.map(m => ({ month: monthLabel(m.monthKey), achievement: Number(m.achievement.toFixed(1)), earnings: Math.round(m.totalEarnings) }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis unit="%" />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="achievement" name="Team Achievement %" stroke="var(--accent-primary)" strokeWidth={2} dot={{ r: 3 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p style={{fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px'}}>
+                    No saved history yet for {selected.name}. Calculate Bulk Results in Monthly view to start tracking month over month.
+                  </p>
+                )}
               </div>
             </div>
           ) : null}
@@ -574,29 +657,27 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
           {activeSubTab === 'leaderboards' ? (
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px'}}>
               {[
-                { title: 'Daily Champion', data: personData.slice(0, 3) },
-                { title: 'Weekly Leaders', data: personData.slice(0, 3) },
-                { title: 'Top Packages', data: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3) },
-                { title: 'Most Consistent', data: [...personData].sort((a, b) => (b.consistency || 0) - (a.consistency || 0)).slice(0, 3) },
-                { title: 'Most Clients', data: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3) },
-                { title: 'Longest Streak', data: [...personData].sort((a, b) => (b.streak || 0) - (a.streak || 0)).slice(0, 3) }
+                { title: `Top Sales — ${getViewModeLabel(viewMode)}`, entries: personData.slice(0, 3).map(p => ({ name: p.name, metric: `AED ${formatCurrency(p.sales)}` })) },
+                { title: `Top Packages — ${getViewModeLabel(viewMode)}`, entries: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3).map(p => ({ name: p.name, metric: `${p.packages} pkgs` })) },
+                ...(personData.some(p => p.clients && p.clients > 0) ? [{
+                  title: `Most Clients — ${getViewModeLabel(viewMode)}`,
+                  entries: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3).map(p => ({ name: p.name, metric: `${p.clients} clients` })),
+                }] : []),
+                ...(streakLeaders.length > 0 ? [{
+                  title: 'Longest Streak — all-time',
+                  entries: streakLeaders.map(p => ({ name: p.name, metric: `${p.streak} mo ≥75%` })),
+                }] : []),
               ].map(board => (
                 <div key={board.title} style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px'}}>{board.title}</h3>
-                  {board.data.map((person, idx) => {
+                  {board.entries.map((entry, idx) => {
                     const badge = getRankBadge(idx + 1)
                     return (
-                      <div key={person.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
+                      <div key={entry.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
                         <div style={{width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${badge.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: badge.color, fontFamily: "'JetBrains Mono', monospace"}}>{badge.label}</div>
                         <div style={{flex: 1}}>
-                          <div style={{fontWeight: '600'}}>{person.name}</div>
-                          <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>
-                            {board.title.includes('Package') ? `${person.packages} pkgs` : 
-                             board.title.includes('Consistent') ? `${person.consistency}%` :
-                             board.title.includes('Streak') ? `${person.streak} days` :
-                             board.title.includes('Clients') ? `${person.clients} clients` :
-                             formatCurrency(person.sales)}
-                          </div>
+                          <div style={{fontWeight: '600'}}>{entry.name}</div>
+                          <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{entry.metric}</div>
                         </div>
                       </div>
                     )
@@ -608,62 +689,76 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
 
           {activeSubTab === 'achievements' ? (
             <div>
-              <div style={{marginBottom: '24px'}}>
+              <div style={{marginBottom: '12px'}}>
                 <label style={{fontWeight: '600', marginRight: '12px'}}>View achievements for:</label>
                 <select value={selectedPerson} onChange={(e) => setSelectedPerson(e.target.value)} style={{padding: '10px', borderRadius: '8px', border: '2px solid var(--border-color)'}}>
                   {sortedPersonData.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                 </select>
               </div>
+              <p style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px'}}>
+                Badges are earned automatically and saved permanently when you calculate Bulk Results in Monthly view.
+                {personBadges.length > 0 && ` ${personBadges.length}/${ALL_BADGE_IDS.length} unlocked.`}
+              </p>
 
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px'}}>
-                {[
-                  { icon: '🌟', name: 'Top Performer', desc: '#1 ranked', unlocked: selected?.rank === 1 },
-                  { icon: '🔥', name: 'Hot Streak', desc: '5+ days active', unlocked: (selected?.streak || 0) >= 5 },
-                  { icon: '💯', name: 'Consistent', desc: '90%+ consistency', unlocked: (selected?.consistency || 0) >= 90 },
-                  { icon: '📈', name: 'Rising Star', desc: 'Top 3 ranking', unlocked: (selected?.rank || 100) <= 3 },
-                  { icon: '🚀', name: 'Overachiever', desc: 'Above average', unlocked: (selected?.sales || 0) / Math.max(selected?.workingDays || 1, 1) > avgDaily },
-                  { icon: '👑', name: 'Champion', desc: 'Monthly winner', unlocked: selected?.rank === 1 },
-                  { icon: '💪', name: 'Persistent', desc: '10+ day streak', unlocked: (selected?.streak || 0) >= 10 },
-                  { icon: '🎯', name: 'Target Crusher', desc: 'Exceed target', unlocked: false },
-                  { icon: '⚡', name: 'Lightning', desc: 'Fast closer', unlocked: false },
-                  { icon: '🏅', name: 'Team Player', desc: 'Top supporter', unlocked: false },
-                  { icon: '🌙', name: 'Night Owl', desc: 'Late achiever', unlocked: false },
-                  { icon: '☀️', name: 'Early Bird', desc: 'Morning star', unlocked: false }
-                ].map(ach => (
-                  <div key={ach.name} style={{padding: '24px', background: ach.unlocked ? 'var(--accent-soft)' : 'var(--bg-tertiary)', border: ach.unlocked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', textAlign: 'center', opacity: ach.unlocked ? 1 : 0.6}}>
-                    <div style={{fontSize: '40px', marginBottom: '12px'}}>{ach.icon}</div>
-                    <div style={{fontWeight: '700', marginBottom: '8px'}}>{ach.name}</div>
-                    <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px'}}>{ach.desc}</div>
-                    <div style={{fontSize: '13px', fontWeight: '700', color: ach.unlocked ? 'var(--success)' : 'var(--text-muted)'}}>{ach.unlocked ? 'Unlocked' : 'Locked'}</div>
-                  </div>
-                ))}
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px'}}>
+                {ALL_BADGE_IDS.map(id => {
+                  const info = getBadgeInfo(id)
+                  const unlocked = personBadges.includes(id)
+                  return (
+                    <div key={id} style={{padding: '24px', background: unlocked ? 'var(--accent-soft)' : 'var(--bg-tertiary)', border: unlocked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', textAlign: 'center', opacity: unlocked ? 1 : 0.5}}>
+                      <div style={{fontSize: '36px', marginBottom: '12px'}}>{info.icon}</div>
+                      <div style={{fontWeight: '700', marginBottom: '8px'}}>{info.name}</div>
+                      <div style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px'}}>{info.description}</div>
+                      <div style={{fontSize: '13px', fontWeight: '700', color: unlocked ? 'var(--success)' : 'var(--text-muted)'}}>{unlocked ? 'Unlocked' : 'Locked'}</div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ) : null}
 
-          {activeSubTab === 'insights' ? (
-            <div style={{display: 'grid', gap: '16px'}}>
-              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--accent-primary)', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Top Performer</div>
-                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>{personData[0]?.name} leads with {formatCurrency(personData[0]?.sales)} in sales. Consistency: {personData[0]?.consistency}%</div>
-              </div>
+          {activeSubTab === 'insights' ? (() => {
+            const latestTwo = teamHistory.slice(-2)
+            const trendDelta = latestTwo.length === 2 ? latestTwo[1].teamAchievement - latestTwo[0].teamAchievement : null
+            const bestMonthRecord = teamHistory.length > 0
+              ? teamHistory.reduce((best, m) => m.teamAchievement > best.teamAchievement ? m : best)
+              : null
+            return (
+              <div style={{display: 'grid', gap: '16px'}}>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--accent-primary)', borderRadius: '8px'}}>
+                  <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Top Performer — {getViewModeLabel(viewMode)}</div>
+                  <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>{personData[0]?.name} leads with AED {formatCurrency(personData[0]?.sales)} in sales.</div>
+                </div>
 
-              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--success)', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Team Strength</div>
-                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Team average of {formatCurrency(avgDaily)} per day. {personData.filter(p => p.sales / Math.max(p.workingDays, 1) > avgDaily).length}/{personData.length} above average</div>
-              </div>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--success)', borderRadius: '8px'}}>
+                  <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Team Strength — {getViewModeLabel(viewMode)}</div>
+                  <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Team average of AED {formatCurrency(avgDaily)} per day. {personData.filter(p => p.sales / Math.max(p.workingDays, 1) > avgDaily).length}/{personData.length} above average</div>
+                </div>
 
-              <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--warning)', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Opportunity</div>
-                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>{personData.filter(p => (p.consistency || 0) < 70).length} members could improve consistency</div>
-              </div>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--warning)', borderRadius: '8px'}}>
+                  <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Team Trend — Month over Month</div>
+                  {trendDelta !== null ? (
+                    <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>
+                      Achievement {trendDelta >= 0 ? 'up' : 'down'} <strong style={{color: trendDelta >= 0 ? 'var(--success)' : 'var(--error)'}}>{Math.abs(trendDelta).toFixed(1)}pp</strong> vs {monthLabel(latestTwo[0].monthKey)} ({latestTwo[0].teamAchievement.toFixed(1)}% → {latestTwo[1].teamAchievement.toFixed(1)}%)
+                    </div>
+                  ) : (
+                    <div style={{color: 'var(--text-muted)', fontSize: '14px'}}>Calculate Bulk Results in Monthly view for at least two months to see a real trend.</div>
+                  )}
+                </div>
 
-              <div style={{padding: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
-                <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Forecast</div>
-                <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>Projected: {formatCurrency(teamTotal * 1.15)} next period at current pace</div>
+                <div style={{padding: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
+                  <div style={{fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px'}}>Best Month on Record</div>
+                  {bestMonthRecord ? (
+                    <div style={{color: 'var(--text-secondary)', fontSize: '14px'}}>
+                      {monthLabel(bestMonthRecord.monthKey)} — <strong>{bestMonthRecord.teamAchievement.toFixed(1)}%</strong> achievement, AED {formatCurrency(bestMonthRecord.teamSales)} in sales ({bestMonthRecord.tier})
+                    </div>
+                  ) : (
+                    <div style={{color: 'var(--text-muted)', fontSize: '14px'}}>No saved history yet. Calculate Bulk Results in Monthly view to start tracking.</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : null}
+            )
+          })() : null}
         </div>
       ) : null}
     </>
