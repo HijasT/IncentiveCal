@@ -5,6 +5,7 @@ import { MoonIcon, SunIcon } from '@/components/icons'
 import { BulkAnalyticsTab } from '@/components/tabs/BulkAnalyticsTab'
 import { SettingsTab } from '@/components/tabs/SettingsTab'
 import { AboutTab } from '@/components/tabs/AboutTab'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { APP_VERSION, DEFAULT_THEME } from '@/lib/config'
 
 export default function Home() {
@@ -70,7 +71,11 @@ export default function Home() {
       </nav>
 
       {activeTab === 'individual'     && <IndividualTab />}
-      {activeTab === 'bulk-analytics' && <BulkAnalyticsTab />}
+      {activeTab === 'bulk-analytics' && (
+        <ErrorBoundary label="Bulk & Analytics tab">
+          <BulkAnalyticsTab />
+        </ErrorBoundary>
+      )}
       {activeTab === 'settings'       && <SettingsTab />}
       {activeTab === 'about'          && <AboutTab />}
     </div>

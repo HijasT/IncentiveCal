@@ -105,7 +105,21 @@ function getAvailableMonthsFromWorkbook(workbook: { SheetNames: string[] }): str
     }
   })
 
-  return months.sort()
+  return sortSheetNamesChronologically(months)
+}
+
+// Sorts "Mon YY" sheet names chronologically (Jan -> Dec, then by year)
+// instead of alphabetically, e.g. ["Apr 26", "Feb 26", "Jan 26"] -> Jan, Feb, Apr.
+function monthSortKey(sheetName: string): number {
+  const match = sheetName.match(/([A-Za-z]+)\s*(\d{2,4})/)
+  if (!match) return 0
+  const monthIdx = SHORT_MONTHS.indexOf(match[1])
+  const year = parseInt(match[2], 10)
+  return (isNaN(year) ? 0 : year) * 12 + (monthIdx === -1 ? 0 : monthIdx)
+}
+
+function sortSheetNamesChronologically(names: string[]): string[] {
+  return [...names].sort((a, b) => monthSortKey(a) - monthSortKey(b))
 }
 
 // ── Sheet extraction ──────────────────────────────────────────────────────────
@@ -311,7 +325,7 @@ function extractStaffFromSheet(
 }
 
 export function getAvailableMonths(data: ExcelData[]): string[] {
-  return data.map((d) => d.sheetName).sort()
+  return sortSheetNamesChronologically(data.map((d) => d.sheetName))
 }
 
 export function aggregateSheets(sheets: ExcelData[]): ExcelData {

@@ -74,15 +74,15 @@ Single source of truth for `APP_VERSION` and app-wide defaults (default P1/P2 sp
 
 ## Role
 
-Analyze requirements, suggest solutions, modify local files, debug, and maintain code quality within the existing architecture. Not in scope: git operations, publishing releases, deployments, or final architectural decisions without approval.
+Analyze requirements, suggest solutions, modify local files, debug, maintain code quality within the existing architecture, and commit/push changes to GitHub on the developer's behalf. Not in scope: publishing releases, deployments, or final architectural decisions without approval.
 
 ## Git rules
 
-Git is operated manually by the developer through VS Code, under their own GitHub account.
+Claude commits and pushes directly to this repo (`origin/main`) using the developer's own configured git identity (`git config user.name`/`user.email`). Commits must read as authored by the developer alone — never add a Claude/AI co-author trailer or attribution of any kind.
 
-Never run `git commit`, `git push`, `git pull`, create tags, or modify Git/GitHub configuration or permissions. Reading is fine — `git status`, `git diff`, `git log`, and other inspection commands.
+`git commit`, `git push`, and `git pull` are allowed for normal work. Still never force-push, hard-reset, rewrite published history, create/delete tags or branches, or modify Git/GitHub configuration or permissions without explicit approval.
 
-After every change (however small), provide a suggested commit message (subject + brief body if needed) summarizing what changed and why, so the developer can commit it themselves through VS Code.
+After every change (however small), write a clear commit message (subject + brief body if needed) summarizing what changed and why, then commit and push it — don't just suggest the message and wait.
 
 ## File modification rules
 
