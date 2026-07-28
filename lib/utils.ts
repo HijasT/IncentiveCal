@@ -39,9 +39,42 @@ export function loadTiers(): Tier[] {
 export function saveTiers(tiers: Tier[]) {
   if (typeof window === 'undefined') return // Safety check for SSR
   localStorage.setItem('sic_tiers', JSON.stringify(tiers))
+  localStorage.setItem('sic_tiers_saved_at', new Date().toISOString())
 }
 
-export function getTier(achievementPercent: number, tiers: Tier[] = DEFAULT_TIERS): Tier {
+export function getTiersSavedAt(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('sic_tiers_saved_at')
+}
+
+// One-slot backup used to undo a "Reset to Defaults" — captures whatever
+// tiers were in effect immediately before the reset overwrote them.
+export function backupTiers(tiers: Tier[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem('sic_tiers_backup', JSON.stringify(tiers))
+}
+
+export function loadTiersBackup(): Tier[] | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem('sic_tiers_backup')
+    if (!stored) return null
+    const parsed = JSON.parse(stored)
+    return parsed.map((tier: Tier) => ({
+      ...tier,
+      max: tier.max === null ? Infinity : tier.max
+    }))
+  } catch {
+    return null
+  }
+}
+
+export function clearTiersBackup() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('sic_tiers_backup')
+}
+
+export function getTier(achievementPercent: number, tiers: Tier[] = loadTiers()): Tier {
   for (const tier of tiers) {
     // Lower bound is inclusive (>=), upper bound is exclusive (<)
     if (achievementPercent >= tier.min && achievementPercent < tier.max) {

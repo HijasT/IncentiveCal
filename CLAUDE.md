@@ -70,7 +70,8 @@ Single source of truth for `APP_VERSION` and app-wide defaults (default P1/P2 sp
 - Path alias `@/*` maps to the repo root (see `tsconfig.json`).
 - `index.html` at the repo root is the pre-Next.js legacy standalone version, kept for reference only — the live app is entirely under `app/`, `components/`, and `lib/`. Don't edit it expecting it to affect the running app.
 - `archive/` contains historical changelogs from earlier versions; not part of the running app.
-- `localStorage` keys in use: `sic_theme`, `sic_tiers`, `smart_incentive_analytics`.
+- `localStorage` keys in use: `sic_theme`, `sic_tiers`, `sic_tiers_saved_at`, `sic_tiers_backup` (one-slot undo for tier reset), `smart_incentive_analytics`, `sic_bulk_upload`.
+- `sessionStorage` keys in use: `sic_individual_inputs` (Individual tab form persistence — cleared when the tab closes, unlike the `localStorage` keys above).
 
 ## Role
 

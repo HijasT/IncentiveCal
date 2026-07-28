@@ -1,14 +1,21 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { DEFAULT_TIERS, loadTiers, saveTiers, type Tier } from '@/lib/utils'
+import {
+  DEFAULT_TIERS, loadTiers, saveTiers, getTiersSavedAt,
+  backupTiers, loadTiersBackup, clearTiersBackup, type Tier,
+} from '@/lib/utils'
 import { SlidersIcon, SaveIcon, BarChartIcon } from '@/components/icons'
 
 export function SettingsTab() {
   const [tiers, setTiers] = useState<Tier[]>(DEFAULT_TIERS)
   const [showDefaults, setShowDefaults] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
+  const [backup, setBackup] = useState<Tier[] | null>(null)
 
   useEffect(() => {
     setTiers(loadTiers())
+    setLastSavedAt(getTiersSavedAt())
+    setBackup(loadTiersBackup())
   }, [])
 
   const handleTierChange = (index: number, field: keyof Tier, value: any) => {
@@ -55,15 +62,30 @@ export function SettingsTab() {
     
     saveTiers(sortedTiers)
     setTiers(sortedTiers)
+    setLastSavedAt(getTiersSavedAt())
     alert('Tier settings saved.')
   }
 
   const handleReset = () => {
     if (confirm('Reset to default tier settings?')) {
+      // Keep an undo snapshot of what's about to be discarded.
+      backupTiers(tiers)
+      setBackup(tiers)
       setTiers(DEFAULT_TIERS)
       saveTiers(DEFAULT_TIERS)
-      alert('Tier settings reset to defaults.')
+      setLastSavedAt(getTiersSavedAt())
+      alert('Tier settings reset to defaults. You can restore your previous tiers below if this was a mistake.')
     }
+  }
+
+  const handleRestoreBackup = () => {
+    if (!backup) return
+    setTiers(backup)
+    saveTiers(backup)
+    setLastSavedAt(getTiersSavedAt())
+    clearTiersBackup()
+    setBackup(null)
+    alert('Previous tier settings restored.')
   }
 
   return (
@@ -117,9 +139,6 @@ export function SettingsTab() {
                   </div>
                   <div style={{fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)'}}>
                     Rate: {tier.rate}%
-                  </div>
-                  <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', fontFamily: 'monospace'}}>
-                    {tier.color}
                   </div>
                 </div>
               ))}
@@ -271,8 +290,31 @@ export function SettingsTab() {
         ))}
       </div>
 
+      {/* Last Saved / Undo */}
+      <div style={{
+        marginTop: '20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '8px',
+        fontSize: '12px',
+        color: 'var(--text-muted)'
+      }}>
+        <span>Last saved: {lastSavedAt ? new Date(lastSavedAt).toLocaleString() : 'Never'}</span>
+        {backup && (
+          <button
+            className="btn btn-secondary"
+            onClick={handleRestoreBackup}
+            style={{padding: '6px 12px', fontSize: '12px'}}
+          >
+            Restore previous tiers
+          </button>
+        )}
+      </div>
+
       {/* Action Buttons */}
-      <div style={{display: 'flex', gap: '12px', marginTop: '24px'}}>
+      <div style={{display: 'flex', gap: '12px', marginTop: '12px'}}>
         <button className="btn btn-secondary" onClick={handleReset} style={{flex: '1'}}>
           <span>↺ Reset to Defaults</span>
         </button>

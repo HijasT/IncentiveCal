@@ -1,25 +1,65 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DEFAULT_P1_SPLIT, DEFAULT_STAFF_COUNT } from '@/lib/config'
 import { calculateIncentive, formatCurrency, type CalculationResult } from '@/lib/utils'
 
+// Persists in-progress form inputs so switching tabs and coming back doesn't
+// blank the form. Session-scoped (not localStorage) — cleared when the tab closes.
+const STORAGE_KEY = 'sic_individual_inputs'
+
+interface PersistedInputs {
+  teamTarget: string
+  teamSales: string
+  mySales: string
+  staffCount: string
+  p1Split: number
+}
+
+function loadPersistedInputs(): Partial<PersistedInputs> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function IndividualTab() {
-  const [teamTarget, setTeamTarget] = useState('')
-  const [teamSales, setTeamSales] = useState('')
-  const [mySales, setMySales] = useState('')
-  const [staffCount, setStaffCount] = useState(String(DEFAULT_STAFF_COUNT))
-  const [p1Split, setP1Split] = useState(DEFAULT_P1_SPLIT)
+  const persisted = loadPersistedInputs()
+  const [teamTarget, setTeamTarget] = useState(persisted.teamTarget ?? '')
+  const [teamSales, setTeamSales] = useState(persisted.teamSales ?? '')
+  const [mySales, setMySales] = useState(persisted.mySales ?? '')
+  const [staffCount, setStaffCount] = useState(persisted.staffCount ?? String(DEFAULT_STAFF_COUNT))
+  const [p1Split, setP1Split] = useState(persisted.p1Split ?? DEFAULT_P1_SPLIT)
   const [results, setResults] = useState<CalculationResult | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ teamTarget, teamSales, mySales, staffCount, p1Split }))
+  }, [teamTarget, teamSales, mySales, staffCount, p1Split])
 
   const calculate = () => {
     const target = parseFloat(teamTarget)
     const sales = parseFloat(teamSales)
     const my = parseFloat(mySales) || 0
     const staff = parseInt(staffCount)
-    
+
     const result = calculateIncentive(target, sales, my, staff, p1Split)
     setResults(result)
   }
+
+  // Live feedback: recalculate automatically as the user types, debounced so
+  // we don't recompute on every keystroke.
+  useEffect(() => {
+    if (!teamTarget || !teamSales || !staffCount) {
+      setResults(null)
+      return
+    }
+    const handle = setTimeout(calculate, 400)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamTarget, teamSales, mySales, staffCount, p1Split])
 
   return (
     <section className="card">
@@ -68,7 +108,7 @@ export function IndividualTab() {
             type="number"
             value={staffCount}
             onChange={(e) => setStaffCount(e.target.value)}
-            placeholder="29" 
+            placeholder={String(DEFAULT_STAFF_COUNT)}
             min="1"
           />
         </div>
