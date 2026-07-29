@@ -42,11 +42,18 @@ export const CENTERS: Record<string, string> = {
  * are grouped as "Unassigned" in the center-wise stats and flagged so it's
  * obvious the mapping needs updating (e.g. after a new hire).
  *
- * Example:
- *   export const STAFF_CENTERS: Record<string, string> = {
- *     'Ahmed Ali': 'C',
- *     'Fatima Noor': 'I',
- *     'John Smith': 'D',
- *   }
+ * The names below are placeholders — replace them with your real staff
+ * names (must match the Excel sheet exactly). Each center needs at least
+ * one entry to show up with real numbers in Center-wise Stats.
  */
-export const STAFF_CENTERS: Record<string, string> = {}
+export const STAFF_CENTERS: Record<string, string> = {
+  'Staff Name 1': 'C',
+  'Staff Name 2': 'C',
+  'Staff Name 3': 'C',
+  'Staff Name 4': 'I',
+  'Staff Name 5': 'I',
+  'Staff Name 6': 'I',
+  'Staff Name 7': 'D',
+  'Staff Name 8': 'D',
+  'Staff Name 9': 'D',
+}
