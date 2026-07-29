@@ -50,3 +50,6 @@ next-env.d.ts
 Thumbs.db
 
 CLAUDE.md
+
+# Claude Code local state (settings, worktrees, etc.)
+.claude/
