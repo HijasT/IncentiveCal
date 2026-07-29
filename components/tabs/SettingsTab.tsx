@@ -8,7 +8,7 @@ import { SlidersIcon, SaveIcon, BarChartIcon } from '@/components/icons'
 
 export function SettingsTab() {
   const [tiers, setTiers] = useState<Tier[]>(DEFAULT_TIERS)
-  const [showDefaults, setShowDefaults] = useState(false)
+  const [showDefaults, setShowDefaults] = useState(true)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [backup, setBackup] = useState<Tier[] | null>(null)
 

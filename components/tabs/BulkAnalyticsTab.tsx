@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { parseExcelFile, type ExcelData } from '@/lib/excelUtils'
+import { parseExcelFile, pickDefaultMonth, type ExcelData } from '@/lib/excelUtils'
 import { BulkResultsView } from './BulkResultsView'
 import { AnalyticsDashboardView } from './AnalyticsDashboardView'
 import { BarChartIcon, TrendIcon, UploadIcon } from '@/components/icons'
@@ -77,11 +77,13 @@ export function BulkAnalyticsTab() {
     try {
       const data = await parseExcelFile(uploadedFile)
       setExcelData(data)
-      // Auto-select the current month/year on every fresh upload — the user
-      // still has to press "Calculate" explicitly, this only sets the filter.
+      // Auto-select the current month/year on every fresh upload, falling
+      // back to the previous month if the current one has no usable data.
+      // Results then calculate automatically (see BulkResultsView).
       setViewMode('monthly')
-      setSelectedMonth(getCurrentMonthShort())
-      setSelectedYear(getCurrentYearShort())
+      const { month, year } = pickDefaultMonth(data)
+      setSelectedMonth(month)
+      setSelectedYear(year)
     } catch (error) {
       console.error('Error parsing Excel:', error)
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'

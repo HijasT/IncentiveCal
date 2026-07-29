@@ -328,6 +328,30 @@ export function getAvailableMonths(data: ExcelData[]): string[] {
   return sortSheetNamesChronologically(data.map((d) => d.sheetName))
 }
 
+// Picks which month/year to auto-select right after an upload: the current
+// calendar month if its sheet has usable data, otherwise the previous month.
+export function pickDefaultMonth(data: ExcelData[], now: Date = new Date()): { month: string; year: string } {
+  const findSheet = (month: string, year: string) =>
+    data.find((d) => d.sheetName === `${month} ${year}` || d.sheetName === `${month}${year}`)
+
+  const isUsable = (sheet: ExcelData | undefined) =>
+    !!sheet && sheet.staff.length > 0 && sheet.target > 0
+
+  const monthIdx = now.getMonth()
+  const month = SHORT_MONTHS[monthIdx]
+  const year = String(now.getFullYear()).slice(-2)
+
+  if (isUsable(findSheet(month, year))) return { month, year }
+
+  const prevIdx = monthIdx === 0 ? 11 : monthIdx - 1
+  const prevYear = monthIdx === 0 ? String(now.getFullYear() - 1).slice(-2) : year
+  const prevMonth = SHORT_MONTHS[prevIdx]
+
+  if (isUsable(findSheet(prevMonth, prevYear))) return { month: prevMonth, year: prevYear }
+
+  return { month, year }
+}
+
 export function aggregateSheets(sheets: ExcelData[]): ExcelData {
   const aggregated: Record<string, StaffData> = {}
   let totalPackages = 0
