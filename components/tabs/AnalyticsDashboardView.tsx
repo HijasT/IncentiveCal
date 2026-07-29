@@ -14,6 +14,7 @@ type SubTab = 'overview' | 'individual' | 'leaderboards' | 'achievements' | 'ins
 type ViewMode = 'monthly' | 'q1' | 'q2' | 'q3' | 'q4' | 'h1' | 'h2' | 'yearly' | 'alltime'
 
 const COLORS = ['#35507a', '#9c6b3e', '#1f7a5c', '#b23a3a', '#6b7280', '#5c7ab0']
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 interface PersonData {
   name: string
@@ -37,6 +38,88 @@ interface AnalyticsDashboardViewProps {
   viewMode: ViewMode
   selectedMonth: string
   selectedYear: string
+}
+
+// Aggregates staff across the given sheets and computes the v7.2.0
+// percentile-based performance score for each person. Pulled out as a
+// standalone function (rather than inline in the effect below) so the same
+// scoring can be run a second time against a prior month's sheet for the
+// leaderboard's month-on-month movement indicator.
+function computePersonData(sheets: ExcelData[]): PersonData[] {
+  const allPeople = new Map<string, PersonData>()
+
+  sheets.forEach(sheet => {
+    sheet.staff.forEach(person => {
+      if (allPeople.has(person.name)) {
+        const existing = allPeople.get(person.name)!
+        existing.sales += person.sales
+        existing.packages += person.packages
+        existing.workingDays += person.workingDays
+        if (person.clients) {
+          existing.clients = (existing.clients || 0) + person.clients
+        }
+      } else {
+        allPeople.set(person.name, {
+          name: person.name,
+          sales: person.sales,
+          packages: person.packages,
+          workingDays: person.workingDays,
+          clients: person.clients || 0
+        })
+      }
+    })
+  })
+
+  const people = Array.from(allPeople.values()).sort((a, b) => b.sales - a.sales)
+  const totalPeople = people.length
+  if (totalPeople === 0) return people
+  const topSellerSales = people[0].sales
+
+  const peopleWithMetrics = people.map(p => ({
+    ...p,
+    dailySales: p.sales / Math.max(p.workingDays, 1),
+    salesPerClient: (p.clients && p.clients > 0) ? p.sales / p.clients : 0
+  }))
+
+  const byProductivity = [...peopleWithMetrics].sort((a, b) => b.dailySales - a.dailySales)
+  const productivityRanks = new Map<string, number>()
+  byProductivity.forEach((p, idx) => productivityRanks.set(p.name, idx + 1))
+
+  const byEfficiency = [...peopleWithMetrics].filter(p => p.salesPerClient > 0).sort((a, b) => b.salesPerClient - a.salesPerClient)
+  const efficiencyRanks = new Map<string, number>()
+  byEfficiency.forEach((p, idx) => efficiencyRanks.set(p.name, idx + 1))
+
+  people.forEach((person, index) => {
+    const rank = index + 1
+    person.rank = rank
+
+    const rankScore = ((totalPeople - rank + 1) / totalPeople) * 100
+    const volumeScore = (person.sales / topSellerSales) * 100
+    const salesScore = (rankScore * 0.6) + (volumeScore * 0.4)
+
+    const productivityRank = productivityRanks.get(person.name) || totalPeople
+    const productivityScore = ((totalPeople - productivityRank + 1) / totalPeople) * 100
+    person.productivityRank = productivityRank
+
+    const efficiencyRank = efficiencyRanks.get(person.name) || totalPeople
+    const efficiencyScore = byEfficiency.length > 0
+      ? ((byEfficiency.length - efficiencyRank + 1) / byEfficiency.length) * 100
+      : 50 // Default if no client data
+    person.efficiencyRank = efficiencyRank
+
+    const performanceScore = (
+      (salesScore * 0.50) +
+      (productivityScore * 0.25) +
+      (efficiencyScore * 0.25)
+    )
+
+    person.salesScore = Math.round(salesScore)
+    person.productivityScore = Math.round(productivityScore)
+    person.efficiencyScore = Math.round(efficiencyScore)
+    person.performanceScore = Math.round(performanceScore)
+  })
+
+  return people
 }
 
 export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, selectedYear }: AnalyticsDashboardViewProps) {
@@ -80,95 +163,52 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
       return
     }
 
-    const allPeople = new Map<string, PersonData>()
-    
-    sheetsToProcess.forEach(sheet => {
-      sheet.staff.forEach(person => {
-        if (allPeople.has(person.name)) {
-          const existing = allPeople.get(person.name)!
-          existing.sales += person.sales
-          existing.packages += person.packages
-          existing.workingDays += person.workingDays
-          if (person.clients) {
-            existing.clients = (existing.clients || 0) + person.clients
-          }
-        } else {
-          allPeople.set(person.name, {
-            name: person.name,
-            sales: person.sales,
-            packages: person.packages,
-            workingDays: person.workingDays,
-            clients: person.clients || 0
-          })
-        }
-      })
-    })
-    
-    const people = Array.from(allPeople.values()).sort((a, b) => b.sales - a.sales)
-    
-    // Calculate v7.2.0 percentile-based performance scores
-    const totalPeople = people.length
-    const topSellerSales = people.length > 0 ? people[0].sales : 1
-    
-    // Calculate daily sales and sales per client for everyone
-    const peopleWithMetrics = people.map(p => ({
-      ...p,
-      dailySales: p.sales / Math.max(p.workingDays, 1),
-      salesPerClient: (p.clients && p.clients > 0) ? p.sales / p.clients : 0
-    }))
-    
-    // Rank by productivity (daily sales)
-    const byProductivity = [...peopleWithMetrics].sort((a, b) => b.dailySales - a.dailySales)
-    const productivityRanks = new Map<string, number>()
-    byProductivity.forEach((p, idx) => productivityRanks.set(p.name, idx + 1))
-    
-    // Rank by efficiency (sales per client)
-    const byEfficiency = [...peopleWithMetrics].filter(p => p.salesPerClient > 0).sort((a, b) => b.salesPerClient - a.salesPerClient)
-    const efficiencyRanks = new Map<string, number>()
-    byEfficiency.forEach((p, idx) => efficiencyRanks.set(p.name, idx + 1))
-    
-    // Assign scores to each person
-    people.forEach((person, index) => {
-      const rank = index + 1 // Sales rank
-      person.rank = rank
-      
-      // 1. SALES PERFORMANCE (50% weight) - HYBRID
-      // Rank component (60%)
-      const rankScore = ((totalPeople - rank + 1) / totalPeople) * 100
-      // Volume component (40%)
-      const volumeScore = (person.sales / topSellerSales) * 100
-      // Combined sales score
-      const salesScore = (rankScore * 0.6) + (volumeScore * 0.4)
-      
-      // 2. PRODUCTIVITY (25% weight) - PERCENTILE-BASED
-      const productivityRank = productivityRanks.get(person.name) || totalPeople
-      const productivityScore = ((totalPeople - productivityRank + 1) / totalPeople) * 100
-      person.productivityRank = productivityRank
-      
-      // 3. EFFICIENCY (25% weight) - PERCENTILE-BASED
-      const efficiencyRank = efficiencyRanks.get(person.name) || totalPeople
-      const efficiencyScore = efficiencyRank > 0 
-        ? ((byEfficiency.length - efficiencyRank + 1) / byEfficiency.length) * 100
-        : 50 // Default if no client data
-      person.efficiencyRank = efficiencyRank
-      
-      // PERFORMANCE SCORE (v7.2.0)
-      const performanceScore = (
-        (salesScore * 0.50) +
-        (productivityScore * 0.25) +
-        (efficiencyScore * 0.25)
-      )
-      
-      // Assign scores
-      person.salesScore = Math.round(salesScore)
-      person.productivityScore = Math.round(productivityScore)
-      person.efficiencyScore = Math.round(efficiencyScore)
-      person.performanceScore = Math.round(performanceScore)
-    })
+    const people = computePersonData(sheetsToProcess)
 
     setPersonData(people)
     if (people.length > 0) setSelectedPerson(people[0].name)
   }, [excelData, viewMode, selectedMonth, selectedYear])
+
+  // Month-on-month score movement: recompute the previous calendar month's
+  // performance scores (independent of the currently selected view/period)
+  // so the leaderboard can show each person's delta vs last month.
+  const [prevMonthScores, setPrevMonthScores] = useState<Map<string, number>>(new Map())
+
+  useEffect(() => {
+    if (viewMode !== 'monthly' || excelData.length === 0) {
+      setPrevMonthScores(new Map())
+      return
+    }
+    const idx = SHORT_MONTHS.indexOf(selectedMonth)
+    if (idx === -1) { setPrevMonthScores(new Map()); return }
+
+    const prevIdx = idx === 0 ? 11 : idx - 1
+    const prevYear = idx === 0 ? String(Number(selectedYear) - 1).padStart(2, '0') : selectedYear
+    const prevMonth = SHORT_MONTHS[prevIdx]
+
+    const prevSheets = excelData.filter(d => d.sheetName === `${prevMonth} ${prevYear}` || d.sheetName === `${prevMonth}${prevYear}`)
+    if (prevSheets.length === 0) { setPrevMonthScores(new Map()); return }
+
+    const prevPeople = computePersonData(prevSheets)
+    const scores = new Map<string, number>()
+    prevPeople.forEach(p => {
+      if (p.performanceScore !== undefined) scores.set(p.name, p.performanceScore)
+    })
+    setPrevMonthScores(scores)
+  }, [excelData, viewMode, selectedMonth, selectedYear])
+
+  // Returns the arrow/delta badge for a person's score vs last month, or
+  // null when there's nothing to compare against (non-monthly view, or no
+  // prior-month sheet for that person).
+  const getMovement = (name: string, currentScore?: number) => {
+    if (viewMode !== 'monthly' || currentScore === undefined) return null
+    const prevScore = prevMonthScores.get(name)
+    if (prevScore === undefined) return null
+    const delta = currentScore - prevScore
+    if (delta > 0) return { arrow: '↑', delta, color: 'var(--success)' }
+    if (delta < 0) return { arrow: '↓', delta, color: 'var(--error)' }
+    return { arrow: '→', delta: 0, color: 'var(--text-muted)' }
+  }
 
   const teamTotal = useMemo(() => personData.reduce((sum, p) => sum + p.sales, 0), [personData])
   const teamPackages = useMemo(() => personData.reduce((sum, p) => sum + p.packages, 0), [personData])
@@ -672,11 +712,19 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px'}}>{board.title}</h3>
                   {board.entries.map((entry, idx) => {
                     const badge = getRankBadge(idx + 1)
+                    const movement = getMovement(entry.name, personData.find(p => p.name === entry.name)?.performanceScore)
                     return (
                       <div key={entry.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
                         <div style={{width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${badge.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: badge.color, fontFamily: "'JetBrains Mono', monospace"}}>{badge.label}</div>
                         <div style={{flex: 1}}>
-                          <div style={{fontWeight: '600'}}>{entry.name}</div>
+                          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                            <span style={{fontWeight: '600'}}>{entry.name}</span>
+                            {movement && (
+                              <span style={{fontSize: '12px', fontWeight: '700', color: movement.color, fontFamily: "'JetBrains Mono', monospace"}}>
+                                {movement.arrow} {movement.delta > 0 ? '+' : ''}{movement.delta} pts
+                              </span>
+                            )}
+                          </div>
                           <div style={{fontSize: '12px', color: 'var(--text-muted)'}}>{entry.metric}</div>
                         </div>
                       </div>
