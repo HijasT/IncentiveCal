@@ -18,6 +18,15 @@ export interface ExcelData {
   }
 }
 
+// Matches an employee code like "AE01-227" embedded in a staff name cell
+// (e.g. "Jane Doe AE01-227") — used to look up STAFF_CENTERS without
+// keying that config by real names.
+export const EMPLOYEE_CODE_PATTERN = /AE\d{2}-\d{3}/
+
+export function extractEmployeeCode(staffName: string): string | null {
+  return staffName.match(EMPLOYEE_CODE_PATTERN)?.[0] ?? null
+}
+
 export async function parseExcelFile(file: File): Promise<ExcelData[]> {
   // Bundled import — no CDN, no (window as any), no polling needed
   const XLSX = await import('xlsx')

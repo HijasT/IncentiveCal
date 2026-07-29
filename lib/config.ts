@@ -37,23 +37,53 @@ export const CENTERS: Record<string, string> = {
 }
 
 /**
- * Maps each staff member's name — exactly as it appears in the uploaded
- * Excel sheet — to a center key from CENTERS above. Staff not listed here
- * are grouped as "Unassigned" in the center-wise stats and flagged so it's
- * obvious the mapping needs updating (e.g. after a new hire).
+ * Maps each staff member's employee code (format "AE##-###") to a center
+ * key from CENTERS above — keyed by code rather than name so this file
+ * (committed to a public repo) never contains real staff names.
  *
- * The names below are placeholders — replace them with your real staff
- * names (must match the Excel sheet exactly). Each center needs at least
- * one entry to show up with real numbers in Center-wise Stats.
+ * Matched against the uploaded Excel by extracting an "AE##-###"-shaped
+ * code out of the staff name cell (see EMPLOYEE_CODE_PATTERN in
+ * lib/excelUtils.ts) — this assumes the sheet's name field includes the
+ * code (e.g. "Jane Doe AE01-227"). Staff with no code, or a code not
+ * listed here, are grouped as "Unassigned" in the center-wise stats.
+ *
+ * Seeded from code prefix (AE01 -> C, AE02 -> I, AE03 -> D) as a starting
+ * point — a few people work across centers regardless of their code
+ * prefix, so double check and reassign those manually below.
  */
 export const STAFF_CENTERS: Record<string, string> = {
-  'Staff Name 1': 'C',
-  'Staff Name 2': 'C',
-  'Staff Name 3': 'C',
-  'Staff Name 4': 'I',
-  'Staff Name 5': 'I',
-  'Staff Name 6': 'I',
-  'Staff Name 7': 'D',
-  'Staff Name 8': 'D',
-  'Staff Name 9': 'D',
+  // C (AE01)
+  'AE01-227': 'C',
+  'AE01-216': 'C',
+  'AE01-228': 'C',
+  'AE01-194': 'C',
+  'AE01-219': 'C',
+  'AE01-229': 'C',
+  'AE01-190': 'C',
+  'AE01-179': 'C',
+  'AE01-206': 'C',
+  'AE01-207': 'C',
+  'AE01-232': 'C',
+  'AE01-234': 'C',
+  'AE01-238': 'C',
+  'AE01-225': 'C',
+  'AE01-224': 'C',
+  'AE01-217': 'C',
+
+  // I (AE02)
+  'AE02-138': 'I',
+  'AE02-110': 'I',
+  'AE02-111': 'I',
+  'AE02-137': 'I',
+  'AE02-123': 'I',
+  'AE02-104': 'I',
+  'AE02-141': 'I',
+  'AE02-146': 'I',
+
+  // D (AE03)
+  'AE03-101': 'D',
+  'AE03-174': 'D',
+  'AE03-153': 'D',
+  'AE03-176': 'D',
+  'AE03-178': 'D',
 }
