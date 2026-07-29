@@ -12,7 +12,7 @@
  */
 
 /** Displayed in the header, About tab, and page title. */
-export const APP_VERSION = '8.3.0'
+export const APP_VERSION = '8.4.0'
 
 /** Default P1 percentage (0–100). P2 = 100 - DEFAULT_P1_SPLIT. */
 export const DEFAULT_P1_SPLIT = 50
@@ -58,32 +58,32 @@ export const STAFF_CENTERS: Record<string, string> = {
   'AE01-228': 'C',
   'AE01-194': 'C',
   'AE01-219': 'C',
-  'AE01-229': 'C',
-  'AE01-190': 'C',
-  'AE01-179': 'C',
   'AE01-206': 'C',
   'AE01-207': 'C',
   'AE01-232': 'C',
-  'AE01-234': 'C',
   'AE01-238': 'C',
-  'AE01-225': 'C',
-  'AE01-224': 'C',
   'AE01-217': 'C',
 
   // I (AE02)
+  'AE01-179': 'I',
   'AE02-138': 'I',
-  'AE02-110': 'I',
-  'AE02-111': 'I',
   'AE02-137': 'I',
   'AE02-123': 'I',
   'AE02-104': 'I',
   'AE02-141': 'I',
   'AE02-146': 'I',
+  'AE01-225': 'I',
+  'AE01-234': 'I',
 
   // D (AE03)
   'AE03-101': 'D',
+  'AE01-229': 'D',
+  'AE01-190': 'D',
   'AE03-174': 'D',
   'AE03-153': 'D',
   'AE03-176': 'D',
   'AE03-178': 'D',
+  'AE02-110': 'D',
+  'AE02-111': 'D',
+  'AE01-224': 'D',
 }
