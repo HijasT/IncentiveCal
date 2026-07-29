@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { aggregateSheets, type ExcelData, type StaffData } from '@/lib/excelUtils'
+import { aggregateSheets, extractEmployeeCode, type ExcelData, type StaffData } from '@/lib/excelUtils'
 import { calculateIncentive, formatCurrency, getTier, loadTiers } from '@/lib/utils'
 import { saveTeamData, checkAndAwardBadges, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
@@ -286,7 +286,8 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
     let unassigned = 0
 
     results.forEach(person => {
-      const center = STAFF_CENTERS[person.name]
+      const code = extractEmployeeCode(person.name)
+      const center = code ? STAFF_CENTERS[code] : undefined
       if (!center) { unassigned++; return }
       if (!totals[center]) totals[center] = { sales: 0, packages: 0, clients: 0 }
       totals[center].sales    += person.sales
