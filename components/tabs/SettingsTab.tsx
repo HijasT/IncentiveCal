@@ -3,8 +3,28 @@ import { useState, useEffect } from 'react'
 import {
   DEFAULT_TIERS, loadTiers, saveTiers, getTiersSavedAt,
   backupTiers, loadTiersBackup, clearTiersBackup, type Tier,
+  loadStaffCenters, saveStaffCenters, getStaffCentersSavedAt,
+  backupStaffCenters, loadStaffCentersBackup, clearStaffCentersBackup,
 } from '@/lib/utils'
+import { CENTERS, STAFF_CENTERS } from '@/lib/config'
 import { SlidersIcon, SaveIcon, BarChartIcon } from '@/components/icons'
+
+interface StaffCenterEntry {
+  code: string
+  center: string
+}
+
+function toEntries(mapping: Record<string, string>): StaffCenterEntry[] {
+  return Object.entries(mapping).map(([code, center]) => ({ code, center }))
+}
+
+function toMapping(entries: StaffCenterEntry[]): Record<string, string> {
+  const mapping: Record<string, string> = {}
+  entries.forEach(({ code, center }) => {
+    if (code.trim()) mapping[code.trim()] = center
+  })
+  return mapping
+}
 
 export function SettingsTab() {
   const [tiers, setTiers] = useState<Tier[]>(DEFAULT_TIERS)
@@ -12,10 +32,18 @@ export function SettingsTab() {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [backup, setBackup] = useState<Tier[] | null>(null)
 
+  const [scEntries, setScEntries] = useState<StaffCenterEntry[]>(toEntries(STAFF_CENTERS))
+  const [scLastSavedAt, setScLastSavedAt] = useState<string | null>(null)
+  const [scBackup, setScBackup] = useState<Record<string, string> | null>(null)
+
   useEffect(() => {
     setTiers(loadTiers())
     setLastSavedAt(getTiersSavedAt())
     setBackup(loadTiersBackup())
+
+    setScEntries(toEntries(loadStaffCenters()))
+    setScLastSavedAt(getStaffCentersSavedAt())
+    setScBackup(loadStaffCentersBackup())
   }, [])
 
   const handleTierChange = (index: number, field: keyof Tier, value: any) => {
@@ -88,7 +116,51 @@ export function SettingsTab() {
     alert('Previous tier settings restored.')
   }
 
+  const handleScChange = (index: number, field: keyof StaffCenterEntry, value: string) => {
+    const next = [...scEntries]
+    next[index] = { ...next[index], [field]: value }
+    setScEntries(next)
+  }
+
+  const handleAddSc = () => {
+    setScEntries([...scEntries, { code: '', center: Object.keys(CENTERS)[0] ?? '' }])
+  }
+
+  const handleRemoveSc = (index: number) => {
+    setScEntries(scEntries.filter((_, i) => i !== index))
+  }
+
+  const handleSaveSc = () => {
+    const mapping = toMapping(scEntries)
+    saveStaffCenters(mapping)
+    setScEntries(toEntries(mapping))
+    setScLastSavedAt(getStaffCentersSavedAt())
+    alert('Staff center allocation saved.')
+  }
+
+  const handleResetSc = () => {
+    if (confirm('Reset to default staff center allocation?')) {
+      backupStaffCenters(toMapping(scEntries))
+      setScBackup(toMapping(scEntries))
+      setScEntries(toEntries(STAFF_CENTERS))
+      saveStaffCenters(STAFF_CENTERS)
+      setScLastSavedAt(getStaffCentersSavedAt())
+      alert('Staff center allocation reset to defaults. You can restore your previous allocation below if this was a mistake.')
+    }
+  }
+
+  const handleRestoreScBackup = () => {
+    if (!scBackup) return
+    setScEntries(toEntries(scBackup))
+    saveStaffCenters(scBackup)
+    setScLastSavedAt(getStaffCentersSavedAt())
+    clearStaffCentersBackup()
+    setScBackup(null)
+    alert('Previous staff center allocation restored.')
+  }
+
   return (
+    <>
     <section className="card">
       <div className="card-header">
         <h2 className="card-title"><SlidersIcon className="icon-lg" />Tier Configuration</h2>
@@ -344,5 +416,136 @@ export function SettingsTab() {
         </ul>
       </div>
     </section>
+
+    <section className="card" style={{marginTop: '24px'}}>
+      <div className="card-header">
+        <h2 className="card-title"><BarChartIcon className="icon-lg" />Staff Center Allocation</h2>
+        <div className="card-description">
+          Map each employee code to a center (used by Bulk Results' Center-wise Stats)
+        </div>
+      </div>
+
+      <div style={{marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <h3 style={{fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)'}}>
+          Allocations ({scEntries.length})
+        </h3>
+        <button className="btn btn-primary" onClick={handleAddSc} style={{padding: '8px 16px', fontSize: '14px'}}>
+          <span>+ Add Staff</span>
+        </button>
+      </div>
+
+      <div style={{maxHeight: '420px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)'}}>
+        {scEntries.map((entry, index) => (
+          <div key={index} style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
+            padding: '10px 16px',
+            borderBottom: index < scEntries.length - 1 ? '1px solid var(--border-color)' : 'none',
+            background: index % 2 === 0 ? 'var(--surface)' : 'var(--bg-tertiary)',
+          }}>
+            <input
+              type="text"
+              value={entry.code}
+              onChange={(e) => handleScChange(index, 'code', e.target.value)}
+              placeholder="e.g. AE01-227"
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontSize: '13px',
+                fontFamily: 'monospace',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+              }}
+            />
+            <select
+              value={entry.center}
+              onChange={(e) => handleScChange(index, 'center', e.target.value)}
+              style={{
+                padding: '8px 12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+              }}
+            >
+              {Object.entries(CENTERS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => handleRemoveSc(index)}
+              title={`Remove ${entry.code || 'this entry'}`}
+              style={{background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-muted)', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer', fontSize: '15px', lineHeight: '1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}
+              onMouseEnter={(e) => { const b = e.currentTarget; b.style.borderColor = 'var(--error)'; b.style.color = 'var(--error)' }}
+              onMouseLeave={(e) => { const b = e.currentTarget; b.style.borderColor = 'var(--border-color)'; b.style.color = 'var(--text-muted)' }}
+            >×</button>
+          </div>
+        ))}
+        {scEntries.length === 0 && (
+          <div style={{padding: '20px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)'}}>
+            No allocations yet — click "+ Add Staff" to map an employee code to a center.
+          </div>
+        )}
+      </div>
+
+      {/* Last Saved / Undo */}
+      <div style={{
+        marginTop: '20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '8px',
+        fontSize: '12px',
+        color: 'var(--text-muted)'
+      }}>
+        <span>Last saved: {scLastSavedAt ? new Date(scLastSavedAt).toLocaleString() : 'Never'}</span>
+        {scBackup && (
+          <button
+            className="btn btn-secondary"
+            onClick={handleRestoreScBackup}
+            style={{padding: '6px 12px', fontSize: '12px'}}
+          >
+            Restore previous allocation
+          </button>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{display: 'flex', gap: '12px', marginTop: '12px'}}>
+        <button className="btn btn-secondary" onClick={handleResetSc} style={{flex: '1'}}>
+          <span>↺ Reset to Defaults</span>
+        </button>
+        <button className="btn btn-primary" onClick={handleSaveSc} style={{flex: '1'}}>
+          <><SaveIcon />Save Allocation</>
+        </button>
+      </div>
+
+      {/* Info Box */}
+      <div style={{
+        marginTop: '24px',
+        padding: '16px',
+        background: 'var(--accent-soft)',
+        border: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-md)',
+        fontSize: '13px',
+        color: 'var(--text-secondary)',
+        lineHeight: '1.6'
+      }}>
+        <strong style={{color: 'var(--text-primary)'}}>How it works:</strong>
+        <ul style={{marginTop: '8px', marginLeft: '20px'}}>
+          <li>Matched against the employee code (e.g. "AE01-227") embedded in each staff name in the uploaded Excel — not the name itself</li>
+          <li>Staff with no code, or a code not listed here, show as "Unassigned" in Center-wise Stats</li>
+          <li>Changes apply immediately to Bulk Results' Center-wise Stats section</li>
+        </ul>
+      </div>
+    </section>
+    </>
   )
 }

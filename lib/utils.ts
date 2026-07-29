@@ -1,5 +1,7 @@
 // Utility functions extracted from original HTML
 
+import { STAFF_CENTERS } from './config'
+
 export interface Tier {
   id: string
   name: string
@@ -72,6 +74,52 @@ export function loadTiersBackup(): Tier[] | null {
 export function clearTiersBackup() {
   if (typeof window === 'undefined') return
   localStorage.removeItem('sic_tiers_backup')
+}
+
+// Employee code -> center key (e.g. { 'AE01-227': 'C' }), editable from the
+// Settings tab. Defaults to STAFF_CENTERS in lib/config.ts (mirrors the
+// tier persistence functions above).
+export function loadStaffCenters(): Record<string, string> {
+  if (typeof window === 'undefined') return STAFF_CENTERS
+  try {
+    const stored = localStorage.getItem('sic_staff_centers')
+    return stored ? JSON.parse(stored) : STAFF_CENTERS
+  } catch {
+    return STAFF_CENTERS
+  }
+}
+
+export function saveStaffCenters(mapping: Record<string, string>) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem('sic_staff_centers', JSON.stringify(mapping))
+  localStorage.setItem('sic_staff_centers_saved_at', new Date().toISOString())
+}
+
+export function getStaffCentersSavedAt(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('sic_staff_centers_saved_at')
+}
+
+// One-slot backup used to undo a "Reset to Defaults" — captures whatever
+// mapping was in effect immediately before the reset overwrote it.
+export function backupStaffCenters(mapping: Record<string, string>) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem('sic_staff_centers_backup', JSON.stringify(mapping))
+}
+
+export function loadStaffCentersBackup(): Record<string, string> | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem('sic_staff_centers_backup')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearStaffCentersBackup() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('sic_staff_centers_backup')
 }
 
 export function getTier(achievementPercent: number, tiers: Tier[] = loadTiers()): Tier {

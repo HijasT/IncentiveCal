@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { aggregateSheets, extractEmployeeCode, type ExcelData, type StaffData } from '@/lib/excelUtils'
-import { calculateIncentive, formatCurrency, getTier, loadTiers } from '@/lib/utils'
+import { calculateIncentive, formatCurrency, getTier, loadTiers, loadStaffCenters } from '@/lib/utils'
 import { saveTeamData, checkAndAwardBadges, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
-import { DEFAULT_P1_SPLIT, CENTERS, STAFF_CENTERS } from '@/lib/config'
+import { DEFAULT_P1_SPLIT, CENTERS } from '@/lib/config'
 import { DownloadIcon } from '@/components/icons'
 
 interface BulkResult extends StaffData {
@@ -282,12 +282,13 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
 
   const centerStats = (() => {
     if (!calculatedData) return null
+    const staffCenters = loadStaffCenters()
     const totals: Record<string, { sales: number; packages: number; clients: number }> = {}
     let unassigned = 0
 
     results.forEach(person => {
       const code = extractEmployeeCode(person.name)
-      const center = code ? STAFF_CENTERS[code] : undefined
+      const center = code ? staffCenters[code] : undefined
       if (!center) { unassigned++; return }
       if (!totals[center]) totals[center] = { sales: 0, packages: 0, clients: 0 }
       totals[center].sales    += person.sales
