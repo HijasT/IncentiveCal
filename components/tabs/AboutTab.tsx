@@ -151,7 +151,7 @@ export function AboutTab() {
         <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px'}}>
           <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
             <p style={{marginBottom: '16px', color: 'var(--text-primary)', fontWeight: '600'}}>
-              The Analytics Dashboard scores each person against a standard (0-100) instead of ranking staff against each other — a score of 100 means the standard was met exactly. Sales and Pace are measured against your personal share of the team target; Clients and Packages are measured against fixed daily benchmarks (1 client/day, 1.25 packages/day), so hitting the standard scores 100 regardless of who else is on the team or how much they sold:
+              The Analytics Dashboard scores each person against a standard instead of ranking staff against each other — a score of 100 means the standard was met exactly. Sales and Pace are measured against your personal share of the team target; Clients and Packages are measured against fixed daily benchmarks (1 client/day, 1.25 packages/day). Scores aren't capped at 100 — they run up to 200 (double the standard), so someone who clearly outperforms the benchmark stays visibly ahead of someone who just cleared it, instead of both showing the same 100:
             </p>
 
             <div style={{
@@ -179,7 +179,7 @@ export function AboutTab() {
                   Personal Target = Team Target ÷ Active Staff
                 </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (My Sales ÷ Personal Target) × 100)
+                  Score = min(200, (My Sales ÷ Personal Target) × 100)
                 </code>
                 <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--accent-primary) 10%, transparent)', borderRadius: '6px'}}>
                   Example: Personal target AED 24,138, sold AED 22,414<br/>
@@ -195,7 +195,7 @@ export function AboutTab() {
                   Avg Clients/Day = Total Clients ÷ Working Days
                 </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (Avg Clients/Day ÷ 1) × 100)
+                  Score = min(200, (Avg Clients/Day ÷ 1) × 100)
                 </code>
                 <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--warning) 10%, transparent)', borderRadius: '6px'}}>
                   No client data on the sheet? Scores a neutral 50 — neither rewarded nor penalised.
@@ -210,7 +210,7 @@ export function AboutTab() {
                   Avg Packages/Day = Total Packages ÷ Working Days
                 </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (Avg Packages/Day ÷ 1.25) × 100)
+                  Score = min(200, (Avg Packages/Day ÷ 1.25) × 100)
                 </code>
               </div>
 
@@ -222,7 +222,7 @@ export function AboutTab() {
                   Expected Daily Rate = Personal Target ÷ Standard Working Days
                 </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (Actual Daily Rate ÷ Expected Daily Rate) × 100)
+                  Score = min(200, (Actual Daily Rate ÷ Expected Daily Rate) × 100)
                 </code>
                 <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--success) 10%, transparent)', borderRadius: '6px'}}>
                   Rewards hitting your target in fewer working days.
