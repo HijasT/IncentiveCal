@@ -12,7 +12,7 @@
  */
 
 /** Displayed in the header, About tab, and page title. */
-export const APP_VERSION = '8.6.0'
+export const APP_VERSION = '8.6.1'
 
 /** Default P1 percentage (0–100). P2 = 100 - DEFAULT_P1_SPLIT. */
 export const DEFAULT_P1_SPLIT = 50
@@ -51,15 +51,11 @@ export const CENTERS: Record<string, string> = {
  * point — a few people work across centers regardless of their code
  * prefix, so double check and reassign those manually below.
  */
-/**
- * Client/package benchmarks are NOT fixed here — AnalyticsDashboardView
- * computes them per period as the team's own average clients/day and
- * packages/day (teamClients ÷ teamWorkingDays, teamPackages ÷ teamWorkingDays)
- * across whatever sheets are in view. A hardcoded constant would either be
- * trivially cleared by real sales volumes (everyone caps at 100, no signal)
- * or need constant recalibration as targets change — deriving it from the
- * uploaded data keeps "100 = met standard" meaningful without manual tuning.
- */
+/** Expected converted clients per working day per staff */
+export const BENCHMARK_CLIENTS_PER_DAY = 1
+
+/** Expected packages sold per working day per staff */
+export const BENCHMARK_PACKAGES_PER_DAY = 1.25
 
 /** Standard working days in a full month */
 export const BENCHMARK_WORKING_DAYS = 26

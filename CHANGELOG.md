@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [8.6.1]
+
+### Changed
+- Client/Package benchmarks in the performance score are fixed constants again — `BENCHMARK_CLIENTS_PER_DAY` = 1 and `BENCHMARK_PACKAGES_PER_DAY` = 1.25 (`lib/config.ts`), replacing the per-period team-average derivation from 8.6.0. Sales/Pace scoring is unchanged.
+
 ## [8.6.0]
 
 ### Changed

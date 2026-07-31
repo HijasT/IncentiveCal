@@ -151,7 +151,7 @@ export function AboutTab() {
         <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px'}}>
           <div style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.8'}}>
             <p style={{marginBottom: '16px', color: 'var(--text-primary)', fontWeight: '600'}}>
-              The Analytics Dashboard scores each person against a standard (0-100) instead of ranking staff against each other — a score of 100 means the standard was met exactly. Sales and Pace are measured against your personal share of the team target; Clients and Packages are measured against the team's own average for the period, so hitting the same standard as everyone else scores 100, not whoever happens to sell the most:
+              The Analytics Dashboard scores each person against a standard (0-100) instead of ranking staff against each other — a score of 100 means the standard was met exactly. Sales and Pace are measured against your personal share of the team target; Clients and Packages are measured against fixed daily benchmarks (1 client/day, 1.25 packages/day), so hitting the standard scores 100 regardless of who else is on the team or how much they sold:
             </p>
 
             <div style={{
@@ -194,11 +194,8 @@ export function AboutTab() {
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
                   Avg Clients/Day = Total Clients ÷ Working Days
                 </code>
-                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
-                  Team Average = Team's Total Clients ÷ Team's Total Working Days (this period)
-                </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (Avg Clients/Day ÷ Team Average) × 100)
+                  Score = min(100, (Avg Clients/Day ÷ 1) × 100)
                 </code>
                 <div style={{marginTop: '10px', fontSize: '13px', padding: '10px', background: 'color-mix(in srgb, var(--warning) 10%, transparent)', borderRadius: '6px'}}>
                   No client data on the sheet? Scores a neutral 50 — neither rewarded nor penalised.
@@ -212,11 +209,8 @@ export function AboutTab() {
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
                   Avg Packages/Day = Total Packages ÷ Working Days
                 </code>
-                <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block', marginBottom: '6px'}}>
-                  Team Average = Team's Total Packages ÷ Team's Total Working Days (this period)
-                </code>
                 <code style={{background: 'var(--bg-secondary)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', display: 'block'}}>
-                  Score = min(100, (Avg Packages/Day ÷ Team Average) × 100)
+                  Score = min(100, (Avg Packages/Day ÷ 1.25) × 100)
                 </code>
               </div>
 
@@ -244,7 +238,7 @@ export function AboutTab() {
               borderRadius: 'var(--radius-sm)',
               fontSize: '13px'
             }}>
-              <strong style={{color: 'var(--success)'}}>Why standards-based?</strong> Clearing the standard scores 100 — it doesn't matter whether one teammate sold far more or another sold far less; everyone is measured against the same target and the same team average, not against each other. A top seller who moves fewer packages or serves fewer clients than the team average will score below 100 on those components even with 100 on Sales — the categories are independent, so strong Sales performance doesn't paper over weak Packages or Clients performance.
+              <strong style={{color: 'var(--success)'}}>Why standards-based?</strong> Clearing the standard scores 100 — it doesn't matter whether one teammate sold far more or another sold far less; everyone is measured against the same fixed benchmarks, not against each other. A top seller who moves fewer than 1.25 packages or serves fewer than 1 client per day will score below 100 on those components even with 100 on Sales — the categories are independent, so strong Sales performance doesn't paper over weak Packages or Clients performance.
             </div>
           </div>
         </div>

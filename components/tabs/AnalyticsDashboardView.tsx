@@ -8,7 +8,7 @@ import {
   getRankHistory, getPersonBadges, getBadgeInfo, ALL_BADGE_IDS,
 } from '@/lib/analyticsUtils'
 import { exportAnalyticsToPDF } from '@/lib/pdfUtils'
-import { BENCHMARK_WORKING_DAYS, SCORE_WEIGHTS } from '@/lib/config'
+import { BENCHMARK_CLIENTS_PER_DAY, BENCHMARK_PACKAGES_PER_DAY, BENCHMARK_WORKING_DAYS, SCORE_WEIGHTS } from '@/lib/config'
 import { CenterBadge } from '@/components/CenterBadge'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
@@ -35,8 +35,6 @@ interface PersonData {
   personalTarget?: number        // AED — teamTarget / activeStaff
   avgClientsPerDay?: number
   avgPackagesPerDay?: number
-  benchmarkClientsPerDay?: number // team average clients/day for this period
-  benchmarkPackagesPerDay?: number // team average packages/day for this period
   actualDailyRate?: number       // AED/day
   noTargetData?: boolean         // true if teamTarget is missing/zero
 }
@@ -49,13 +47,14 @@ interface AnalyticsDashboardViewProps {
 }
 
 // Aggregates staff across the given sheets and computes a standards-based
-// absolute performance score for each person against configurable benchmarks
-// (lib/config.ts) rather than ranking staff against each other — a score of
-// 100 means the benchmark was met exactly, so it stays meaningful across
-// months and team compositions. Pulled out as a standalone function (rather
-// than inline in the effect below) so the same scoring can be run a second
-// time against a prior month's sheet for the leaderboard's month-on-month
-// movement indicator.
+// absolute performance score for each person against fixed benchmarks
+// (lib/config.ts: BENCHMARK_CLIENTS_PER_DAY, BENCHMARK_PACKAGES_PER_DAY)
+// rather than ranking staff against each other — a score of 100 means the
+// benchmark was met exactly, so it stays meaningful across months and team
+// compositions. Pulled out as a standalone function (rather than inline in
+// the effect below) so the same scoring can be run a second time against a
+// prior month's sheet for the leaderboard's month-on-month movement
+// indicator.
 function computePersonData(sheets: ExcelData[]): PersonData[] {
   const allPeople = new Map<string, PersonData>()
 
@@ -92,20 +91,9 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
   const activeStaff = allPeople.size
   const personalTarget = activeStaff > 0 ? teamTarget / activeStaff : 0
 
-  // Client/package benchmarks are the team's own average for this period
-  // (not a fixed constant) — see lib/config.ts for why. Computed as team
-  // totals over team working days so one person's days off don't skew it.
-  const teamWorkingDays = people.reduce((sum, p) => sum + p.workingDays, 0)
-  const teamClients = people.reduce((sum, p) => sum + (p.clients || 0), 0)
-  const teamPackages = people.reduce((sum, p) => sum + p.packages, 0)
-  const benchmarkClientsPerDay = teamWorkingDays > 0 ? teamClients / teamWorkingDays : 0
-  const benchmarkPackagesPerDay = teamWorkingDays > 0 ? teamPackages / teamWorkingDays : 0
-
   people.forEach((person, index) => {
     person.rank = index + 1
     person.personalTarget = personalTarget
-    person.benchmarkClientsPerDay = benchmarkClientsPerDay
-    person.benchmarkPackagesPerDay = benchmarkPackagesPerDay
 
     if (!teamTarget || !personalTarget) {
       person.salesScore = 0
@@ -125,9 +113,7 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
     let avgClientsPerDay = 0
     if (person.clients && person.clients > 0 && person.workingDays > 0) {
       avgClientsPerDay = person.clients / person.workingDays
-      clientScore = benchmarkClientsPerDay > 0
-        ? clampScore((avgClientsPerDay / benchmarkClientsPerDay) * 100)
-        : 50
+      clientScore = clampScore((avgClientsPerDay / BENCHMARK_CLIENTS_PER_DAY) * 100)
     } else {
       clientScore = 50 // Neutral — client data absent, neither reward nor penalise
     }
@@ -136,9 +122,7 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
     let avgPackagesPerDay = 0
     if (person.packages > 0 && person.workingDays > 0) {
       avgPackagesPerDay = person.packages / person.workingDays
-      packageScore = benchmarkPackagesPerDay > 0
-        ? clampScore((avgPackagesPerDay / benchmarkPackagesPerDay) * 100)
-        : 50
+      packageScore = clampScore((avgPackagesPerDay / BENCHMARK_PACKAGES_PER_DAY) * 100)
     } else {
       packageScore = 0
     }
@@ -580,7 +564,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
                         Clients
                         <span
-                          title="Average converted clients per working day vs the team's own average for this period. 100 = met that average exactly."
+                          title="Average converted clients per working day vs the benchmark rate. 100 = met the benchmark exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -619,7 +603,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
                       {selected.clients && selected.clients > 0
-                        ? `${(selected.avgClientsPerDay || 0).toFixed(2)}/day vs team average ${(selected.benchmarkClientsPerDay || 0).toFixed(2)}/day`
+                        ? `${(selected.avgClientsPerDay || 0).toFixed(2)}/day vs benchmark ${BENCHMARK_CLIENTS_PER_DAY}/day`
                         : 'No client data — neutral score applied'}
                     </div>
                   </div>
@@ -630,7 +614,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
                         Packages
                         <span
-                          title="Average packages sold per working day vs the team's own average for this period. 100 = met that average exactly."
+                          title="Average packages sold per working day vs the benchmark rate. 100 = met the benchmark exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -668,7 +652,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       }} />
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                      {(selected.avgPackagesPerDay || 0).toFixed(2)}/day vs team average {(selected.benchmarkPackagesPerDay || 0).toFixed(2)}/day
+                      {(selected.avgPackagesPerDay || 0).toFixed(2)}/day vs benchmark {BENCHMARK_PACKAGES_PER_DAY}/day
                     </div>
                   </div>
 
