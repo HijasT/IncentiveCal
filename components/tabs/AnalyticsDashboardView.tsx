@@ -8,6 +8,12 @@ import {
   getRankHistory, getPersonBadges, getBadgeInfo, ALL_BADGE_IDS,
 } from '@/lib/analyticsUtils'
 import { exportAnalyticsToPDF } from '@/lib/pdfUtils'
+import {
+  BENCHMARK_CLIENTS_PER_DAY,
+  BENCHMARK_PACKAGES_PER_DAY,
+  BENCHMARK_WORKING_DAYS,
+  SCORE_WEIGHTS,
+} from '@/lib/config'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 type SubTab = 'overview' | 'individual' | 'leaderboards' | 'achievements' | 'insights'
@@ -23,14 +29,17 @@ interface PersonData {
   workingDays: number
   clients?: number
   rank?: number
-  // Performance score components (v7.2.0 Percentile Formula)
+  // Performance score components (standards-based absolute scoring)
   performanceScore?: number      // Overall: 0-100
-  salesScore?: number            // 50% weight: Hybrid (rank 60% + volume 40%)
-  productivityScore?: number     // 25% weight: Percentile-based daily sales
-  efficiencyScore?: number       // 25% weight: Percentile-based sales per client
-  // Rankings for percentile calculation
-  productivityRank?: number      // Rank by daily sales
-  efficiencyRank?: number        // Rank by sales per client
+  salesScore?: number            // 50% weight: mySales vs personalTarget
+  clientScore?: number           // 20% weight: avg clients/day vs benchmark
+  packageScore?: number          // 20% weight: avg packages/day vs benchmark
+  paceScore?: number             // 10% weight: actual daily sales rate vs expected
+  personalTarget?: number        // AED — teamTarget / activeStaff
+  avgClientsPerDay?: number
+  avgPackagesPerDay?: number
+  actualDailyRate?: number       // AED/day
+  noTargetData?: boolean         // true if teamTarget is missing/zero
 }
 
 interface AnalyticsDashboardViewProps {
@@ -40,11 +49,14 @@ interface AnalyticsDashboardViewProps {
   selectedYear: string
 }
 
-// Aggregates staff across the given sheets and computes the v7.2.0
-// percentile-based performance score for each person. Pulled out as a
-// standalone function (rather than inline in the effect below) so the same
-// scoring can be run a second time against a prior month's sheet for the
-// leaderboard's month-on-month movement indicator.
+// Aggregates staff across the given sheets and computes a standards-based
+// absolute performance score for each person against configurable benchmarks
+// (lib/config.ts) rather than ranking staff against each other — a score of
+// 100 means the benchmark was met exactly, so it stays meaningful across
+// months and team compositions. Pulled out as a standalone function (rather
+// than inline in the effect below) so the same scoring can be run a second
+// time against a prior month's sheet for the leaderboard's month-on-month
+// movement indicator.
 function computePersonData(sheets: ExcelData[]): PersonData[] {
   const allPeople = new Map<string, PersonData>()
 
@@ -73,53 +85,78 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
   const people = Array.from(allPeople.values()).sort((a, b) => b.sales - a.sales)
   const totalPeople = people.length
   if (totalPeople === 0) return people
-  const topSellerSales = people[0].sales
 
-  const peopleWithMetrics = people.map(p => ({
-    ...p,
-    dailySales: p.sales / Math.max(p.workingDays, 1),
-    salesPerClient: (p.clients && p.clients > 0) ? p.sales / p.clients : 0
-  }))
-
-  const byProductivity = [...peopleWithMetrics].sort((a, b) => b.dailySales - a.dailySales)
-  const productivityRanks = new Map<string, number>()
-  byProductivity.forEach((p, idx) => productivityRanks.set(p.name, idx + 1))
-
-  const byEfficiency = [...peopleWithMetrics].filter(p => p.salesPerClient > 0).sort((a, b) => b.salesPerClient - a.salesPerClient)
-  const efficiencyRanks = new Map<string, number>()
-  byEfficiency.forEach((p, idx) => efficiencyRanks.set(p.name, idx + 1))
+  const teamTarget = sheets.reduce((sum, sh) => sum + sh.target, 0)
+  const activeStaff = allPeople.size
+  const personalTarget = activeStaff > 0 ? teamTarget / activeStaff : 0
 
   people.forEach((person, index) => {
-    const rank = index + 1
-    person.rank = rank
+    person.rank = index + 1
+    person.personalTarget = personalTarget
 
-    const rankScore = ((totalPeople - rank + 1) / totalPeople) * 100
-    const volumeScore = (person.sales / topSellerSales) * 100
-    const salesScore = (rankScore * 0.6) + (volumeScore * 0.4)
+    if (!teamTarget || !personalTarget) {
+      person.salesScore = 0
+      person.clientScore = 0
+      person.packageScore = 0
+      person.paceScore = 0
+      person.performanceScore = 0
+      person.noTargetData = true
+      return
+    }
 
-    const productivityRank = productivityRanks.get(person.name) || totalPeople
-    const productivityScore = ((totalPeople - productivityRank + 1) / totalPeople) * 100
-    person.productivityRank = productivityRank
+    const effectiveWorkingDays = Math.max(person.workingDays, 1)
 
-    const efficiencyRank = efficiencyRanks.get(person.name) || totalPeople
-    const efficiencyScore = byEfficiency.length > 0
-      ? ((byEfficiency.length - efficiencyRank + 1) / byEfficiency.length) * 100
-      : 50 // Default if no client data
-    person.efficiencyRank = efficiencyRank
+    const salesScore = clampScore((person.sales / personalTarget) * 100)
 
-    const performanceScore = (
-      (salesScore * 0.50) +
-      (productivityScore * 0.25) +
-      (efficiencyScore * 0.25)
+    let clientScore: number
+    let avgClientsPerDay = 0
+    if (person.clients && person.clients > 0 && person.workingDays > 0) {
+      avgClientsPerDay = person.clients / person.workingDays
+      clientScore = BENCHMARK_CLIENTS_PER_DAY > 0
+        ? clampScore((avgClientsPerDay / BENCHMARK_CLIENTS_PER_DAY) * 100)
+        : 50
+    } else {
+      clientScore = 50 // Neutral — client data absent, neither reward nor penalise
+    }
+
+    let packageScore: number
+    let avgPackagesPerDay = 0
+    if (person.packages > 0 && person.workingDays > 0) {
+      avgPackagesPerDay = person.packages / person.workingDays
+      packageScore = BENCHMARK_PACKAGES_PER_DAY > 0
+        ? clampScore((avgPackagesPerDay / BENCHMARK_PACKAGES_PER_DAY) * 100)
+        : 50
+    } else {
+      packageScore = 0
+    }
+
+    const expectedDailyRate = personalTarget / BENCHMARK_WORKING_DAYS
+    const actualDailyRate = person.sales / effectiveWorkingDays
+    const paceScore = clampScore((actualDailyRate / expectedDailyRate) * 100)
+
+    const performanceScore = Math.round(
+      salesScore   * SCORE_WEIGHTS.sales +
+      clientScore  * SCORE_WEIGHTS.clients +
+      packageScore * SCORE_WEIGHTS.packages +
+      paceScore    * SCORE_WEIGHTS.pace
     )
 
     person.salesScore = Math.round(salesScore)
-    person.productivityScore = Math.round(productivityScore)
-    person.efficiencyScore = Math.round(efficiencyScore)
-    person.performanceScore = Math.round(performanceScore)
+    person.clientScore = Math.round(clientScore)
+    person.packageScore = Math.round(packageScore)
+    person.paceScore = Math.round(paceScore)
+    person.performanceScore = performanceScore
+    person.avgClientsPerDay = avgClientsPerDay
+    person.avgPackagesPerDay = avgPackagesPerDay
+    person.actualDailyRate = actualDailyRate
+    person.noTargetData = false
   })
 
   return people
+}
+
+function clampScore(score: number): number {
+  return Math.min(100, Math.max(0, score))
 }
 
 export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, selectedYear }: AnalyticsDashboardViewProps) {
@@ -453,7 +490,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               <div style={{
                 padding: '20px',
                 background: 'var(--bg-card)',
-                
+
                 border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-md)',
                 marginBottom: '24px'
@@ -461,15 +498,28 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                 <h3 style={{fontSize: '16px', fontWeight: '700', marginBottom: '20px', color: 'var(--text-primary)'}}>
                   Performance Breakdown
                 </h3>
-                
+
+                {selected.noTargetData ? (
+                  <div style={{
+                    padding: '16px',
+                    background: 'var(--bg-tertiary)',
+                    borderLeft: '3px solid var(--warning)',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    No target found for this period. Performance scores unavailable.
+                  </div>
+                ) : (
+                <>
                 <div style={{display: 'grid', gap: '16px'}}>
-                  {/* Sales Performance - 50% (Hybrid: Rank 60% + Volume 40%) */}
+                  {/* Sales Score - 50% (vs personal share of team target) */}
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        Sales Performance
-                        <span 
-                          title="Hybrid formula: 60% based on your sales rank position + 40% based on your sales volume vs top seller. Rewards both position and actual performance gap."
+                        Sales
+                        <span
+                          title="Your monthly sales vs your personal share of the team target (team target ÷ active staff). 100 = met your target exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -507,17 +557,17 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       }} />
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                      Rank #{selected.rank}/{personData.length} • Hybrid (Rank 60% + Volume 40%)
+                      Personal target: AED {formatCurrency(selected.personalTarget || 0)}
                     </div>
                   </div>
 
-                  {/* Productivity Score - 25% (Percentile-based) */}
+                  {/* Client Score - 20% (avg clients/day vs benchmark) */}
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        Productivity
-                        <span 
-                          title="Percentile-based ranking by daily sales output. Shows where you rank among the team in daily sales (Total Sales ÷ Working Days). Top performer = 100."
+                        Clients
+                        <span
+                          title="Average converted clients per working day vs the benchmark rate. 100 = met the benchmark exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -533,11 +583,11 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           ℹ
                         </span>
                         <span style={{marginLeft: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500'}}>
-                          (25% weight)
+                          (20% weight)
                         </span>
                       </div>
                       <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--warning)'}}>
-                        {selected.productivityScore || 0}/100
+                        {selected.clientScore ?? 0}/100
                       </div>
                     </div>
                     <div style={{
@@ -548,24 +598,26 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       overflow: 'hidden'
                     }}>
                       <div style={{
-                        width: `${selected.productivityScore || 0}%`,
+                        width: `${selected.clientScore ?? 0}%`,
                         height: '100%',
                         background: 'var(--warning)',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                      {formatCurrency(selected.sales / selected.workingDays)}/day • Rank #{selected.productivityRank}/{personData.length}
+                      {selected.clients && selected.clients > 0
+                        ? `${(selected.avgClientsPerDay || 0).toFixed(2)}/day vs benchmark ${BENCHMARK_CLIENTS_PER_DAY}/day`
+                        : 'No client data — neutral score applied'}
                     </div>
                   </div>
 
-                  {/* Efficiency Score - 25% (Percentile-based) */}
+                  {/* Package Score - 20% (avg packages/day vs benchmark) */}
                   <div>
                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
-                        Efficiency
-                        <span 
-                          title="Percentile-based ranking by sales per client. Shows where you rank in average sale value (Total Sales ÷ Clients Served). Top performer = 100."
+                        Packages
+                        <span
+                          title="Average packages sold per working day vs the benchmark rate. 100 = met the benchmark exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -581,11 +633,11 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                           ℹ
                         </span>
                         <span style={{marginLeft: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500'}}>
-                          (25% weight)
+                          (20% weight)
                         </span>
                       </div>
                       <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--success)'}}>
-                        {selected.efficiencyScore || 0}/100
+                        {selected.packageScore ?? 0}/100
                       </div>
                     </div>
                     <div style={{
@@ -596,14 +648,62 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       overflow: 'hidden'
                     }}>
                       <div style={{
-                        width: `${selected.efficiencyScore || 0}%`,
+                        width: `${selected.packageScore ?? 0}%`,
                         height: '100%',
                         background: 'var(--success)',
                         transition: 'width 0.5s ease'
                       }} />
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                      {selected.clients ? `${formatCurrency(selected.sales / selected.clients)}/client • Rank #{selected.efficiencyRank}/{personData.length}` : 'No client data'}
+                      {(selected.avgPackagesPerDay || 0).toFixed(2)}/day vs benchmark {BENCHMARK_PACKAGES_PER_DAY}/day
+                    </div>
+                  </div>
+
+                  {/* Pace Score - 10% (actual daily sales rate vs expected) */}
+                  <div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
+                      <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
+                        Pace
+                        <span
+                          title="Actual daily sales rate vs the expected rate (personal target ÷ standard working days). Rewards hitting target in fewer days."
+                          style={{
+                            marginLeft: '6px',
+                            fontSize: '12px',
+                            color: 'var(--accent-secondary)',
+                            cursor: 'help',
+                            border: '1px solid var(--accent-secondary)',
+                            borderRadius: '50%',
+                            padding: '0 5px',
+                            display: 'inline-block',
+                            lineHeight: '1.4'
+                          }}
+                        >
+                          ℹ
+                        </span>
+                        <span style={{marginLeft: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500'}}>
+                          (10% weight)
+                        </span>
+                      </div>
+                      <div style={{fontSize: '14px', fontWeight: '700', color: 'var(--accent-secondary)'}}>
+                        {selected.paceScore ?? 0}/100
+                      </div>
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      background: 'var(--bg-tertiary)',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${selected.paceScore ?? 0}%`,
+                        height: '100%',
+                        background: 'var(--accent-secondary)',
+                        transition: 'width 0.5s ease'
+                      }} />
+                    </div>
+                    <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
+                      AED {(selected.actualDailyRate || 0).toFixed(0)}/day vs expected AED {((selected.personalTarget || 0) / BENCHMARK_WORKING_DAYS).toFixed(0)}/day
                     </div>
                   </div>
                 </div>
@@ -618,9 +718,11 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                   color: 'var(--text-muted)',
                   fontFamily: 'monospace'
                 }}>
-                  <strong style={{color: 'var(--text-primary)'}}>Formula v7.2.0:</strong> Performance = 
-                  (Sales × 50%) + (Productivity × 25%) + (Efficiency × 25%)
+                  <strong style={{color: 'var(--text-primary)'}}>Formula:</strong> Performance =
+                  (Sales × 50%) + (Clients × 20%) + (Packages × 20%) + (Pace × 10%)
                 </div>
+                </>
+                )}
               </div>
 
               {/* Additional Stats */}
