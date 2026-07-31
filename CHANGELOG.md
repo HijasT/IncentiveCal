@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [8.6.3]
+
+### Changed
+- Removed the 200 ceiling from performance score components (Sales, Clients, Packages, Pace) added in 8.6.2 — scores are now floored at 0 with no upper limit at all, so overall performance (still 50% Sales + 20% Clients + 20% Packages + 10% Pace) scales as high as actual over-achievement warrants instead of flattening out at a second ceiling.
+
 ## [8.6.2]
 
 ### Changed

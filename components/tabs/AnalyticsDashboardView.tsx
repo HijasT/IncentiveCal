@@ -27,8 +27,8 @@ interface PersonData {
   clients?: number
   rank?: number
   // Performance score components (standards-based absolute scoring).
-  // 0-200: 100 = met the benchmark exactly, up to 200 = double it. Not
-  // capped at 100 — see computePersonData for why.
+  // Floored at 0, uncapped above — 100 = met the benchmark exactly, higher
+  // means exceeded it by that much. See computePersonData for why.
   performanceScore?: number      // Overall
   salesScore?: number            // 50% weight: mySales vs personalTarget
   clientScore?: number           // 20% weight: avg clients/day vs benchmark
@@ -51,15 +51,16 @@ interface AnalyticsDashboardViewProps {
 // Aggregates staff across the given sheets and computes a standards-based
 // absolute performance score for each person against fixed benchmarks
 // (lib/config.ts: BENCHMARK_CLIENTS_PER_DAY, BENCHMARK_PACKAGES_PER_DAY) —
-// a score of 100 means the benchmark was met exactly. Scores are NOT capped
-// at 100: clearing the benchmark is common for a healthy team (the app's own
-// tier system expects teams to regularly hit 100-111%+ of target), so a hard
-// cap at 100 collapses everyone who clears it into an indistinguishable
-// ceiling. Letting scores run up to 200 (double the standard) keeps real
-// over-achievers visibly ahead of people who just cleared the bar. Pulled
-// out as a standalone function (rather than inline in the effect below) so
-// the same scoring can be run a second time against a prior month's sheet
-// for the leaderboard's month-on-month movement indicator.
+// a score of 100 means the benchmark was met exactly. Scores are uncapped
+// above 100 (no ceiling): clearing the benchmark is common for a healthy
+// team (the app's own tier system expects teams to regularly hit 100-111%+
+// of target), so any hard cap collapses everyone who clears it into an
+// indistinguishable ceiling — letting scores run as high as actual
+// performance warrants keeps real over-achievers visibly ahead of people
+// who just cleared the bar. Pulled out as a standalone function (rather
+// than inline in the effect below) so the same scoring can be run a second
+// time against a prior month's sheet for the leaderboard's month-on-month
+// movement indicator.
 function computePersonData(sheets: ExcelData[]): PersonData[] {
   const allPeople = new Map<string, PersonData>()
 
@@ -157,11 +158,11 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
   return people
 }
 
-// Floors at 0; ceilings at 200 (double the benchmark) rather than 100 so
-// genuine over-achievement stays visible instead of bunching everyone who
-// clears the standard into the same score. See computePersonData above.
+// Floors at 0 only — no ceiling, so genuine over-achievement stays visible
+// instead of bunching everyone who clears the standard into the same score.
+// See computePersonData above.
 function clampScore(score: number): number {
-  return Math.min(200, Math.max(0, score))
+  return Math.max(0, score)
 }
 
 export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, selectedYear }: AnalyticsDashboardViewProps) {
