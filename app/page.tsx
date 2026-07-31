@@ -9,7 +9,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { APP_VERSION, DEFAULT_THEME } from '@/lib/config'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('individual')
+  const [activeTab, setActiveTab] = useState('bulk-analytics')
   const [theme, setTheme] = useState<'light' | 'dark'>(DEFAULT_THEME)
 
   useEffect(() => {
@@ -45,16 +45,16 @@ export default function Home() {
 
       <nav className="nav-tabs">
         <button
-          className={`nav-tab ${activeTab === 'individual' ? 'active' : ''}`}
-          onClick={() => setActiveTab('individual')}
-        >
-          Individual
-        </button>
-        <button
           className={`nav-tab ${activeTab === 'bulk-analytics' ? 'active' : ''}`}
           onClick={() => setActiveTab('bulk-analytics')}
         >
           Bulk & Analytics
+        </button>
+        <button
+          className={`nav-tab ${activeTab === 'individual' ? 'active' : ''}`}
+          onClick={() => setActiveTab('individual')}
+        >
+          Individual
         </button>
         <button
           className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}

@@ -35,19 +35,36 @@ function loadPersistedUpload(): Partial<PersistedUpload> {
 
 export function BulkAnalyticsTab() {
   const [subView, setSubView] = useState<SubView>('bulk')
-  const persisted = loadPersistedUpload()
-  const [viewMode, setViewMode] = useState<ViewMode>(persisted.viewMode ?? 'monthly')
-  const [selectedMonth, setSelectedMonth] = useState(persisted.selectedMonth ?? getCurrentMonthShort())
-  const [selectedYear, setSelectedYear] = useState(persisted.selectedYear ?? getCurrentYearShort())
-  const [excelData, setExcelData] = useState<ExcelData[]>(persisted.excelData ?? [])
+  // SSR-safe defaults — localStorage isn't available during the server
+  // render, so starting from it here would make the client's first render
+  // diverge from the server's and trigger a hydration mismatch. The actual
+  // persisted values are applied after mount instead (see below), which
+  // matters now that this is the default/first-rendered tab.
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly')
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthShort())
+  const [selectedYear, setSelectedYear] = useState(getCurrentYearShort())
+  const [excelData, setExcelData] = useState<ExcelData[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [availableYears, setAvailableYears] = useState<string[]>([])
+  const [hasHydrated, setHasHydrated] = useState(false)
 
-  // Persist shared upload state so it survives a tab switch/remount.
+  // Apply whatever was persisted from a previous session, once, after mount.
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    const persisted = loadPersistedUpload()
+    if (persisted.excelData !== undefined) setExcelData(persisted.excelData)
+    if (persisted.viewMode !== undefined) setViewMode(persisted.viewMode)
+    if (persisted.selectedMonth !== undefined) setSelectedMonth(persisted.selectedMonth)
+    if (persisted.selectedYear !== undefined) setSelectedYear(persisted.selectedYear)
+    setHasHydrated(true)
+  }, [])
+
+  // Persist shared upload state so it survives a tab switch/remount. Skipped
+  // until the hydrate effect above has run, so it doesn't overwrite saved
+  // data with the SSR-safe defaults before they've been applied.
+  useEffect(() => {
+    if (!hasHydrated || typeof window === 'undefined') return
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ excelData, viewMode, selectedMonth, selectedYear }))
-  }, [excelData, viewMode, selectedMonth, selectedYear])
+  }, [hasHydrated, excelData, viewMode, selectedMonth, selectedYear])
 
   // Extract available years from excelData
   useEffect(() => {

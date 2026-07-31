@@ -7,11 +7,39 @@ import {
   backupStaffCenters, loadStaffCentersBackup, clearStaffCentersBackup,
 } from '@/lib/utils'
 import { CENTERS, STAFF_CENTERS } from '@/lib/config'
+import { extractEmployeeCode, stripEmployeeCode, type ExcelData } from '@/lib/excelUtils'
 import { SlidersIcon, SaveIcon, BarChartIcon } from '@/components/icons'
 
 interface StaffCenterEntry {
   code: string
   center: string
+}
+
+// Mirrors BulkAnalyticsTab's persistence key — read-only here, just to
+// resolve employee codes to the human names last seen in an uploaded sheet.
+const BULK_UPLOAD_KEY = 'sic_bulk_upload'
+
+// Employee code -> display name, built from whatever workbook was last
+// uploaded in Bulk & Analytics. The code itself stays the stored identifier
+// (names can change between uploads); this is purely a display convenience,
+// and is empty (falls back to showing the code) until something is uploaded.
+function loadCodeToName(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const stored = localStorage.getItem(BULK_UPLOAD_KEY)
+    if (!stored) return {}
+    const excelData: ExcelData[] = JSON.parse(stored).excelData ?? []
+    const map: Record<string, string> = {}
+    excelData.forEach(sheet => {
+      sheet.staff.forEach(person => {
+        const code = extractEmployeeCode(person.name)
+        if (code) map[code] = stripEmployeeCode(person.name)
+      })
+    })
+    return map
+  } catch {
+    return {}
+  }
 }
 
 function toEntries(mapping: Record<string, string>): StaffCenterEntry[] {
@@ -35,6 +63,7 @@ export function SettingsTab() {
   const [scEntries, setScEntries] = useState<StaffCenterEntry[]>(toEntries(STAFF_CENTERS))
   const [scLastSavedAt, setScLastSavedAt] = useState<string | null>(null)
   const [scBackup, setScBackup] = useState<Record<string, string> | null>(null)
+  const [codeToName, setCodeToName] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setTiers(loadTiers())
@@ -44,6 +73,7 @@ export function SettingsTab() {
     setScEntries(toEntries(loadStaffCenters()))
     setScLastSavedAt(getStaffCentersSavedAt())
     setScBackup(loadStaffCentersBackup())
+    setCodeToName(loadCodeToName())
   }, [])
 
   const handleTierChange = (index: number, field: keyof Tier, value: any) => {
@@ -444,22 +474,27 @@ export function SettingsTab() {
             borderBottom: index < scEntries.length - 1 ? '1px solid var(--border-color)' : 'none',
             background: index % 2 === 0 ? 'var(--surface)' : 'var(--bg-tertiary)',
           }}>
-            <input
-              type="text"
-              value={entry.code}
-              onChange={(e) => handleScChange(index, 'code', e.target.value)}
-              placeholder="e.g. AE01-227"
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                fontSize: '13px',
-                fontFamily: 'monospace',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-              }}
-            />
+            <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '4px'}}>
+              <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
+                {codeToName[entry.code.trim()] || entry.code || '(no code yet)'}
+              </div>
+              <input
+                type="text"
+                value={entry.code}
+                onChange={(e) => handleScChange(index, 'code', e.target.value)}
+                placeholder="e.g. AE01-227"
+                title="Employee code — the actual stored identifier for this mapping"
+                style={{
+                  padding: '6px 10px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-muted)',
+                }}
+              />
+            </div>
             <select
               value={entry.center}
               onChange={(e) => handleScChange(index, 'center', e.target.value)}
@@ -540,7 +575,8 @@ export function SettingsTab() {
       }}>
         <strong style={{color: 'var(--text-primary)'}}>How it works:</strong>
         <ul style={{marginTop: '8px', marginLeft: '20px'}}>
-          <li>Matched against the employee code (e.g. "AE01-227") embedded in each staff name in the uploaded Excel — not the name itself</li>
+          <li>Matched against the employee code (e.g. "AE01-227") embedded in each staff name in the uploaded Excel — the code is the stored identifier, since staff names can change between uploads</li>
+          <li>Shows the staff member's name above the code once a workbook has been uploaded in Bulk & Analytics; shows the raw code until then</li>
           <li>Staff with no code, or a code not listed here, show as "Unassigned" in Center-wise Stats</li>
           <li>Changes apply immediately to Bulk Results' Center-wise Stats section</li>
         </ul>

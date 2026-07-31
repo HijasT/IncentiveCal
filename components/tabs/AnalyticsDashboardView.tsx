@@ -1,19 +1,15 @@
 'use client'
 import { HomeIcon, UserIcon, TrophyIcon, AwardIcon, InsightIcon, TrendIcon, BarChartIcon, DownloadIcon } from '@/components/icons'
 import { useState, useEffect, useMemo } from 'react'
-import { type ExcelData } from '@/lib/excelUtils'
-import { formatCurrency } from '@/lib/utils'
+import { getPersonId, type ExcelData } from '@/lib/excelUtils'
+import { formatCurrency, getStaffCenterTag } from '@/lib/utils'
 import {
-  getAvailableNames, getPersonalHistory, getTeamHistory, getLifetimeStats,
+  getAvailableIds, getDisplayName, getPersonalHistory, getTeamHistory, getLifetimeStats,
   getRankHistory, getPersonBadges, getBadgeInfo, ALL_BADGE_IDS,
 } from '@/lib/analyticsUtils'
 import { exportAnalyticsToPDF } from '@/lib/pdfUtils'
-import {
-  BENCHMARK_CLIENTS_PER_DAY,
-  BENCHMARK_PACKAGES_PER_DAY,
-  BENCHMARK_WORKING_DAYS,
-  SCORE_WEIGHTS,
-} from '@/lib/config'
+import { BENCHMARK_WORKING_DAYS, SCORE_WEIGHTS } from '@/lib/config'
+import { CenterBadge } from '@/components/CenterBadge'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 type SubTab = 'overview' | 'individual' | 'leaderboards' | 'achievements' | 'insights'
@@ -23,6 +19,7 @@ const COLORS = ['#35507a', '#9c6b3e', '#1f7a5c', '#b23a3a', '#6b7280', '#5c7ab0'
 const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 interface PersonData {
+  id: string // employee code (or raw name fallback) — see getPersonId in excelUtils.ts
   name: string
   sales: number
   packages: number
@@ -38,6 +35,8 @@ interface PersonData {
   personalTarget?: number        // AED — teamTarget / activeStaff
   avgClientsPerDay?: number
   avgPackagesPerDay?: number
+  benchmarkClientsPerDay?: number // team average clients/day for this period
+  benchmarkPackagesPerDay?: number // team average packages/day for this period
   actualDailyRate?: number       // AED/day
   noTargetData?: boolean         // true if teamTarget is missing/zero
 }
@@ -62,16 +61,19 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
 
   sheets.forEach(sheet => {
     sheet.staff.forEach(person => {
-      if (allPeople.has(person.name)) {
-        const existing = allPeople.get(person.name)!
+      const id = getPersonId(person.name)
+      if (allPeople.has(id)) {
+        const existing = allPeople.get(id)!
         existing.sales += person.sales
         existing.packages += person.packages
         existing.workingDays += person.workingDays
+        existing.name = person.name // keep the latest-seen name for display
         if (person.clients) {
           existing.clients = (existing.clients || 0) + person.clients
         }
       } else {
-        allPeople.set(person.name, {
+        allPeople.set(id, {
+          id,
           name: person.name,
           sales: person.sales,
           packages: person.packages,
@@ -90,9 +92,20 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
   const activeStaff = allPeople.size
   const personalTarget = activeStaff > 0 ? teamTarget / activeStaff : 0
 
+  // Client/package benchmarks are the team's own average for this period
+  // (not a fixed constant) — see lib/config.ts for why. Computed as team
+  // totals over team working days so one person's days off don't skew it.
+  const teamWorkingDays = people.reduce((sum, p) => sum + p.workingDays, 0)
+  const teamClients = people.reduce((sum, p) => sum + (p.clients || 0), 0)
+  const teamPackages = people.reduce((sum, p) => sum + p.packages, 0)
+  const benchmarkClientsPerDay = teamWorkingDays > 0 ? teamClients / teamWorkingDays : 0
+  const benchmarkPackagesPerDay = teamWorkingDays > 0 ? teamPackages / teamWorkingDays : 0
+
   people.forEach((person, index) => {
     person.rank = index + 1
     person.personalTarget = personalTarget
+    person.benchmarkClientsPerDay = benchmarkClientsPerDay
+    person.benchmarkPackagesPerDay = benchmarkPackagesPerDay
 
     if (!teamTarget || !personalTarget) {
       person.salesScore = 0
@@ -112,8 +125,8 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
     let avgClientsPerDay = 0
     if (person.clients && person.clients > 0 && person.workingDays > 0) {
       avgClientsPerDay = person.clients / person.workingDays
-      clientScore = BENCHMARK_CLIENTS_PER_DAY > 0
-        ? clampScore((avgClientsPerDay / BENCHMARK_CLIENTS_PER_DAY) * 100)
+      clientScore = benchmarkClientsPerDay > 0
+        ? clampScore((avgClientsPerDay / benchmarkClientsPerDay) * 100)
         : 50
     } else {
       clientScore = 50 // Neutral — client data absent, neither reward nor penalise
@@ -123,8 +136,8 @@ function computePersonData(sheets: ExcelData[]): PersonData[] {
     let avgPackagesPerDay = 0
     if (person.packages > 0 && person.workingDays > 0) {
       avgPackagesPerDay = person.packages / person.workingDays
-      packageScore = BENCHMARK_PACKAGES_PER_DAY > 0
-        ? clampScore((avgPackagesPerDay / BENCHMARK_PACKAGES_PER_DAY) * 100)
+      packageScore = benchmarkPackagesPerDay > 0
+        ? clampScore((avgPackagesPerDay / benchmarkPackagesPerDay) * 100)
         : 50
     } else {
       packageScore = 0
@@ -203,7 +216,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
     const people = computePersonData(sheetsToProcess)
 
     setPersonData(people)
-    if (people.length > 0) setSelectedPerson(people[0].name)
+    if (people.length > 0) setSelectedPerson(people[0].id)
   }, [excelData, viewMode, selectedMonth, selectedYear])
 
   // Month-on-month score movement: recompute the previous calendar month's
@@ -229,7 +242,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
     const prevPeople = computePersonData(prevSheets)
     const scores = new Map<string, number>()
     prevPeople.forEach(p => {
-      if (p.performanceScore !== undefined) scores.set(p.name, p.performanceScore)
+      if (p.performanceScore !== undefined) scores.set(p.id, p.performanceScore)
     })
     setPrevMonthScores(scores)
   }, [excelData, viewMode, selectedMonth, selectedYear])
@@ -237,9 +250,9 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
   // Returns the arrow/delta badge for a person's score vs last month, or
   // null when there's nothing to compare against (non-monthly view, or no
   // prior-month sheet for that person).
-  const getMovement = (name: string, currentScore?: number) => {
+  const getMovement = (id: string, currentScore?: number) => {
     if (viewMode !== 'monthly' || currentScore === undefined) return null
-    const prevScore = prevMonthScores.get(name)
+    const prevScore = prevMonthScores.get(id)
     if (prevScore === undefined) return null
     const delta = currentScore - prevScore
     if (delta > 0) return { arrow: '↑', delta, color: 'var(--success)' }
@@ -250,7 +263,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
   const teamTotal = useMemo(() => personData.reduce((sum, p) => sum + p.sales, 0), [personData])
   const teamPackages = useMemo(() => personData.reduce((sum, p) => sum + p.packages, 0), [personData])
   const avgDaily = useMemo(() => teamTotal / Math.max(personData.reduce((sum, p) => sum + p.workingDays, 0), 1), [personData, teamTotal])
-  const selected = useMemo(() => personData.find(p => p.name === selectedPerson), [personData, selectedPerson])
+  const selected = useMemo(() => personData.find(p => p.id === selectedPerson), [personData, selectedPerson])
 
   const topPerformers = useMemo(() => 
     personData.slice(0, 10).map(p => ({ name: p.name.split(' ')[0], sales: p.sales })),
@@ -275,8 +288,8 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
   const rankHistory = useMemo(() => getRankHistory(selectedPerson), [selectedPerson, personData])
   const personBadges = useMemo(() => getPersonBadges(selectedPerson), [selectedPerson, personData])
   const streakLeaders = useMemo(() => {
-    return getAvailableNames()
-      .map(name => ({ name, streak: getLifetimeStats(name)?.longestStreak || 0 }))
+    return getAvailableIds()
+      .map(id => ({ id, name: getDisplayName(id), streak: getLifetimeStats(id)?.longestStreak || 0 }))
       .filter(p => p.streak > 0)
       .sort((a, b) => b.streak - a.streak)
       .slice(0, 3)
@@ -460,7 +473,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               <div style={{marginBottom: '24px'}}>
                 <label style={{fontWeight: '600', marginRight: '12px'}}>Select Person:</label>
                 <select value={selectedPerson} onChange={(e) => setSelectedPerson(e.target.value)} style={{padding: '10px', borderRadius: '8px', border: '2px solid var(--border-color)'}}>
-                  {sortedPersonData.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                  {sortedPersonData.map(p => { const tag = getStaffCenterTag(p.name); return <option key={p.id} value={p.id}>{p.name}{tag ? ` [${tag}]` : ''}</option> })}
                 </select>
               </div>
 
@@ -567,7 +580,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
                         Clients
                         <span
-                          title="Average converted clients per working day vs the benchmark rate. 100 = met the benchmark exactly."
+                          title="Average converted clients per working day vs the team's own average for this period. 100 = met that average exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -606,7 +619,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
                       {selected.clients && selected.clients > 0
-                        ? `${(selected.avgClientsPerDay || 0).toFixed(2)}/day vs benchmark ${BENCHMARK_CLIENTS_PER_DAY}/day`
+                        ? `${(selected.avgClientsPerDay || 0).toFixed(2)}/day vs team average ${(selected.benchmarkClientsPerDay || 0).toFixed(2)}/day`
                         : 'No client data — neutral score applied'}
                     </div>
                   </div>
@@ -617,7 +630,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       <div style={{fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)'}}>
                         Packages
                         <span
-                          title="Average packages sold per working day vs the benchmark rate. 100 = met the benchmark exactly."
+                          title="Average packages sold per working day vs the team's own average for this period. 100 = met that average exactly."
                           style={{
                             marginLeft: '6px',
                             fontSize: '12px',
@@ -655,7 +668,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
                       }} />
                     </div>
                     <div style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>
-                      {(selected.avgPackagesPerDay || 0).toFixed(2)}/day vs benchmark {BENCHMARK_PACKAGES_PER_DAY}/day
+                      {(selected.avgPackagesPerDay || 0).toFixed(2)}/day vs team average {(selected.benchmarkPackagesPerDay || 0).toFixed(2)}/day
                     </div>
                   </div>
 
@@ -751,7 +764,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               {/* Real cross-month history for this person */}
               <div style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '24px'}}>
                 <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px'}}>
-                  <h3 style={{fontSize: '14px', fontWeight: '600'}}><TrendIcon />{selected.name} — History</h3>
+                  <h3 style={{fontSize: '14px', fontWeight: '600'}}><TrendIcon />{selected.name}<CenterBadge name={selected.name} /> — History</h3>
                   {lifetimeStats && (
                     <button
                       className="btn btn-secondary btn-sm"
@@ -799,28 +812,28 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
           {activeSubTab === 'leaderboards' ? (
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px'}}>
               {[
-                { title: `Top Sales — ${getViewModeLabel(viewMode)}`, entries: personData.slice(0, 3).map(p => ({ name: p.name, metric: `AED ${formatCurrency(p.sales)}` })) },
-                { title: `Top Packages — ${getViewModeLabel(viewMode)}`, entries: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3).map(p => ({ name: p.name, metric: `${p.packages} pkgs` })) },
+                { title: `Top Sales — ${getViewModeLabel(viewMode)}`, entries: personData.slice(0, 3).map(p => ({ id: p.id, name: p.name, metric: `AED ${formatCurrency(p.sales)}` })) },
+                { title: `Top Packages — ${getViewModeLabel(viewMode)}`, entries: [...personData].sort((a, b) => b.packages - a.packages).slice(0, 3).map(p => ({ id: p.id, name: p.name, metric: `${p.packages} pkgs` })) },
                 ...(personData.some(p => p.clients && p.clients > 0) ? [{
                   title: `Most Clients — ${getViewModeLabel(viewMode)}`,
-                  entries: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3).map(p => ({ name: p.name, metric: `${p.clients} clients` })),
+                  entries: [...personData].filter(p => p.clients && p.clients > 0).sort((a, b) => (b.clients || 0) - (a.clients || 0)).slice(0, 3).map(p => ({ id: p.id, name: p.name, metric: `${p.clients} clients` })),
                 }] : []),
                 ...(streakLeaders.length > 0 ? [{
                   title: 'Longest Streak — all-time',
-                  entries: streakLeaders.map(p => ({ name: p.name, metric: `${p.streak} mo ≥75%` })),
+                  entries: streakLeaders.map(p => ({ id: p.id, name: p.name, metric: `${p.streak} mo ≥75%` })),
                 }] : []),
               ].map(board => (
                 <div key={board.title} style={{padding: '20px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)'}}>
                   <h3 style={{fontSize: '16px', fontWeight: '600', marginBottom: '16px'}}>{board.title}</h3>
                   {board.entries.map((entry, idx) => {
                     const badge = getRankBadge(idx + 1)
-                    const movement = getMovement(entry.name, personData.find(p => p.name === entry.name)?.performanceScore)
+                    const movement = getMovement(entry.id, personData.find(p => p.id === entry.id)?.performanceScore)
                     return (
-                      <div key={entry.name} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
+                      <div key={entry.id} style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--surface)', borderRadius: '8px', marginBottom: '8px', border: '1px solid var(--border-color)'}}>
                         <div style={{width: '32px', height: '32px', borderRadius: '50%', border: `1px solid ${badge.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: badge.color, fontFamily: "'JetBrains Mono', monospace"}}>{badge.label}</div>
                         <div style={{flex: 1}}>
                           <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            <span style={{fontWeight: '600'}}>{entry.name}</span>
+                            <span style={{fontWeight: '600'}}>{entry.name}</span><CenterBadge name={entry.id} />
                             {movement && (
                               <span style={{fontSize: '12px', fontWeight: '700', color: movement.color, fontFamily: "'JetBrains Mono', monospace"}}>
                                 {movement.arrow} {movement.delta > 0 ? '+' : ''}{movement.delta} pts
@@ -842,7 +855,7 @@ export function AnalyticsDashboardView({ excelData, viewMode, selectedMonth, sel
               <div style={{marginBottom: '12px'}}>
                 <label style={{fontWeight: '600', marginRight: '12px'}}>View achievements for:</label>
                 <select value={selectedPerson} onChange={(e) => setSelectedPerson(e.target.value)} style={{padding: '10px', borderRadius: '8px', border: '2px solid var(--border-color)'}}>
-                  {sortedPersonData.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                  {sortedPersonData.map(p => { const tag = getStaffCenterTag(p.name); return <option key={p.id} value={p.id}>{p.name}{tag ? ` [${tag}]` : ''}</option> })}
                 </select>
               </div>
               <p style={{fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px'}}>

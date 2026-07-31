@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { aggregateSheets, extractEmployeeCode, type ExcelData, type StaffData } from '@/lib/excelUtils'
+import { aggregateSheets, extractEmployeeCode, getPersonId, stripEmployeeCode, type ExcelData, type StaffData } from '@/lib/excelUtils'
 import { calculateIncentive, formatCurrency, getTier, loadTiers, loadStaffCenters } from '@/lib/utils'
 import { saveTeamData, checkAndAwardBadges, type MonthlyTeamData, type StaffResult } from '@/lib/analyticsUtils'
 import { exportBulkToPDF } from '@/lib/pdfUtils'
 import { DEFAULT_P1_SPLIT, CENTERS } from '@/lib/config'
 import { DownloadIcon } from '@/components/icons'
+import { CenterBadge } from '@/components/CenterBadge'
 
 interface BulkResult extends StaffData {
   achievement: number
@@ -234,12 +235,12 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
     const monthIdx = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(selectedMonth) + 1
     const yr = selectedYear.length === 2 ? '20' + selectedYear : selectedYear
     const monthKey = `${yr}-${String(monthIdx).padStart(2,'0')}`
-    const staff: StaffResult[] = rows.map((p,i) => ({ name:p.name,sales:p.sales,packages:p.packages,totalEarnings:p.totalIncentive,rank:i+1,contribution:p.contribution,p1:p.p1,p2:p.p2 }))
+    const staff: StaffResult[] = rows.map((p,i) => ({ id:getPersonId(p.name),name:stripEmployeeCode(p.name)||p.name,sales:p.sales,packages:p.packages,totalEarnings:p.totalIncentive,rank:i+1,contribution:p.contribution,p1:p.p1,p2:p.p2 }))
     const record: MonthlyTeamData = { monthKey, date:new Date().toISOString(), teamAchievement:td.teamAchievement, tier:td.tier.name, tierRate:td.tier.rate, tierColor:td.tier.color, teamSales:td.teamSales, teamTarget:td.target, totalPool:td.totalPool, totalStaff:td.staffCount, staff }
     saveTeamData(record)
 
     staff.forEach(s => {
-      checkAndAwardBadges(s.name, {
+      checkAndAwardBadges(s.id, {
         monthKey, date: record.date, achievement: td.teamAchievement, tier: td.tier.name,
         tierRate: td.tier.rate, tierColor: td.tier.color, totalEarnings: s.totalEarnings,
         rank: s.rank, totalStaff: td.staffCount, sales: s.sales, packages: s.packages,
@@ -491,7 +492,7 @@ export function BulkResultsView({ excelData, viewMode, selectedMonth, selectedYe
                     return (
                       <tr key={person.name} style={{borderBottom:'1px solid var(--border-color)',background:isTop3?'var(--accent-soft)':undefined}}>
                         <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc,fontFamily:"'JetBrains Mono', monospace"}}>#{rank}</td>
-                        <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc}}>{person.name}</td>
+                        <td style={{...TD,fontWeight:isTop3?'700':'normal',color:nc}}>{person.name}<CenterBadge name={person.name} /></td>
                         <td style={{...TD,fontWeight:'600',color:isTop3?'var(--accent-primary)':'var(--success)'}}>AED {formatCurrency(person.totalIncentive)}</td>
                         <td style={TD}>{person.packages}</td>
                         <td style={TD}>{person.clients??'-'}</td>

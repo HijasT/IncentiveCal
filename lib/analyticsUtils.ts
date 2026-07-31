@@ -1,7 +1,8 @@
 // Analytics data storage and retrieval utilities
 
 export interface StaffResult {
-  name: string
+  id: string // employee code (or raw name fallback) — see getPersonId in excelUtils.ts. The stored/looked-up identifier; names can change, this shouldn't.
+  name: string // display name at the time of this record (code stripped)
   sales: number
   packages: number
   totalEarnings: number
@@ -44,8 +45,8 @@ export interface PersonalAnalytics {
 
 export interface AnalyticsData {
   teamHistory: Record<string, MonthlyTeamData>
-  selectedName: string | null
-  badges: Record<string, string[]> // badges per person
+  selectedId: string | null
+  badges: Record<string, string[]> // badges per person, keyed by StaffResult.id
 }
 
 const STORAGE_KEY = 'smart_incentive_analytics'
@@ -64,47 +65,65 @@ export function getAnalyticsData(): AnalyticsData {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-      return { teamHistory: {}, selectedName: null, badges: {} }
+      return { teamHistory: {}, selectedId: null, badges: {} }
     }
     return JSON.parse(stored)
   } catch (error) {
     console.error('Failed to load analytics:', error)
-    return { teamHistory: {}, selectedName: null, badges: {} }
+    return { teamHistory: {}, selectedId: null, badges: {} }
   }
 }
 
-export function setSelectedName(name: string | null): void {
+export function setSelectedId(id: string | null): void {
   try {
     const data = getAnalyticsData()
-    data.selectedName = name
+    data.selectedId = id
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch (error) {
-    console.error('Failed to save selected name:', error)
+    console.error('Failed to save selected id:', error)
   }
 }
 
-export function getSelectedName(): string | null {
+export function getSelectedId(): string | null {
   const data = getAnalyticsData()
-  return data.selectedName
+  return data.selectedId
 }
 
-export function getAvailableNames(): string[] {
+export function getAvailableIds(): string[] {
   const data = getAnalyticsData()
-  const allNames = new Set<string>()
-  
+  const allIds = new Set<string>()
+
   Object.values(data.teamHistory).forEach(month => {
-    month.staff.forEach(person => allNames.add(person.name))
+    month.staff.forEach(person => allIds.add(person.id))
   })
-  
-  return Array.from(allNames).sort()
+
+  return Array.from(allIds).sort()
 }
 
-export function getPersonalHistory(name: string): PersonalAnalytics[] {
+// Resolves the most recently recorded display name for a given id, falling
+// back to the id itself if no history has been saved for them yet.
+export function getDisplayName(id: string): string {
+  const data = getAnalyticsData()
+  let latestDate = ''
+  let latestName = id
+
+  Object.values(data.teamHistory).forEach(month => {
+    const person = month.staff.find(s => s.id === id)
+    if (person && month.date > latestDate) {
+      latestDate = month.date
+      latestName = person.name
+    }
+  })
+
+  return latestName
+}
+
+export function getPersonalHistory(id: string): PersonalAnalytics[] {
   const data = getAnalyticsData()
   const history: PersonalAnalytics[] = []
-  
+
   Object.values(data.teamHistory).forEach(month => {
-    const person = month.staff.find(s => s.name === name)
+    const person = month.staff.find(s => s.id === id)
     if (person) {
       history.push({
         monthKey: month.monthKey,
@@ -139,10 +158,10 @@ export function getAvailableYearsFromHistory(): string[] {
   return years
 }
 
-export function getLifetimeStats(name: string | null) {
-  if (!name) return null
-  
-  const history = getPersonalHistory(name)
+export function getLifetimeStats(id: string | null) {
+  if (!id) return null
+
+  const history = getPersonalHistory(id)
   
   if (history.length === 0) {
     return null
@@ -192,10 +211,10 @@ export function getLifetimeStats(name: string | null) {
   }
 }
 
-export function getRankHistory(name: string | null) {
-  if (!name) return []
-  
-  const history = getPersonalHistory(name)
+export function getRankHistory(id: string | null) {
+  if (!id) return []
+
+  const history = getPersonalHistory(id)
   return history.map(m => ({
     month: m.monthKey,
     rank: m.rank,
@@ -204,22 +223,22 @@ export function getRankHistory(name: string | null) {
   }))
 }
 
-export function getCurrentMonthData(name: string | null): PersonalAnalytics | null {
-  if (!name) return null
-  
+export function getCurrentMonthData(id: string | null): PersonalAnalytics | null {
+  if (!id) return null
+
   const now = new Date()
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const history = getPersonalHistory(name)
+  const history = getPersonalHistory(id)
   return history.find(m => m.monthKey === monthKey) || null
 }
 
-export function checkAndAwardBadges(name: string, newData: PersonalAnalytics): string[] {
+export function checkAndAwardBadges(id: string, newData: PersonalAnalytics): string[] {
   const analytics = getAnalyticsData()
-  if (!analytics.badges[name]) {
-    analytics.badges[name] = []
+  if (!analytics.badges[id]) {
+    analytics.badges[id] = []
   }
-  
-  const personBadges = analytics.badges[name]
+
+  const personBadges = analytics.badges[id]
   const newBadges: string[] = []
   
   // First Sale
@@ -246,7 +265,7 @@ export function checkAndAwardBadges(name: string, newData: PersonalAnalytics): s
   }
 
   // Streaks
-  const stats = getLifetimeStats(name)
+  const stats = getLifetimeStats(id)
   if (stats) {
     if (!personBadges.includes('streak-3') && stats.currentStreak >= 3) {
       personBadges.push('streak-3')
@@ -281,17 +300,17 @@ export function checkAndAwardBadges(name: string, newData: PersonalAnalytics): s
   }
 
   if (newBadges.length > 0) {
-    analytics.badges[name] = personBadges
+    analytics.badges[id] = personBadges
     localStorage.setItem(STORAGE_KEY, JSON.stringify(analytics))
   }
 
   return newBadges
 }
 
-export function getPersonBadges(name: string | null): string[] {
-  if (!name) return []
+export function getPersonBadges(id: string | null): string[] {
+  if (!id) return []
   const data = getAnalyticsData()
-  return data.badges[name] || []
+  return data.badges[id] || []
 }
 
 export const ALL_BADGE_IDS = [

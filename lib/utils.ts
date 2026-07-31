@@ -1,6 +1,7 @@
 // Utility functions extracted from original HTML
 
 import { STAFF_CENTERS } from './config'
+import { extractEmployeeCode } from './excelUtils'
 
 export interface Tier {
   id: string
@@ -120,6 +121,15 @@ export function loadStaffCentersBackup(): Record<string, string> | null {
 export function clearStaffCentersBackup() {
   if (typeof window === 'undefined') return
   localStorage.removeItem('sic_staff_centers_backup')
+}
+
+// Resolves a staff name (as it appears in the uploaded Excel, e.g. "Jane Doe
+// AE01-227") to its center key (C/I/D), or null if no employee code is
+// embedded in the name or that code isn't mapped to a center.
+export function getStaffCenterTag(name: string, staffCenters: Record<string, string> = loadStaffCenters()): string | null {
+  const code = extractEmployeeCode(name)
+  if (!code) return null
+  return staffCenters[code] ?? null
 }
 
 export function getTier(achievementPercent: number, tiers: Tier[] = loadTiers()): Tier {
