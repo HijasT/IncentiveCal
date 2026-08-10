@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [8.6.4]
+
+### Changed
+- Hid the "Analytics Dashboard (beta)" sub-view toggle in Bulk & Analytics — the tab now always shows Bulk Results. `AnalyticsDashboardView` and its data/history logic are untouched and can be re-enabled by restoring the toggle in `BulkAnalyticsTab.tsx`.
+
 ## [8.6.3]
 
 ### Changed

@@ -303,49 +303,8 @@ export function BulkAnalyticsTab() {
             )}
           </div>
 
-          <div style={{
-            display: 'flex',
-            gap: '4px',
-            marginBottom: '24px',
-            borderBottom: '1px solid var(--border-color)'
-          }}>
-            <button
-              onClick={() => setSubView('bulk')}
-              style={{
-                flex: 1,
-                padding: '12px 20px',
-                border: 'none',
-                borderBottom: subView === 'bulk' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                background: 'transparent',
-                color: subView === 'bulk' ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontWeight: '600',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'var(--transition-base)'
-              }}
-            >
-              <BarChartIcon />Bulk Results
-            </button>
-            <button
-              onClick={() => setSubView('analytics')}
-              style={{
-                flex: 1,
-                padding: '12px 20px',
-                border: 'none',
-                borderBottom: subView === 'analytics' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                marginBottom: '-1px',
-                background: 'transparent',
-                color: subView === 'analytics' ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontWeight: '600',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'var(--transition-base)'
-              }}
-            >
-              <TrendIcon />Analytics Dashboard (beta)
-            </button>
-          </div>
+          {/* Analytics Dashboard sub-view is temporarily hidden (not removed) —
+              the sub-view toggle is disabled here so subView stays 'bulk'. */}
 
           {/* Conditional View Rendering */}
           {subView === 'bulk' ? (
